@@ -6,7 +6,7 @@ import numpy as np
 class R0Generator:
     states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
 
-    def __init__(self, param: dict, n_age: int = 10, n_l: int = 2, n_a: int = 3, n_i: int = 3):
+    def __init__(self, param: dict, n_age: int = 16, n_l: int = 2, n_a: int = 3, n_i: int = 3):
         self.parameters = param
         self.n_age = n_age
         self.n_l = n_l

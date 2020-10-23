@@ -4,9 +4,7 @@ from scipy.integrate import odeint
 
 class RostModelHungary:
     def __init__(self, model_data):
-        self.contact_mtx = model_data.contact_data
         self.population = model_data.age_data.flatten()
-        self.age_group_data = model_data.age_group_data
 
         self.compartments = ["s", "l1", "l2",
                              "ip", "ia1", "ia2", "ia3",
@@ -48,16 +46,16 @@ class RostModelHungary:
 
         return np.array([iv[comp] for comp in self.compartments]).flatten()
 
-    def get_solution(self, t, parameters):
+    def get_solution(self, t, parameters, cm):
         initial_values = self.get_initial_values()
-        return np.array(odeint(self.get_model, initial_values, t, args=(parameters,)))
+        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
 
-    def get_model(self, xs, _, ps):
+    def get_model(self, xs, _, ps, cm):
         # the same order as in self.compartments!
-        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, 10)
+        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, 16)
 
         transmission = ps["beta"] * \
-            np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(self.contact_mtx)
+            np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
 
         # TODO: implement old RostModelHungary
@@ -76,15 +74,15 @@ class RostModelHungary:
             "is2": 3 * ps["gamma_s"] * is1 - 3 * ps["gamma_s"] * is2,  # Is2'(t)
             "is3": 3 * ps["gamma_s"] * is2 - 3 * ps["gamma_s"] * is3,  # Is3'(t)
 
-            "ih": ps["factor_ih"] * ps["h"] * (1 - ps["factor_ic"] * ps["xi"]) * 3 * ps["gamma_s"] * is3
+            "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3
             - ps["gamma_h"] * ih,  # Ih'(t)
-            "ic": ps["factor_ih"] * ps["h"] * ps["factor_ic"] * ps["xi"] * 3 * ps["gamma_s"] * is3
+            "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3
             - ps["gamma_c"] * ic,  # Ic'(t)
-            "icr": (1 - ps["factor_d"] * ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)
+            "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)
 
-            "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["factor_ih"] * ps["h"]) * 3 * ps["gamma_s"] * is3
+            "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3
             + ps["gamma_h"] * ih + ps["gamma_cr"] * icr,  # R'(t)
-            "d": ps["factor_d"] * ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
+            "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
 
             "c": 2 * ps["alpha_l"] * l2  # C'(t)
         }

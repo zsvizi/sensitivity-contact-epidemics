@@ -39,11 +39,15 @@ class DataLoader:
 
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
-        sheet = wb.sheet_by_index(0)
-        datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
-        wb.unload_sheet(0)
-        datalist = self.transform_matrix(datalist)
-        self.contact_data = datalist
+        contact_matrices = dict()
+        for idx in range(4):
+            sheet = wb.sheet_by_index(idx)
+            datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
+            cm_type = wb.sheet_names()[idx]
+            wb.unload_sheet(0)
+            datalist = self.transform_matrix(datalist)
+            contact_matrices.update({cm_type: datalist})
+        self.contact_data = contact_matrices
 
     def transform_matrix(self, matrix: np.ndarray):
         age_distribution = self.age_data.reshape((-1, 1))
