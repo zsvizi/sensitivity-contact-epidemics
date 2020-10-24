@@ -52,7 +52,7 @@ class RostModelHungary:
 
     def get_model(self, xs, _, ps, cm):
         # the same order as in self.compartments!
-        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, 16)
+        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, self.n_age)
 
         transmission = ps["beta"] * \
             np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
@@ -91,9 +91,8 @@ class RostModelHungary:
         v = np.array(model_eq).flatten()
         return v
 
-    @staticmethod
-    def aggregate_by_age(solution, idx):
-        return np.sum(solution[:, idx * 10:(idx + 1) * 10], axis=1)
+    def aggregate_by_age(self, solution, idx):
+        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=1)
 
     def get_cumulative(self, solution):
         idx = self.c_idx["c"]
