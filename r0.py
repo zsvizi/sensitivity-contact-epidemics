@@ -32,19 +32,18 @@ class R0Generator:
         return r_eff
 
     def __get_v(self) -> np.array:
-        # TODO: implement old model
         idx = self.__idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
         # L1 -> L2
         v[idx("l1"), idx("l1")] = self.n_l * self.parameters["alpha_l"]
         v[idx("l2"), idx("l1")] = -self.n_l * self.parameters["alpha_l"]
-        # L2 -> Ip/A1
+        # L2 -> Ip
         v[idx("l2"), idx("l2")] = self.n_l * self.parameters["alpha_l"]
-        v[idx("ip"), idx("l2")] = -self.n_l * self.parameters["alpha_l"] * (1 - self.parameters["p"])  # !
-        v[idx("a1"), idx("l2")] = -self.n_l * self.parameters["alpha_l"] * self.parameters["p"]  # !
-        # ip -> I1
+        v[idx("ip"), idx("l2")] = -self.n_l * self.parameters["alpha_l"]
+        # ip -> I1/A1
         v[idx("ip"), idx("ip")] = self.parameters["alpha_p"]
-        v[idx("i1"), idx("ip")] = -self.parameters["alpha_p"]  # !
+        v[idx("i1"), idx("ip")] = -self.parameters["alpha_p"] * (1 - self.parameters["p"])
+        v[idx("a1"), idx("ip")] = -self.parameters["alpha_p"] * self.parameters["p"]
         # A1 -> A2
         v[idx("a1"), idx("a1")] = self.n_a * self.parameters["gamma_a"]
         v[idx("a2"), idx("a1")] = -self.n_a * self.parameters["gamma_a"]

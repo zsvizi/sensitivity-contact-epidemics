@@ -58,19 +58,18 @@ class RostModelHungary:
             np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
 
-        # TODO: implement old RostModelHungary
         model_eq_dict = {
             "s": -ps["susc"] * (s / actual_population) * transmission,  # S'(t)
             "l1": ps["susc"] * (s / actual_population) * transmission - 2 * ps["alpha_l"] * l1,  # L1'(t)
             "l2": 2 * ps["alpha_l"] * l1 - 2 * ps["alpha_l"] * l2,  # L2'(t)
 
-            "ip": (1 - ps["p"]) * 2 * ps["alpha_l"] * l2 - ps["alpha_p"] * ip,  # Ip'(t)
+            "ip": 2 * ps["alpha_l"] * l2 - ps["alpha_p"] * ip,  # Ip'(t)
 
-            "ia1": ps["p"] * 2 * ps["alpha_l"] * l2 - 3 * ps["gamma_a"] * ia1,  # Ia1'(t)
+            "ia1": ps["p"] * ps["alpha_p"] * ip - 3 * ps["gamma_a"] * ia1,  # Ia1'(t)
             "ia2": 3 * ps["gamma_a"] * ia1 - 3 * ps["gamma_a"] * ia2,  # Ia2'(t)
             "ia3": 3 * ps["gamma_a"] * ia2 - 3 * ps["gamma_a"] * ia3,  # Ia3'(t)
 
-            "is1": ps["alpha_p"] * ip - 3 * ps["gamma_s"] * is1,  # Is1'(t)
+            "is1": (1 - ps["p"]) * ps["alpha_p"] * ip - 3 * ps["gamma_s"] * is1,  # Is1'(t)
             "is2": 3 * ps["gamma_s"] * is1 - 3 * ps["gamma_s"] * is2,  # Is2'(t)
             "is3": 3 * ps["gamma_s"] * is2 - 3 * ps["gamma_s"] * is3,  # Is3'(t)
 
