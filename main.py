@@ -10,6 +10,8 @@ from model import RostModelHungary
 from prcc import create_latin_table, get_contact_matrix_from_upper_triu, get_prcc_values
 from r0 import R0Generator
 
+import plotter
+
 
 def main():
     # Load data
@@ -93,14 +95,14 @@ def main():
 
                     os.makedirs("./sens_data", exist_ok=True)
                     os.makedirs("./sens_data/simulations", exist_ok=True)
-                    np.savetxt(fname="./sens_data/simulations/simulation_" +
-                               "_".join([str(susc), str(base_r0), format(beta, '.5f'), str(mtx_type)]) + ".csv",
+                    filename = "./sens_data/simulations/simulation_" +\
+                               "_".join([str(susc), str(base_r0), format(beta, '.5f'), str(mtx_type)])
+                    np.savetxt(fname=filename + ".csv",
                                X=np.asarray(sim_output), delimiter=";")
 
                     is_prcc_generated = False
                     if is_prcc_generated:
-                        filename = "simulation_1.0_3_0.05203_home.csv"
-                        saved_simulation = np.loadtxt("./sens_data/simulations/" + filename, delimiter=';')[:, 0:-no_ag]
+                        saved_simulation = np.loadtxt(filename + ".csv", delimiter=';')[:, 0:-no_ag]
                         prcc_list = get_prcc_values(np.delete(saved_simulation, -2, axis=1))
                         print(prcc_list)
                 else:
@@ -123,4 +125,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    plotter.generate_prcc_plots()
