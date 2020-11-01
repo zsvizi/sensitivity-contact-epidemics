@@ -126,4 +126,6 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    plotter.generate_prcc_plots()
+    # plotter.generate_prcc_plots()
+    plotter.generate_stacked_plots()
+    plotter.plot_2d_contact_matrices()
