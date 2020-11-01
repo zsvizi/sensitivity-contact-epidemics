@@ -201,6 +201,10 @@ def plot_2d_contact_matrices():
                    origin='lower')
         plt.colorbar(pad=0.02, fraction=0.04)
         plt.grid(b=None)
+        number_of_age_groups = 16
+        plt.gca().set_xticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
+        plt.gca().set_yticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
+        plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
         plt.xticks(ticks=param_list, labels=param_list)
         plt.yticks(ticks=param_list, labels=param_list)
         plt.savefig('./sens_data/CM_symm_Hungary' + "_" + t + '.pdf', format="pdf",
