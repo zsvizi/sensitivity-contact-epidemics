@@ -36,7 +36,8 @@ class RostModelHungary:
             "d": np.zeros(self.n_age),
             "r": np.zeros(self.n_age)
         }
-        iv["l1"][2] = 1
+
+        iv["l1"][2] = 1  # np.array([0, 0, 0, 4, 3, 3, 1, 2, 1, 2, 2, 2, 5, 5, 0, 0])
         iv.update({
             "c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] + iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
         })
@@ -55,7 +56,7 @@ class RostModelHungary:
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, self.n_age)
 
         transmission = ps["beta"] * \
-            np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
+                       np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
 
         model_eq_dict = {
@@ -74,13 +75,13 @@ class RostModelHungary:
             "is3": 3 * ps["gamma_s"] * is2 - 3 * ps["gamma_s"] * is3,  # Is3'(t)
 
             "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3
-            - ps["gamma_h"] * ih,  # Ih'(t)
+                  - ps["gamma_h"] * ih,  # Ih'(t)
             "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3
-            - ps["gamma_c"] * ic,  # Ic'(t)
+                  - ps["gamma_c"] * ic,  # Ic'(t)
             "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)
 
             "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3
-            + ps["gamma_h"] * ih + ps["gamma_cr"] * icr,  # R'(t)
+                 + ps["gamma_h"] * ih + ps["gamma_cr"] * icr,  # R'(t)
             "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
 
             "c": 2 * ps["alpha_l"] * l2  # C'(t)
