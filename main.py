@@ -107,7 +107,7 @@ def main():
                         contact_school[3, :] = 0
                         contact_school[:, 3] = 0
                         full_contact_matrix = data.contact_data["home"] + data.contact_data["work"] + \
-                            contact_school + data.contact_data["other"]
+                                              contact_school + data.contact_data["other"]
                         cm_school_closure = (full_contact_matrix * age_vector)[upper_tri_indexes]
 
                         # School closure + 0.5 * other
@@ -117,7 +117,7 @@ def main():
                         contact_other[3, 3] = contact_other[3, 3] * 2
 
                         full_contact_matrix = data.contact_data["home"] + data.contact_data["work"] + \
-                            contact_school
+                                              contact_school
 
                         cm_school_closure_50 = ((full_contact_matrix * age_vector) + contact_other)[upper_tri_indexes]
 
@@ -152,12 +152,15 @@ def main():
                         contact_work[-2, -2] = contact_work[-2, -2] * 2
                         contact_work[-1, -1] = contact_work[-1, -1] * 2
 
-                        cm_idosek_homeon_kivul_nulla_50 = ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[upper_tri_indexes]
+                        cm_idosek_homeon_kivul_nulla_50 = \
+                        ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[
+                            upper_tri_indexes]
 
                         # Fixed number contact reduction
                         fixed_number = np.min((upper_limit_matrix - contact_home * age_vector))
-                        cm_fixed_reduced = (upper_limit_matrix - fixed_number * upper_limit_matrix /
-                                            np.sum(upper_limit_matrix[upper_tri_indexes]))[upper_tri_indexes]
+                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        cm_fixed_reduced = (upper_limit_matrix - fixed_number * other_than_home /
+                                            np.sum(other_than_home[upper_tri_indexes]))[upper_tri_indexes]
 
                         # School closure + Idősek home-on kívül 0.5-szörözés
                         contact_school = np.copy(data.contact_data["school"]) * age_vector
@@ -181,7 +184,9 @@ def main():
                         contact_work[-2, -2] = 2 * contact_work[-2, -2]
                         contact_work[-1, -1] = 2 * contact_work[-1, -1]
 
-                        cm_kombo_1 = ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[upper_tri_indexes]
+                        cm_kombo_1 = \
+                        ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[
+                            upper_tri_indexes]
 
                         # School closure + 50%other + Elder just home
                         contact_school = np.copy(data.contact_data["school"]) * age_vector
@@ -199,7 +204,16 @@ def main():
                         contact_work[-2:, :] = 0
                         contact_work[:, -2:] = 0
 
-                        cm_kombo_2 = ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[upper_tri_indexes]
+                        cm_kombo_2 = \
+                        ((data.contact_data["home"] * age_vector) + contact_other + contact_school + contact_work)[
+                            upper_tri_indexes]
+
+                        # Fixed number of school closure
+                        contact_school = np.copy(data.contact_data["school"]) * age_vector
+                        fixed_number = np.sum(contact_school[3, :])
+                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        cm_fixed_reduced_2 = (upper_limit_matrix - fixed_number * other_than_home /
+                                              np.sum(other_than_home[upper_tri_indexes]))[upper_tri_indexes]
 
                         cm1 = get_contact_matrix_from_upper_triu(rvector=cm_full,
                                                                  age_vector=age_vector.reshape(-1, ))
@@ -217,31 +231,26 @@ def main():
                                                                  age_vector=age_vector.reshape(-1, ))
                         cm8 = get_contact_matrix_from_upper_triu(rvector=cm_kombo_2,
                                                                  age_vector=age_vector.reshape(-1, ))
+                        cm9 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_reduced_2,
+                                                                 age_vector=age_vector.reshape(-1, ))
 
-                        cm_list = [cm1, cm6, cm2, cm3, cm4, cm5]
+                        # cm_list = [cm1, cm6, cm2, cm3, cm4, cm5, cm9, cm7, cm8]
+                        # legend_list = [
+                        #     "Full contact matrix",
+                        #     "Fixed number of contacts reduced",
+                        #     "School closure",
+                        #     "School closure + 50% other",
+                        #     "Elder people just home",
+                        #     "Elder people 1*home + 0.5 others",
+                        #     "Fixed school closure number",
+                        #     "School closure + Elder home-0.5*others",
+                        #     "School closure + 50% other + Elder people just home"
+                        # ]
+
+
+                        cm_list = [cm1, cm7, cm8]
                         legend_list = [
                             "Full contact matrix",
-                            "Fixed number of contacts reduced",
-                            "School closure",
-                            "School closure + 50% other",
-                            "Elder people just home",
-                            "Elder people 1*home + 0.5 others"
-                        ]
-                        r0_list = []
-                        for idx, cm in enumerate(cm_list):
-                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
-                                                                        susceptibles=susceptibles.reshape(1, -1),
-                                                                        population=population)[0]
-                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
-                            r0_list.append((beta / beta_cm) * base_r0)
-
-
-                        # Get solution
-                        t = np.linspace(0, 450, 1000)
-                        plot_solution(t, params, cm_list, legend_list, "_".join([str(susc), str(base_r0)]))
-
-                        cm_list = [cm7, cm8]
-                        legend_list = [
                             "School closure + Elder home-0.5*others",
                             "School closure + 50% other + Elder people just home"
                         ]
@@ -255,7 +264,45 @@ def main():
 
                         # Get solution
                         t = np.linspace(0, 450, 1000)
+                        plot_solution(t, params, cm_list, legend_list, "_V3_".join([str(susc), str(base_r0)]))
+
+                        cm_list = [cm1, cm6, cm4, cm5]
+                        legend_list = [
+                            "Full contact matrix",
+                            "Fixed number of contacts reduced",
+                            "Elder people just home",
+                            "Elder people 1*home + 0.5 others"
+                        ]
+                        r0_list = []
+                        for idx, cm in enumerate(cm_list):
+                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                                                                        susceptibles=susceptibles.reshape(1, -1),
+                                                                        population=population)[0]
+                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                            r0_list.append((beta / beta_cm) * base_r0)
+
+                        # Get solution
+                        t = np.linspace(0, 450, 1000)
                         plot_solution(t, params, cm_list, legend_list, "_V2_".join([str(susc), str(base_r0)]))
+
+                        cm_list = [cm1, cm2, cm3, cm9]
+                        legend_list = [
+                            "Full contact matrix",
+                            "School closure",
+                            "School closure + 50% other",
+                            "Fixed school closure number"
+                        ]
+                        r0_list = []
+                        for idx, cm in enumerate(cm_list):
+                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                                                                        susceptibles=susceptibles.reshape(1, -1),
+                                                                        population=population)[0]
+                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                            r0_list.append((beta / beta_cm) * base_r0)
+
+                        # Get solution
+                        t = np.linspace(0, 450, 1000)
+                        plot_solution(t, params, cm_list, legend_list, "_V1_".join([str(susc), str(base_r0)]))
 
 
 def plot_solution(time, params, cm_list, legend_list, title_part):
