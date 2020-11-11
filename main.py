@@ -234,20 +234,6 @@ def main():
                         cm9 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_reduced_2,
                                                                  age_vector=age_vector.reshape(-1, ))
 
-                        # cm_list = [cm1, cm6, cm2, cm3, cm4, cm5, cm9, cm7, cm8]
-                        # legend_list = [
-                        #     "Full contact matrix",
-                        #     "Fixed number of contacts reduced",
-                        #     "School closure",
-                        #     "School closure + 50% other",
-                        #     "Elder people just home",
-                        #     "Elder people 1*home + 0.5 others",
-                        #     "Fixed school closure number",
-                        #     "School closure + Elder home-0.5*others",
-                        #     "School closure + 50% other + Elder people just home"
-                        # ]
-
-
                         cm_list = [cm1, cm7, cm8]
                         legend_list = [
                             "Full contact matrix",
@@ -304,6 +290,19 @@ def main():
                         t = np.linspace(0, 450, 1000)
                         plot_solution(t, params, cm_list, legend_list, "_V1_".join([str(susc), str(base_r0)]))
 
+                        if susc in [0.5, 1.0]:
+                            solution = model.get_solution(t=t, parameters=params, cm=cm2)
+                            np.savetxt('./sens_data/dinamics/' + 'susc' + str(susc) + '_r0' + str(
+                                base_r0) + '_schoolclosure.txt',
+                                       np.sum(solution[:, model.c_idx["ic"] * no_ag:(model.c_idx["ic"] + 1) * no_ag],
+                                              axis=1))
+                            solution = model.get_solution(t=t, parameters=params, cm=cm1)
+                            np.savetxt('./sens_data/dinamics/' + 'susc' + str(susc) + '_r0' + str(
+                                base_r0) + '_full.txt',
+                                       np.sum(solution[:, model.c_idx["ic"] * no_ag:(model.c_idx["ic"] + 1) * no_ag],
+                                              axis=1))
+
+
 
 def plot_solution(time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
@@ -320,8 +319,22 @@ def plot_solution(time, params, cm_list, legend_list, title_part):
     plt.close()
 
 
+def plot_different_susc(file_list):
+    os.makedirs("./sens_data/dinamics", exist_ok=True)
+    for f in file_list:
+        sol = np.loadtxt('./sens_data/dinamics/' + f)
+        plt.plot(np.arange(len(sol)), sol, label=f)
+    plt.legend(loc="upper left")
+    plt.gca().set_xlabel('days')
+    plt.gca().set_ylabel('ICU usage')
+    plt.tight_layout()
+    plt.savefig('./sens_data/dinamics/school_closures.pdf', format="pdf")
+    plt.close()
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    plot_different_susc(["susc0.5_r01.32_schoolclosure.txt", "susc1.0_r01.32_schoolclosure.txt"])
     # plotter.generate_prcc_plots()
     # plotter.generate_stacked_plots()
     # plotter.plot_2d_contact_matrices()
