@@ -94,111 +94,117 @@ def main():
                                "_".join([str(susc), str(base_r0), format(beta, '.5f'), str(mtx_type)])
                     np.savetxt(fname=filename + ".csv", X=np.asarray(sim_output), delimiter=";")
                 else:
-                    if susc in [1.0, 0.5] and base_r0 in [1.35, 2.2] and mtx_type == "home":
+                    if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "home":
                         # if mtx_type == "home":
                         # Get modified contact matrix
                         # cm_row = lower_limit_matrices[mtx_type][upper_tri_indexes]
 
                         # Total full contact matrix contact
                         cm_full = upper_limit_matrix[upper_tri_indexes]
+                        print(np.sum(cm_full))
 
                         # School reduction
-                        contact_reduction = np.copy(data.contact_data["school"])
-                        contact_reduction[3, 3] *= 0.5
-                        full_contact_matrix = data.contact_data["home"] + data.contact_data["work"] + \
-                                              contact_reduction + data.contact_data["other"]
-                        cm_school_reduction = (full_contact_matrix * age_vector)[upper_tri_indexes]
+                        contact_work = np.copy(data.contact_data["work"]) * age_vector
+                        fixed_number = contact_work[7, 8] * 0.5
+                        print(fixed_number)
+                        contact_work[7, 8] -= fixed_number
+                        full_contact_matrix = data.contact_data["home"] + data.contact_data["school"] + \
+                                              data.contact_data["other"]
+                        cm_school_reduction = (full_contact_matrix * age_vector + contact_work)[upper_tri_indexes]
+                        print(np.sum(cm_school_reduction))
 
                         # Fixed number of school reduction
                         contact_school = np.copy(data.contact_data["school"]) * age_vector
-                        fixed_number = contact_school[3, 3] * 0.5
-                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
-                        cm_fixed_reduced_school = (upper_limit_matrix
-                                                   - fixed_number * other_than_home /
-                                                   np.sum(other_than_home))[upper_tri_indexes]
+                        contact_school[3, 3] -= fixed_number
+                        # other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
 
-                        # School closure
-                        contact_school = np.copy(data.contact_data["school"])
-                        contact_school[3, :] = contact_school[3, :] = 0
                         full_contact_matrix = data.contact_data["home"] + data.contact_data["work"] + \
-                                              contact_school + data.contact_data["other"]
-                        cm_school_closure = (full_contact_matrix * age_vector)[upper_tri_indexes]
+                                              data.contact_data["other"]
+                        cm_fixed_reduced_school = (full_contact_matrix * age_vector + contact_school)[upper_tri_indexes]
+                        print(np.sum(cm_fixed_reduced_school))
 
-                        # Fixed number of school closure
-                        contact_school = np.copy(data.contact_data["school"]) * age_vector
-                        fixed_number = np.sum(contact_school[3, :]) - contact_school[3, 3]
-                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
-                        cm_fixed_school_closure = (upper_limit_matrix
-                                                   - fixed_number * other_than_home /
-                                                   np.sum(other_than_home))[upper_tri_indexes]
-
-                        # Work + other reduction at a.g. 4-8
-                        contact_work = np.copy(data.contact_data["work"])
-                        contact_other = np.copy(data.contact_data["other"])
-                        contact_work[4:9, 4:9] *= 0.5
-                        contact_other[4:9, 4:9] *= 0.5
-                        full_contact_matrix = data.contact_data["home"] + contact_work + \
-                                              data.contact_data["school"] + contact_other
-                        cm_workandother_reduction = (full_contact_matrix * age_vector)[upper_tri_indexes]
-
-                        # Fixed number of work + other reduction at a.g. 4-8
-                        contact_work = np.copy(data.contact_data["work"]) * age_vector
-                        contact_other = np.copy(data.contact_data["other"]) * age_vector
-                        fixed_number = (np.sum(contact_work[4:9, 4:9]) + np.sum(contact_other[4:9, 4:9])) * 0.5
-                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
-                        cm_fixed_workandother_reduction = (upper_limit_matrix
-                                                           - fixed_number * other_than_home /
-                                                           np.sum(other_than_home))[upper_tri_indexes]
-
-                        # 50% Work + other reduction and 0 school at a.g. 5
-                        contact_work = np.copy(data.contact_data["work"])
-                        contact_other = np.copy(data.contact_data["other"])
-                        contact_school = np.copy(data.contact_data["school"])
-                        contact_work[5, :] *= 0.5
-                        contact_work[:, 5] *= 0.5
-                        contact_work[5, 5] *= 2
-                        contact_other[5, :] *= 0.5
-                        contact_other[:, 5] *= 0.5
-                        contact_other[5, 5] *= 2
-                        # contact_work[5, :] = contact_work[:, 5] = 0
-                        # contact_other[5, :] = contact_other[:, 5] = 0
-                        contact_school[5, :] = contact_school[:, 5] = 0
-                        full_contact_matrix = data.contact_data["home"] + contact_work + \
-                                              contact_school + contact_other
-                        total_cm = full_contact_matrix * age_vector
-                        print(np.sum(total_cm))
-                        cm_workotherandschool_reduction = (total_cm)[upper_tri_indexes]
-
-                        # Fixed number of 50% Work + other reduction and 0 school at a.g. 5
-                        fixed_number = np.sum(upper_limit_matrix - total_cm)
-                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
-                        cm_fixed_workotherandschool_reduction = (upper_limit_matrix
-                                                                 - fixed_number * other_than_home /
-                                                                 np.sum(other_than_home))[upper_tri_indexes]
-                        print(np.sum(upper_limit_matrix - fixed_number * other_than_home / np.sum(other_than_home)))
-
-                        # Idosek home-on kivul nullázása
-                        contact_other = np.copy(data.contact_data["other"]) * age_vector
-                        contact_other[14:, :] = 0
-                        contact_other[:, 14:] = 0
-                        contact_school = np.copy(data.contact_data["school"]) * age_vector
-                        contact_school[14:, :] = 0
-                        contact_school[:, 14:] = 0
-                        contact_work = np.copy(data.contact_data["work"]) * age_vector
-                        contact_work[14:, :] = 0
-                        contact_work[:, 14:] = 0
-                        total_cm = (data.contact_data["home"] * age_vector) + contact_other + \
-                                   contact_school + contact_work
-                        print(np.sum(total_cm))
-                        cm_idosek_homeon_kivul_nulla = total_cm[upper_tri_indexes]
-
-                        # Fixed number of Idosek home-on kivul nullázása
-                        fixed_number = np.sum(upper_limit_matrix - total_cm)
-                        other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
-                        cm_fixed_idosek_homeon_kivul_nulla = (upper_limit_matrix
-                                                              - fixed_number * other_than_home /
-                                                              np.sum(other_than_home))[upper_tri_indexes]
-                        print(np.sum(upper_limit_matrix - fixed_number * other_than_home / np.sum(other_than_home)))
+                        # # School closure
+                        # contact_school = np.copy(data.contact_data["school"])
+                        # contact_school[3, :] = contact_school[3, :] = 0
+                        # full_contact_matrix = data.contact_data["home"] + data.contact_data["work"] + \
+                        #                       contact_school + data.contact_data["other"]
+                        # cm_school_closure = (full_contact_matrix * age_vector)[upper_tri_indexes]
+                        #
+                        # # Fixed number of school closure
+                        # contact_school = np.copy(data.contact_data["school"]) * age_vector
+                        # fixed_number = np.sum(contact_school[3, :]) - contact_school[3, 3]
+                        # other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        # cm_fixed_school_closure = (upper_limit_matrix
+                        #                            - fixed_number * other_than_home /
+                        #                            np.sum(other_than_home))[upper_tri_indexes]
+                        #
+                        # # Work + other reduction at a.g. 4-8
+                        # contact_work = np.copy(data.contact_data["work"])
+                        # contact_other = np.copy(data.contact_data["other"])
+                        # contact_work[4:9, 4:9] *= 0.5
+                        # contact_other[4:9, 4:9] *= 0.5
+                        # full_contact_matrix = data.contact_data["home"] + contact_work + \
+                        #                       data.contact_data["school"] + contact_other
+                        # cm_workandother_reduction = (full_contact_matrix * age_vector)[upper_tri_indexes]
+                        #
+                        # # Fixed number of work + other reduction at a.g. 4-8
+                        # contact_work = np.copy(data.contact_data["work"]) * age_vector
+                        # contact_other = np.copy(data.contact_data["other"]) * age_vector
+                        # fixed_number = (np.sum(contact_work[4:9, 4:9]) + np.sum(contact_other[4:9, 4:9])) * 0.5
+                        # other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        # cm_fixed_workandother_reduction = (upper_limit_matrix
+                        #                                    - fixed_number * other_than_home /
+                        #                                    np.sum(other_than_home))[upper_tri_indexes]
+                        #
+                        # # 50% Work + other reduction and 0 school at a.g. 5
+                        # contact_work = np.copy(data.contact_data["work"])
+                        # contact_other = np.copy(data.contact_data["other"])
+                        # contact_school = np.copy(data.contact_data["school"])
+                        # contact_work[5, :] *= 0.5
+                        # contact_work[:, 5] *= 0.5
+                        # contact_work[5, 5] *= 2
+                        # contact_other[5, :] *= 0.5
+                        # contact_other[:, 5] *= 0.5
+                        # contact_other[5, 5] *= 2
+                        # # contact_work[5, :] = contact_work[:, 5] = 0
+                        # # contact_other[5, :] = contact_other[:, 5] = 0
+                        # contact_school[5, :] = contact_school[:, 5] = 0
+                        # full_contact_matrix = data.contact_data["home"] + contact_work + \
+                        #                       contact_school + contact_other
+                        # total_cm = full_contact_matrix * age_vector
+                        # print(np.sum(total_cm))
+                        # cm_workotherandschool_reduction = (total_cm)[upper_tri_indexes]
+                        #
+                        # # Fixed number of 50% Work + other reduction and 0 school at a.g. 5
+                        # fixed_number = np.sum(upper_limit_matrix - total_cm)
+                        # other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        # cm_fixed_workotherandschool_reduction = (upper_limit_matrix
+                        #                                          - fixed_number * other_than_home /
+                        #                                          np.sum(other_than_home))[upper_tri_indexes]
+                        # print(np.sum(upper_limit_matrix - fixed_number * other_than_home / np.sum(other_than_home)))
+                        #
+                        # # Idosek home-on kivul nullázása
+                        # contact_other = np.copy(data.contact_data["other"]) * age_vector
+                        # contact_other[14:, :] = 0
+                        # contact_other[:, 14:] = 0
+                        # contact_school = np.copy(data.contact_data["school"]) * age_vector
+                        # contact_school[14:, :] = 0
+                        # contact_school[:, 14:] = 0
+                        # contact_work = np.copy(data.contact_data["work"]) * age_vector
+                        # contact_work[14:, :] = 0
+                        # contact_work[:, 14:] = 0
+                        # total_cm = (data.contact_data["home"] * age_vector) + contact_other + \
+                        #            contact_school + contact_work
+                        # print(np.sum(total_cm))
+                        # cm_idosek_homeon_kivul_nulla = total_cm[upper_tri_indexes]
+                        #
+                        # # Fixed number of Idosek home-on kivul nullázása
+                        # fixed_number = np.sum(upper_limit_matrix - total_cm)
+                        # other_than_home = upper_limit_matrix - (data.contact_data["home"] * age_vector)
+                        # cm_fixed_idosek_homeon_kivul_nulla = (upper_limit_matrix
+                        #                                       - fixed_number * other_than_home /
+                        #                                       np.sum(other_than_home))[upper_tri_indexes]
+                        # print(np.sum(upper_limit_matrix - fixed_number * other_than_home / np.sum(other_than_home)))
 
                         # # Idosek home-on kivul nullázása
                         # fixed_number = np.min(upper_limit_matrix - np.copy(data.contact_data["home"]) * age_vector)
@@ -215,7 +221,6 @@ def main():
                         #                                       - 60 * fixed_number * other_than_home /
                         #                                       np.sum(other_than_home))[upper_tri_indexes]
                         # print(np.sum(upper_limit_matrix - 60 * fixed_number * other_than_home / np.sum(other_than_home)))
-
 
                         ################################################################################
                         ################################################################################
@@ -319,22 +324,22 @@ def main():
                                                                  age_vector=age_vector.reshape(-1, ))
                         cm3 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_reduced_school,
                                                                  age_vector=age_vector.reshape(-1, ))
-                        cm4 = get_contact_matrix_from_upper_triu(rvector=cm_school_closure,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm5 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_school_closure,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm6 = get_contact_matrix_from_upper_triu(rvector=cm_workandother_reduction,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm7 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_workandother_reduction,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm8 = get_contact_matrix_from_upper_triu(rvector=cm_workotherandschool_reduction,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm9 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_workotherandschool_reduction,
-                                                                 age_vector=age_vector.reshape(-1, ))
-                        cm10 = get_contact_matrix_from_upper_triu(rvector=cm_idosek_homeon_kivul_nulla,
-                                                                  age_vector=age_vector.reshape(-1, ))
-                        cm11 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_idosek_homeon_kivul_nulla,
-                                                                  age_vector=age_vector.reshape(-1, ))
+                        # cm4 = get_contact_matrix_from_upper_triu(rvector=cm_school_closure,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm5 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_school_closure,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm6 = get_contact_matrix_from_upper_triu(rvector=cm_workandother_reduction,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm7 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_workandother_reduction,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm8 = get_contact_matrix_from_upper_triu(rvector=cm_workotherandschool_reduction,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm9 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_workotherandschool_reduction,
+                        #                                          age_vector=age_vector.reshape(-1, ))
+                        # cm10 = get_contact_matrix_from_upper_triu(rvector=cm_idosek_homeon_kivul_nulla,
+                        #                                           age_vector=age_vector.reshape(-1, ))
+                        # cm11 = get_contact_matrix_from_upper_triu(rvector=cm_fixed_idosek_homeon_kivul_nulla,
+                        #                                           age_vector=age_vector.reshape(-1, ))
 
                         cm_list = [cm1, cm2, cm3]
                         legend_list = [
@@ -353,84 +358,84 @@ def main():
                         # Get solution
                         t = np.arange(0, 500, 0.5)
                         plot_solution_inc(t, params, cm_list, legend_list, "_P1_".join([str(susc), str(base_r0)]))
-                        t = np.arange(0, 500, 0.5)
-                        plot_solution_ic(t, params, cm_list, legend_list, "_P4_".join([str(susc), str(base_r0)]))
+                        # t = np.arange(0, 500, 0.5)
+                        # plot_solution_ic(t, params, cm_list, legend_list, "_P4_".join([str(susc), str(base_r0)]))
 
-                        cm_list = [cm1, cm4, cm5]
-                        legend_list = [
-                            "Total contact",
-                            "School closure",
-                            "Reduction with fixed number"
-                        ]
-                        r0_list = []
-                        for idx, cm in enumerate(cm_list):
-                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
-                                                                        susceptibles=susceptibles.reshape(1, -1),
-                                                                        population=population)[0]
-                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
-                            r0_list.append((beta / beta_cm) * base_r0)
-
-                        # Get solution
-                        t = np.arange(0, 500, 0.5)
-                        plot_solution_inc(t, params, cm_list, legend_list, "_P2_".join([str(susc), str(base_r0)]))
-
-                        cm_list = [cm1, cm6, cm7]
-                        legend_list = [
-                            "Total contact",
-                            "50% work and other reduction in a.g. 4-8",
-                            "Reduction with fixed number"
-                        ]
-                        r0_list = []
-                        for idx, cm in enumerate(cm_list):
-                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
-                                                                        susceptibles=susceptibles.reshape(1, -1),
-                                                                        population=population)[0]
-                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
-                            r0_list.append((beta / beta_cm) * base_r0)
-
-                        # Get solution
-                        t = np.arange(0, 1000, 0.5)
-                        plot_solution_inc(t, params, cm_list, legend_list, "_P3_".join([str(susc), str(base_r0)]))
-                        t = np.arange(0, 1000, 0.5)
-                        plot_solution_ic(t, params, cm_list, legend_list, "_P5_".join([str(susc), str(base_r0)]))
-
-                        cm_list = [cm1, cm8, cm9]
-                        legend_list = [
-                            "Total contact",
-                            "50% work and other reduction and 0 school in a.g. 5",
-                            "Reduction with fixed number"
-                        ]
-                        r0_list = []
-                        for idx, cm in enumerate(cm_list):
-                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
-                                                                        susceptibles=susceptibles.reshape(1, -1),
-                                                                        population=population)[0]
-                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
-                            r0_list.append((beta / beta_cm) * base_r0)
-
-                        # Get solution
-                        t = np.arange(0, 1000, 0.5)
-                        plot_solution_ic(t, params, cm_list, legend_list, "_P6_".join([str(susc), str(base_r0)]))
-
-                        cm_list = [cm1, cm10, cm11]
-                        legend_list = [
-                            "Total contact",
-                            "Elderly lockdown",
-                            "Reduction with fixed number"
-                        ]
-                        r0_list = []
-                        for idx, cm in enumerate(cm_list):
-                            beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
-                                                                        susceptibles=susceptibles.reshape(1, -1),
-                                                                        population=population)[0]
-                            print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
-                            r0_list.append((beta / beta_cm) * base_r0)
-
-                        # Get solution
-                        t = np.arange(0, 500, 0.5)
-                        if base_r0 == 2.2:
-                            t = np.arange(0, 200, 0.5)
-                        plot_solution_ic(t, params, cm_list, legend_list, "_P7_".join([str(susc), str(base_r0)]))
+                        # cm_list = [cm1, cm4, cm5]
+                        # legend_list = [
+                        #     "Total contact",
+                        #     "School closure",
+                        #     "Reduction with fixed number"
+                        # ]
+                        # r0_list = []
+                        # for idx, cm in enumerate(cm_list):
+                        #     beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                        #                                                 susceptibles=susceptibles.reshape(1, -1),
+                        #                                                 population=population)[0]
+                        #     print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                        #     r0_list.append((beta / beta_cm) * base_r0)
+                        #
+                        # # Get solution
+                        # t = np.arange(0, 500, 0.5)
+                        # plot_solution_inc(t, params, cm_list, legend_list, "_P2_".join([str(susc), str(base_r0)]))
+                        #
+                        # cm_list = [cm1, cm6, cm7]
+                        # legend_list = [
+                        #     "Total contact",
+                        #     "50% work and other reduction in a.g. 4-8",
+                        #     "Reduction with fixed number"
+                        # ]
+                        # r0_list = []
+                        # for idx, cm in enumerate(cm_list):
+                        #     beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                        #                                                 susceptibles=susceptibles.reshape(1, -1),
+                        #                                                 population=population)[0]
+                        #     print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                        #     r0_list.append((beta / beta_cm) * base_r0)
+                        #
+                        # # Get solution
+                        # t = np.arange(0, 1000, 0.5)
+                        # plot_solution_inc(t, params, cm_list, legend_list, "_P3_".join([str(susc), str(base_r0)]))
+                        # t = np.arange(0, 1000, 0.5)
+                        # plot_solution_ic(t, params, cm_list, legend_list, "_P5_".join([str(susc), str(base_r0)]))
+                        #
+                        # cm_list = [cm1, cm8, cm9]
+                        # legend_list = [
+                        #     "Total contact",
+                        #     "50% work and other reduction and 0 school in a.g. 5",
+                        #     "Reduction with fixed number"
+                        # ]
+                        # r0_list = []
+                        # for idx, cm in enumerate(cm_list):
+                        #     beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                        #                                                 susceptibles=susceptibles.reshape(1, -1),
+                        #                                                 population=population)[0]
+                        #     print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                        #     r0_list.append((beta / beta_cm) * base_r0)
+                        #
+                        # # Get solution
+                        # t = np.arange(0, 1000, 0.5)
+                        # plot_solution_ic(t, params, cm_list, legend_list, "_P6_".join([str(susc), str(base_r0)]))
+                        #
+                        # cm_list = [cm1, cm10, cm11]
+                        # legend_list = [
+                        #     "Total contact",
+                        #     "Elderly lockdown",
+                        #     "Reduction with fixed number"
+                        # ]
+                        # r0_list = []
+                        # for idx, cm in enumerate(cm_list):
+                        #     beta_cm = base_r0 / r0generator.get_eig_val(contact_mtx=cm,
+                        #                                                 susceptibles=susceptibles.reshape(1, -1),
+                        #                                                 population=population)[0]
+                        #     print(str(idx) + " R0 for modified contact matrix:", (beta / beta_cm) * base_r0)
+                        #     r0_list.append((beta / beta_cm) * base_r0)
+                        #
+                        # # Get solution
+                        # t = np.arange(0, 500, 0.5)
+                        # if base_r0 == 2.2:
+                        #     t = np.arange(0, 200, 0.5)
+                        # plot_solution_ic(t, params, cm_list, legend_list, "_P7_".join([str(susc), str(base_r0)]))
 
                         # if susc in [0.5, 1.0]:
                         #     solution = model.get_solution(t=t, parameters=params, cm=cm2)
