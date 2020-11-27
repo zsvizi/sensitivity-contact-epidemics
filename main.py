@@ -9,7 +9,6 @@ from dataloader import DataLoader
 from model import RostModelHungary
 from prcc import create_latin_table, get_contact_matrix_from_upper_triu, get_prcc_values
 from r0 import R0Generator
-from varname import nameof
 
 import plotter
 
