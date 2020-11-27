@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import prcc
 from dataloader import DataLoader
+from main import model, no_ag
 
 plt.style.use('seaborn-whitegrid')
 
@@ -249,3 +250,49 @@ def generate_stacked_plots():
     plot_stacked(c_matrices, np.array(names[upper_tri_indexes]).flatten().tolist(), c_names,
                  color_list=color_list, title="Compound version of total, normed and home contacts",
                  filename="TNH_contacts")
+
+
+def plot_solution_ic(time, params, cm_list, legend_list, title_part):
+    os.makedirs("./sens_data/dinamics", exist_ok=True)
+    # for comp in compartments:
+    for idx, cm in enumerate(cm_list):
+        solution = model.get_solution(t=time, parameters=params, cm=cm)
+        plt.plot(time, np.sum(solution[:, model.c_idx["ic"] * no_ag:(model.c_idx["ic"] + 1) * no_ag], axis=1),
+                 label=legend_list[idx])
+    plt.legend()
+    plt.gca().set_xlabel('days')
+    plt.gca().set_ylabel('ICU usage')
+    plt.gcf().set_size_inches(6, 6)
+    plt.tight_layout()
+    plt.savefig('./sens_data/dinamics/solution_ic' + "_" + title_part + '.pdf', format="pdf")
+    plt.close()
+
+
+def plot_solution_inc(time, params, cm_list, legend_list, title_part):
+    os.makedirs("./sens_data/dinamics", exist_ok=True)
+    # for comp in compartments:
+    for idx, cm in enumerate(cm_list):
+        solution = model.get_solution(t=time, parameters=params, cm=cm)
+        plt.plot(time[:-1],
+                 np.diff(np.sum(solution[:, model.c_idx["c"] * no_ag:(model.c_idx["c"] + 1) * no_ag], axis=1)),
+                 label=legend_list[idx])
+    plt.legend()
+    plt.gca().set_xlabel('days')
+    plt.gca().set_ylabel('Incidence')
+    plt.gcf().set_size_inches(6, 6)
+    plt.tight_layout()
+    plt.savefig('./sens_data/dinamics/solution_inc' + "_" + title_part + '.pdf', format="pdf")
+    plt.close()
+
+
+def plot_different_susc(file_list, c_list, l_list, title):
+    os.makedirs("./sens_data/dinamics", exist_ok=True)
+    for idx, f in enumerate(file_list):
+        sol = np.loadtxt('./sens_data/dinamics/' + f)
+        plt.plot(np.arange(len(sol)) / 2, sol, c_list[idx], label=l_list[idx])
+    plt.legend(loc='upper left')
+    plt.gca().set_xlabel('days')
+    plt.gca().set_ylabel('ICU usage')
+    plt.tight_layout()
+    plt.savefig('./sens_data/dinamics/' + title + '.pdf', format="pdf")
+    plt.close()
