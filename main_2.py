@@ -4,6 +4,7 @@ from time import sleep
 import numpy as np
 from tqdm import tqdm
 
+from analysis import Analysis
 from dataloader import DataLoader
 from model import RostModelHungary
 from prcc import create_latin_table, get_contact_matrix_from_upper_triu
@@ -31,24 +32,26 @@ class Simulation:
     def run(self):
         is_lhs_generated = False
 
-        # 0. Get base parameter dictionary
-        params = self.data.model_parameters_data
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
-            params.update({"susc": susceptibility})
+            self.params.update({"susc": susceptibility})
             # 2. Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                r0generator = R0Generator(param=params)
+                r0generator = R0Generator(param=self.params)
                 beta = base_r0 / r0generator.get_eig_val(contact_mtx=self.contact_matrix,
                                                          susceptibles=self.susceptibles.reshape(1, -1),
                                                          population=self.population)[0]
-                params.update({"beta": beta})
+                self.params.update({"beta": beta})
                 # 3. Choose matrix type
                 for mtx_type in self.lower_matrix_types:
                     if is_lhs_generated:
                         self.generate_lhs(base_r0, beta, mtx_type, susc, r0generator)
+                    else:
+                        if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "home":
+                            analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
+                            analysis.run()
 
     def generate_lhs(self, base_r0, beta, mtx_type, susc, r0generator):
         # Get actual lower limit matrix
@@ -104,6 +107,8 @@ class Simulation:
         self.contact_home = self.data.contact_data["home"]
         self.upper_limit_matrix = self.contact_matrix * self.age_vector
         self.upper_tri_indexes = np.triu_indices(self.no_ag)
+        # 0. Get base parameter dictionary
+        self.params = self.data.model_parameters_data
 
 
 def main():

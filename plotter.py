@@ -1,11 +1,12 @@
+import os
+
 from matplotlib import pyplot as plt, cm as cm
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
-import os
-import prcc
+
 from dataloader import DataLoader
-from main import model, no_ag
+import prcc
 
 plt.style.use('seaborn-whitegrid')
 
@@ -252,12 +253,14 @@ def generate_stacked_plots():
                  filename="TNH_contacts")
 
 
-def plot_solution_ic(time, params, cm_list, legend_list, title_part):
+def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
     # for comp in compartments:
     for idx, cm in enumerate(cm_list):
-        solution = model.get_solution(t=time, parameters=params, cm=cm)
-        plt.plot(time, np.sum(solution[:, model.c_idx["ic"] * no_ag:(model.c_idx["ic"] + 1) * no_ag], axis=1),
+        solution = obj.model.get_solution(t=time, parameters=params, cm=cm)
+        plt.plot(time, np.sum(solution[:,
+                              obj.model.c_idx["ic"] * obj.no_ag:(obj.model.c_idx["ic"] + 1) * obj.no_ag],
+                              axis=1),
                  label=legend_list[idx])
     plt.legend()
     plt.gca().set_xlabel('days')
@@ -268,13 +271,15 @@ def plot_solution_ic(time, params, cm_list, legend_list, title_part):
     plt.close()
 
 
-def plot_solution_inc(time, params, cm_list, legend_list, title_part):
+def plot_solution_inc(obj, time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
     # for comp in compartments:
     for idx, cm in enumerate(cm_list):
-        solution = model.get_solution(t=time, parameters=params, cm=cm)
+        solution = obj.model.get_solution(t=time, parameters=params, cm=cm)
         plt.plot(time[:-1],
-                 np.diff(np.sum(solution[:, model.c_idx["c"] * no_ag:(model.c_idx["c"] + 1) * no_ag], axis=1)),
+                 np.diff(np.sum(solution[:,
+                                obj.model.c_idx["c"] * obj.no_ag:(obj.model.c_idx["c"] + 1) * obj.no_ag],
+                                axis=1)),
                  label=legend_list[idx])
     plt.legend()
     plt.gca().set_xlabel('days')
