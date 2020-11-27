@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+from scipy.linalg import block_diag
 
 
 class R0Generator:
@@ -17,19 +18,24 @@ class R0Generator:
         self.s_mtx = self.n_age * self.n_states
 
         self.v_inv = None
+        self.__get_e()
         self.__get_v()
 
     def get_eig_val(self, contact_mtx: np.array, susceptibles: np.ndarray, population: np.ndarray) -> List[np.float]:
         # contact matrix needed for effective reproduction number: [c_{j,i} * S_i(t) / N_i(t)]
         contact_matrix = contact_mtx / population.reshape((-1, 1))
         cm_tensor = np.tile(contact_matrix, (susceptibles.shape[0], 1, 1))
-        susc_tensor = susceptibles.reshape((susceptibles.shape[0], 1, susceptibles.shape[1]))
+        susc_tensor = susceptibles.reshape((susceptibles.shape[0], susceptibles.shape[1], 1))
         contact_matrix_tensor = cm_tensor * susc_tensor
-        r_eff = []
+        eig_val_eff = []
         for cm in contact_matrix_tensor:
             f = self.__get_f(cm)
-            r_eff.append(np.linalg.eig(np.dot(f, self.v_inv))[0][0])
-        return r_eff
+            ngm_large = f @ self.v_inv
+            ngm = self.e @ ngm_large @ self.e.T
+            eig_val = np.sort(np.linalg.eig(ngm)[0])
+            eig_val_eff.append(float(eig_val[-1]))
+
+        return eig_val_eff
 
     def __get_v(self) -> np.array:
         idx = self.__idx
@@ -83,6 +89,13 @@ class R0Generator:
         f[i["l1"]:s_mtx:n_states, i["i3"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
 
         return f
+
+    def __get_e(self):
+        block = np.zeros(self.n_states, )
+        block[0] = 1
+        self.e = block
+        for i in range(1, self.n_age):
+            self.e = block_diag(self.e, block)
 
     def __idx(self, state: str) -> int:
         return np.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
