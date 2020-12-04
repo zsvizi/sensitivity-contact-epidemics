@@ -12,6 +12,10 @@ def get_contact_matrix_from_upper_triu(rvector, age_vector):
     return vector
 
 
+def get_cm_row_sums(rvector, age_vector):
+    return np.sum(get_contact_matrix_from_upper_triu(rvector, age_vector), axis=1) * age_vector.reshape(-1,)
+
+
 def create_latin_table(n_of_samples, lower, upper):
     bounds = np.array([lower, upper]).T
     sampling = LHS(xlimits=bounds)

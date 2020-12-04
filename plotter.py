@@ -107,26 +107,28 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
 
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
+    names = generate_axis_label()
     for root, dirs, files in os.walk("./sens_data/simulations"):
         for filename in files:
             filename_without_ext = os.path.splitext(filename)[0]
             print(filename_without_ext)
             saved_simulation = np.loadtxt("./sens_data/simulations/" + filename, delimiter=';')
-            saved_simulation = saved_simulation[:, 0:-n_ag]
-            upper_tri_indexes = np.triu_indices(n_ag)
+            cm_upper_tri_size = int(n_ag * (n_ag + 1) / 2)
+            sim_data = np.apply_along_axis(func1d=prcc.get_cm_row_sums,
+                                           axis=1, arr=saved_simulation[:, :cm_upper_tri_size],
+                                           age_vector=sim_obj.age_vector.reshape(-1, )
+                                           )
             # PRCC analysis for R0
-            names = generate_axis_label()
-            prcc_list = prcc.get_prcc_values(np.delete(saved_simulation, -2, axis=1))
-            plot_prcc_values(np.array(names[upper_tri_indexes]).flatten().tolist(), prcc_list,
+            simulation = np.append(sim_data, saved_simulation[:, -16 - 1].reshape((-1, 1)), axis=1)
+            prcc_list = prcc.get_prcc_values(simulation)
+            plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                              filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
-            plot_prcc_values_as_heatmap(prcc_list, filename_without_ext,
-                                        "PRCC_matrix_" + filename_without_ext + "_R0")
+
             # PRCC analysis for ICU maximum
-            prcc_list = prcc.get_prcc_values(np.delete(saved_simulation, -1, axis=1))
-            plot_prcc_values(np.array(names[upper_tri_indexes]).flatten().tolist(), prcc_list,
+            simulation = np.append(sim_data, saved_simulation[:, -16 - 2].reshape((-1, 1)), axis=1)
+            prcc_list = prcc.get_prcc_values(simulation)
+            plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                              filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
-            plot_prcc_values_as_heatmap(prcc_list, filename_without_ext,
-                                        "PRCC_matrix_" + filename_without_ext + "_ICU")
 
 
 def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
