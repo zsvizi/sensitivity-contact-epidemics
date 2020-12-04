@@ -20,7 +20,6 @@ class Simulation:
         # User-defined parameters
         self.susc_choices = [0.1, 0.5, 1.0]
         self.r0_choices = [1.35]
-        self.lower_matrix_types = ["home", "normed"]
 
         # Define initial configs
         self._get_initial_config()
@@ -29,6 +28,7 @@ class Simulation:
         self.lower_limit_matrices = \
             {"normed": self.upper_limit_matrix - np.min(self.upper_limit_matrix - self.contact_home * self.age_vector),
              "home": self.contact_home * self.age_vector}
+        self.lower_matrix_types = list(self.lower_limit_matrices.keys())
 
     def run(self):
         is_lhs_generated = False
