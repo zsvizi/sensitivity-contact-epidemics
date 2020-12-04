@@ -74,7 +74,13 @@ class Simulation:
 
         # Local function for calculating LHS output
         def get_simulation_output(lhs_sample):
+            # Subtract lhs_sample as a column from cm_total_full (= reduction of row sum)
             cm_total_sim = self.contact_matrix * self.age_vector - lhs_sample.reshape(-1, 1)
+            # Subtract lhs_sample as a row (reduction of col sum)
+            cm_total_sim -= lhs_sample.reshape(1, -1)
+            # Diagonal elements were reduced twice -> correction
+            cm_total_sim += np.diag(lhs_sample)
+            # Transform to contact matrix compatible with the model calculations
             cm_sim = cm_total_sim / self.age_vector
             beta_lhs = base_r0 / r0generator.get_eig_val(contact_mtx=cm_sim,
                                                          susceptibles=self.susceptibles.reshape(1, -1),
@@ -125,7 +131,7 @@ class Simulation:
 
     def _get_upper_bound_factor_unit(self):
         cm_diff = (self.contact_matrix - self.contact_home) * self.age_vector
-        min_diff = self.no_ag * np.min(cm_diff) / 2
+        min_diff = np.min(cm_diff) / 2
         return min_diff
 
 
