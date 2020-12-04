@@ -105,14 +105,15 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     plt.close()
 
 
-def generate_prcc_plots():
+def generate_prcc_plots(sim_obj):
+    n_ag = sim_obj.no_ag
     for root, dirs, files in os.walk("./sens_data/simulations"):
         for filename in files:
             filename_without_ext = os.path.splitext(filename)[0]
             print(filename_without_ext)
             saved_simulation = np.loadtxt("./sens_data/simulations/" + filename, delimiter=';')
-            saved_simulation = saved_simulation[:, 0:-16]
-            upper_tri_indexes = np.triu_indices(16)
+            saved_simulation = saved_simulation[:, 0:-n_ag]
+            upper_tri_indexes = np.triu_indices(n_ag)
             # PRCC analysis for R0
             names = generate_axis_label()
             prcc_list = prcc.get_prcc_values(np.delete(saved_simulation, -2, axis=1))

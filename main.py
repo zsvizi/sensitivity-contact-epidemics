@@ -7,6 +7,7 @@ from tqdm import tqdm
 from analysis import Analysis
 from dataloader import DataLoader
 from model import RostModelHungary
+from plotter import generate_prcc_plots
 from prcc import create_latin_table, get_contact_matrix_from_upper_triu
 from r0 import R0Generator
 
@@ -31,6 +32,7 @@ class Simulation:
 
     def run(self):
         is_lhs_generated = False
+        is_prcc_plots_generated = True
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
@@ -52,6 +54,8 @@ class Simulation:
                         if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "home":
                             analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
                             analysis.run()
+        if is_prcc_plots_generated:
+            generate_prcc_plots(sim_obj=self)
 
     def generate_lhs(self, base_r0, beta, mtx_type, susc, r0generator):
         # Get actual lower limit matrix
