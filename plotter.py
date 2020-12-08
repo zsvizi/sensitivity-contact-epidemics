@@ -107,25 +107,31 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
 
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
-    names = generate_axis_label()
-    for root, dirs, files in os.walk("./sens_data/simulations"):
+    # names = generate_axis_label()
+    names = [str(i) for i in range(n_ag)]
+    sim_folder = "simulations_after_redei"
+    lhs_folder = "lhs"
+    cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
+    for root, dirs, files in os.walk("./sens_data/" + sim_folder):
         for filename in files:
             filename_without_ext = os.path.splitext(filename)[0]
             print(filename_without_ext)
-            saved_simulation = np.loadtxt("./sens_data/simulations/" + filename, delimiter=';')
-            cm_upper_tri_size = int(n_ag * (n_ag + 1) / 2)
-            sim_data = np.apply_along_axis(func1d=prcc.get_cm_row_sums,
-                                           axis=1, arr=saved_simulation[:, :cm_upper_tri_size],
-                                           age_vector=sim_obj.age_vector.reshape(-1, )
+            saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" + filename,
+                                          delimiter=';')
+            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulation", "lhs"),
+                                          delimiter=';')
+            sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
+                                           axis=1, arr=saved_lhs_values[:, :n_ag],
+                                           cm=cm_total_full
                                            )
             # PRCC analysis for R0
-            simulation = np.append(sim_data, saved_simulation[:, -16 - 1].reshape((-1, 1)), axis=1)
+            simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
             plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                              filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
 
             # PRCC analysis for ICU maximum
-            simulation = np.append(sim_data, saved_simulation[:, -16 - 2].reshape((-1, 1)), axis=1)
+            simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
             plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                              filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
