@@ -77,18 +77,20 @@ class LHSGenerator:
             ratio_col = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
             # get ratio matrix via multiplying 1-matrix by sampled_ratios as a row
             ratio_row = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
+            # get diagonal matrix using lhs_sample
+            ratio_diag = np.diag(sampled_ratios)
             # create factor matrix via adding up ratio_col and ratio_row
             # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
-            factor_matrix = 1 - (ratio_col + ratio_row)
+            factor_matrix = 1 - (ratio_col + ratio_row - ratio_diag)
             return factor_matrix
 
         # Contact data from Simulation object
         contact_data = self.sim_obj.data.contact_data
-        # Modified contact matrices (contact types: school, work, other)
-        cm_mod_school = get_factor(lhs_sample[:no_ag]) * contact_data["school"]
-        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * contact_data["work"]
-        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * contact_data["other"]
-        # Get modified full contact matrix
+        # Modified total contact matrices (contact types: school, work, other)
+        cm_mod_school = get_factor(lhs_sample[:no_ag]) * (contact_data["school"] * self.sim_obj.age_vector)
+        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * (contact_data["work"] * self.sim_obj.age_vector)
+        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * (contact_data["other"] * self.sim_obj.age_vector)
+        # Get modified total contact matrix of type full
         cm_total_home = contact_data["home"] * self.sim_obj.age_vector
         cm_total_sim = cm_total_home + cm_mod_school + cm_mod_work + cm_mod_other
         # Get output
