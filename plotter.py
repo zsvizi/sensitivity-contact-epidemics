@@ -108,7 +108,6 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
     # names = generate_axis_label()
-    names = [str(i) for i in range(n_ag)]
     sim_folder = "simulations_after_redei"
     lhs_folder = "lhs"
     cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
@@ -120,10 +119,17 @@ def generate_prcc_plots(sim_obj):
                                           delimiter=';')
             saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulation", "lhs"),
                                           delimiter=';')
-            sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
-                                           axis=1, arr=saved_lhs_values[:, :n_ag],
-                                           cm=cm_total_full
-                                           )
+            if 'unit' in filename_without_ext:
+                sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
+                                               axis=1, arr=saved_lhs_values[:, :n_ag],
+                                               cm=cm_total_full
+                                               )
+                names = [str(i) for i in range(n_ag)]
+            elif 'ratio' in filename_without_ext:
+                sim_data = 1 - saved_lhs_values[:, :3*n_ag]
+                names = [str(i) for i in range(3 * n_ag)]
+            else:
+                raise Exception('Matrix type is unknown!')
             # PRCC analysis for R0
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
