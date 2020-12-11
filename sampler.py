@@ -68,7 +68,57 @@ class LHSGenerator:
         return list(output)
 
     def _get_sim_output_ratio(self, lhs_sample: np.ndarray):
-        pass
+        # Number of age groups
+        no_ag = self.sim_obj.no_ag
+
+        # Local function for calculating factor matrix for all contact types
+        def get_factor(sampled_ratios):
+            # get ratio matrix via multiplying 1-matrix by sampled_ratios as a column
+            ratio_col = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
+            # get ratio matrix via multiplying 1-matrix by sampled_ratios as a row
+            ratio_row = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
+            # create factor matrix via adding up ratio_col and ratio_row
+            # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
+            factor_matrix = 1 - (ratio_col + ratio_row)
+            return factor_matrix
+
+        # Contact data from Simulation object
+        contact_data = self.sim_obj.data.contact_data
+        # Modified contact matrices (contact types: school, work, other)
+        cm_mod_school = get_factor(lhs_sample[:no_ag]) * contact_data["school"]
+        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * contact_data["work"]
+        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * contact_data["other"]
+        # Get modified full contact matrix
+        cm_total_home = contact_data["home"] * self.sim_obj.age_vector
+        cm_total_sim = cm_total_home + cm_mod_school + cm_mod_work + cm_mod_other
+        # Get output
+        output = self._get_output(cm_total_sim)
+        return list(output)
+
+    def _get_output(self, cm_total_sim: np.ndarray):
+        # Transform to contact matrix compatible with the model calculations
+        cm_sim = cm_total_sim / self.sim_obj.age_vector
+        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
+                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+                                                               population=self.sim_obj.population)[0]
+        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        output = np.append(cm_total_sim[self.sim_obj.upper_tri_indexes], [0, r0_lhs])
+        output = np.append(output, np.zeros(self.sim_obj.no_ag))
+        return output
+
+    def _save_outputs(self, lhs_table, sim_output):
+        # Create directories for saving calculation outputs
+        os.makedirs("./sens_data", exist_ok=True)
+        os.makedirs("./sens_data/simulations", exist_ok=True)
+        os.makedirs("./sens_data/lhs", exist_ok=True)
+        # Save simulation input
+        filename = "./sens_data/simulations/simulation_Hungary_" + \
+                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), str(self.mtx_type)])
+        np.savetxt(fname=filename + ".csv", X=np.asarray(sim_output), delimiter=";")
+        # Save LHS output
+        filename = "./sens_data/lhs/lhs_Hungary_" + \
+                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), str(self.mtx_type)])
+        np.savetxt(fname=filename + ".csv", X=np.asarray(lhs_table), delimiter=";")
 
 
 def create_latin_table(n_of_samples, lower, upper):
