@@ -1,5 +1,4 @@
 import numpy as np
-from smt.sampling_methods import LHS
 
 
 def get_contact_matrix_from_upper_triu(rvector, age_vector):
@@ -15,12 +14,6 @@ def get_contact_matrix_from_upper_triu(rvector, age_vector):
 def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
     cm_total = cm - lhs_vector.reshape((-1, 1))
     return np.sum(cm_total, axis=1)
-
-
-def create_latin_table(n_of_samples, lower, upper):
-    bounds = np.array([lower, upper]).T
-    sampling = LHS(xlimits=bounds)
-    return sampling(n_of_samples)
 
 
 def get_prcc_values(lhs_output_table):
