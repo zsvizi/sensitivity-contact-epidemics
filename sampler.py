@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 
 class LHSGenerator:
-    def __init__(self, sim_state, sim_obj):
+    def __init__(self, sim_state: dict, sim_obj):
         self.sim_obj = sim_obj
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
@@ -16,19 +16,11 @@ class LHSGenerator:
         self.r0generator = sim_state["r0generator"]
 
     def run(self):
-        # Get actual lower limit matrix
-        lower_bound = self.sim_obj.lhs_boundaries[self.mtx_type]["lower"]
-        upper_bound = self.sim_obj.lhs_boundaries[self.mtx_type]["upper"]
-
-        # Get LHS tables
-        number_of_samples = 40000
-        lhs_table = create_latin_table(n_of_samples=number_of_samples,
-                                       lower=lower_bound,
-                                       upper=upper_bound)
-        print("Simulation for", number_of_samples,
-              "samples (", "-".join([str(self.susc), str(self.base_r0), self.mtx_type]), ")")
+        # Get LHS table
+        lhs_table = self._get_lhs_table()
         sleep(0.3)
 
+        # Select getter for simulation output
         if self.mtx_type == 'unit':
             get_sim_output = self._get_sim_output_unit
         elif self.mtx_type == 'ratio':
@@ -48,18 +40,21 @@ class LHSGenerator:
         sim_output = np.array(results)
         sleep(0.3)
 
-        # Create directories for saving calculation outputs
-        os.makedirs("./sens_data", exist_ok=True)
-        os.makedirs("./sens_data/simulations", exist_ok=True)
-        os.makedirs("./sens_data/lhs", exist_ok=True)
-        # Save simulation input
-        filename = "./sens_data/simulations/simulation_Hungary_" + \
-                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), str(self.mtx_type)])
-        np.savetxt(fname=filename + ".csv", X=np.asarray(sim_output), delimiter=";")
-        # Save LHS output
-        filename = "./sens_data/lhs/lhs_Hungary_" + \
-                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), str(self.mtx_type)])
-        np.savetxt(fname=filename + ".csv", X=np.asarray(lhs_table), delimiter=";")
+        # Save outputs
+        self._save_outputs(lhs_table, sim_output)
+
+    def _get_lhs_table(self):
+        # Get actual lower limit matrix
+        lower_bound = self.sim_obj.lhs_boundaries[self.mtx_type]["lower"]
+        upper_bound = self.sim_obj.lhs_boundaries[self.mtx_type]["upper"]
+        # Get LHS tables
+        number_of_samples = 40000
+        lhs_table = create_latin_table(n_of_samples=number_of_samples,
+                                       lower=lower_bound,
+                                       upper=upper_bound)
+        print("Simulation for", number_of_samples,
+              "samples (", "-".join([str(self.susc), str(self.base_r0), self.mtx_type]), ")")
+        return lhs_table
 
     def _get_sim_output_unit(self, lhs_sample: np.ndarray):
         # Subtract lhs_sample as a column from cm_total_full (= reduction of row sum)
@@ -68,14 +63,8 @@ class LHSGenerator:
         cm_total_sim -= lhs_sample.reshape(1, -1)
         # Diagonal elements were reduced twice -> correction
         cm_total_sim += np.diag(lhs_sample)
-        # Transform to contact matrix compatible with the model calculations
-        cm_sim = cm_total_sim / self.sim_obj.age_vector
-        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
-                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                                                               population=self.sim_obj.population)[0]
-        r0_lhs = (self.beta / beta_lhs) * self.base_r0
-        output = np.append(cm_total_sim[self.sim_obj.upper_tri_indexes], [0, r0_lhs])
-        output = np.append(output, np.zeros(self.sim_obj.no_ag))
+        # Get output
+        output = self._get_output(cm_total_sim)
         return list(output)
 
     def _get_sim_output_ratio(self, lhs_sample: np.ndarray):
