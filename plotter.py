@@ -126,7 +126,7 @@ def generate_prcc_plots(sim_obj):
                                                )
                 names = [str(i) for i in range(n_ag)]
             elif 'ratio' in filename_without_ext:
-                sim_data = 1 - saved_lhs_values[:, :3*n_ag]
+                sim_data = saved_lhs_values[:, :3*n_ag]
                 names = [str(i) for i in range(3 * n_ag)]
             else:
                 raise Exception('Matrix type is unknown!')
