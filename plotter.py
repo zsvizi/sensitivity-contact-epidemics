@@ -137,14 +137,22 @@ def generate_prcc_plots(sim_obj):
             # PRCC analysis for R0
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                             filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
+            if 'unit' in filename_without_ext:
+                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
+            elif 'ratio' in filename_without_ext:
+                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
 
             # PRCC analysis for ICU maximum
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                             filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
+            if 'unit' in filename_without_ext:
+                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
+            elif 'ratio' in filename_without_ext:
+                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
 
 
 def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
