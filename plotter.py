@@ -127,6 +127,10 @@ def generate_prcc_plots(sim_obj):
                 names = [str(i) for i in range(n_ag)]
             elif 'ratio' in filename_without_ext:
                 sim_data = saved_lhs_values[:, :3*n_ag]
+                # Transform sim_data to get positively correlating variables
+                # Here ratio to subtract is negatively correlated to the targets, thus
+                # 1 - ratio (i.e. ratio of remaining contacts) is positively correlated
+                sim_data = 1 - sim_data
                 names = [str(i) for i in range(3 * n_ag)]
             else:
                 raise Exception('Matrix type is unknown!')
