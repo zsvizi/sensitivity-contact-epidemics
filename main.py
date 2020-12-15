@@ -3,7 +3,7 @@ import numpy as np
 from analysis import Analysis
 from dataloader import DataLoader
 from model import RostModelHungary
-from plotter import generate_prcc_plots
+from plotter import generate_prcc_plots, generate_stacked_plots
 from r0 import R0Generator
 from sampler import LHSGenerator
 
@@ -31,7 +31,7 @@ class Simulation:
 
     def run(self):
         is_lhs_generated = False
-        is_prcc_plots_generated = False
+        is_prcc_plots_generated = True
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
@@ -86,3 +86,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

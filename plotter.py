@@ -72,6 +72,48 @@ def plot_prcc_values_as_heatmap(prcc_vector, filename_without_ext, filename):
     plt.close()
 
 
+def plot_prcc_values_ratio(prcc_vector, filename_to_save, plot_title):
+    """
+    Plots a given PRCC result
+    :param filename_to_save: name of the output file
+    :param prcc_vector: list of PRCC values
+    :return: None
+    """
+    os.makedirs("./sens_data/PRCC_bars", exist_ok=True)
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif', size=14)
+    plt.margins(0, tight=False)
+    parameter_count = len(list(prcc_vector)) // 3
+
+    age_group_vector = list(range(parameter_count))*3
+    contact_type_vector = ["school"]*16 + ["work"]*16 + ["other"]*16
+
+    data_to_df = [[age_group_vector[i], contact_type_vector[i], prcc_vector[i]] for i in range(parameter_count * 3)]
+
+    df = pd.DataFrame(data_to_df, columns=['Age group', 'Contact type', 'val'])
+
+    plt.figure(figsize=(17, 10))
+
+    colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
+
+    df.pivot("Age group", "Contact type", "val").plot(kind='bar', width=0.85,
+                                                      color=[colors["school"], colors["work"], colors["other"]])
+
+    xp = range(parameter_count)
+
+    param_list = map(lambda x: "75+" if x == 15 else str(5*x) + "-"+str(5*x+4), range(parameter_count))
+
+    plt.tick_params(direction="in")
+    plt.xticks(ticks=xp, labels=param_list, rotation=45)
+    axes = plt.gca()
+    axes.set_ylim([0, 1])
+    plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
+    plt.xlabel('Age groups', labelpad=10, fontsize=20)
+    plt.title(plot_title, y=1.03, fontsize=25)
+    plt.savefig('./sens_data/PRCC_bars/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
+    plt.close()
+
+
 def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_save):
     """
     Plots a given PRCC result
@@ -117,7 +159,7 @@ def generate_prcc_plots(sim_obj):
             print(filename_without_ext)
             saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" + filename,
                                           delimiter=';')
-            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulation", "lhs"),
+            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulations", "lhs"),
                                           delimiter=';')
             if 'unit' in filename_without_ext:
                 sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
@@ -141,8 +183,10 @@ def generate_prcc_plots(sim_obj):
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
             elif 'ratio' in filename_without_ext:
-                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
+                title_list = filename_without_ext.split("_")
+                plot_title = 'PRCC results for ' + title_list[-1] + ' version with children\nsusceptibility ' + \
+                             title_list[2] + ' and base R0=' + title_list[3]
+                plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
 
             # PRCC analysis for ICU maximum
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
@@ -151,8 +195,10 @@ def generate_prcc_plots(sim_obj):
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
             elif 'ratio' in filename_without_ext:
-                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
+                title_list = filename_without_ext.split("_")
+                plot_title = 'PRCC results for ' + title_list[-1] + ' version with children\nsusceptibility ' + \
+                             title_list[2] + ' and base R0=' + title_list[3]
+                plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
 
 
 def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
