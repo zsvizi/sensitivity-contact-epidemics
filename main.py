@@ -14,7 +14,7 @@ class Simulation:
         self.data = DataLoader()
 
         # User-defined parameters
-        self.susc_choices = [0.1, 0.5, 1.0]
+        self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.35]
 
         # Define initial configs
@@ -85,5 +85,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # generate_stacked_plots()
     main()
 

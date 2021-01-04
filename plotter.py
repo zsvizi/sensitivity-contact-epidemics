@@ -96,8 +96,9 @@ def plot_prcc_values_ratio(prcc_vector, filename_to_save, plot_title):
 
     colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
 
-    df.pivot("Age group", "Contact type", "val").plot(kind='bar', width=0.85,
-                                                      color=[colors["school"], colors["work"], colors["other"]])
+    dftemp = df.pivot("Age group", "Contact type", "val")
+    dftemp = dftemp[["school", "work", "other"]]
+    dftemp.plot(kind='bar', width=0.85, color=[colors["school"], colors["work"], colors["other"]])
 
     xp = range(parameter_count)
 
@@ -159,7 +160,7 @@ def generate_prcc_plots(sim_obj):
             print(filename_without_ext)
             saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" + filename,
                                           delimiter=';')
-            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulations", "lhs"),
+            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulation", "lhs"),
                                           delimiter=';')
             if 'unit' in filename_without_ext:
                 sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
@@ -184,8 +185,7 @@ def generate_prcc_plots(sim_obj):
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
             elif 'ratio' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
-                plot_title = 'PRCC results for ' + title_list[-1] + ' version with children\nsusceptibility ' + \
-                             title_list[2] + ' and base R0=' + title_list[3]
+                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
 
             # PRCC analysis for ICU maximum
@@ -196,8 +196,7 @@ def generate_prcc_plots(sim_obj):
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
             elif 'ratio' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
-                plot_title = 'PRCC results for ' + title_list[-1] + ' version with children\nsusceptibility ' + \
-                             title_list[2] + ' and base R0=' + title_list[3]
+                plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
 
 
