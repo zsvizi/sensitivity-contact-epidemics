@@ -15,17 +15,17 @@ class Simulation:
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.35]
+        self.r0_choices = [1.35, 1.1, 1.6, 2.5]
 
         # Define initial configs
         self._get_initial_config()
 
         # For contact matrix sampling: ["unit", "ratio"]
-        self.mtx_types = ["unit", "ratio"]
+        self.mtx_types = ["lockdown", "ratio", "mitigation"]
 
     def run(self):
-        is_lhs_generated = False
-        is_prcc_plots_generated = True
+        is_lhs_generated = True
+        is_prcc_plots_generated = False
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
@@ -48,9 +48,10 @@ class Simulation:
                         cm_generator.run()
 
                     else:
-                        if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "home":
-                            analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
-                            analysis.run()
+                        pass
+                        # if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type in ["lockdown"]:
+                        #     analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
+                        #     analysis.run()
         if is_prcc_plots_generated:
             generate_prcc_plots(sim_obj=self)
 
