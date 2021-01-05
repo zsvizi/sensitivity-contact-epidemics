@@ -77,11 +77,9 @@ class LHSGenerator:
             ratio_col = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
             # get ratio matrix via multiplying 1-matrix by sampled_ratios as a row
             ratio_row = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
-            # get diagonal matrix using lhs_sample
-            ratio_diag = np.diag(sampled_ratios)
             # create factor matrix via adding up ratio_col and ratio_row
             # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
-            factor_matrix = 1 - (ratio_col + ratio_row - ratio_diag)
+            factor_matrix = 1 - (ratio_col + ratio_row)
             return factor_matrix
 
         # Contact data from Simulation object
