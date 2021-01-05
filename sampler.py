@@ -60,7 +60,7 @@ class ContactMatrixSampler(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj):
         super().__init__(sim_state, sim_obj)
         # Matrices of frequently used contact types
-        self.contact_home = self.sim_obj.data.contact_home
+        self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
 
         # Local variable for calculating lower boundary for "mitigation" approach
