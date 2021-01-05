@@ -15,7 +15,7 @@ class Simulation:
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.35]
+        self.r0_choices = [1.1, 1.35, 1.6, 2.5]
 
         # Define initial configs
         self._get_initial_config()
