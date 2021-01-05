@@ -115,7 +115,7 @@ def plot_prcc_values_ratio(prcc_vector, filename_to_save, plot_title):
     plt.close()
 
 
-def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_save):
+def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_save, plot_title):
     """
     Plots a given PRCC result
     :param filename_to_save: name of the output file
@@ -142,15 +142,13 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
     plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
     title_list = filename_without_ext.split("_")
-    plt.title('PRCC results for ' + title_list[-1] + ' version with children susceptibility ' + title_list[1] +
-              ' and base R0=' + title_list[2], y=1.03, fontsize=25)
+    plt.title(plot_title, y=1.03, fontsize=25)
     plt.savefig('./sens_data/PRCC_bars/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
     plt.close()
 
 
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
-    # names = generate_axis_label()
     sim_folder = "simulations_after_redei"
     lhs_folder = "lhs"
     cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
@@ -160,7 +158,7 @@ def generate_prcc_plots(sim_obj):
             print(filename_without_ext)
             saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" + filename,
                                           delimiter=';')
-            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulation", "lhs"),
+            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulations", "lhs"),
                                           delimiter=';')
             if 'unit' in filename_without_ext:
                 sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
@@ -169,20 +167,28 @@ def generate_prcc_plots(sim_obj):
                                                )
                 names = [str(i) for i in range(n_ag)]
             elif 'ratio' in filename_without_ext:
-                sim_data = saved_lhs_values[:, :3*n_ag]
+                sim_data = saved_lhs_values[:, :3 * n_ag]
                 # Transform sim_data to get positively correlating variables
                 # Here ratio to subtract is negatively correlated to the targets, thus
                 # 1 - ratio (i.e. ratio of remaining contacts) is positively correlated
                 sim_data = 1 - sim_data
                 names = [str(i) for i in range(3 * n_ag)]
+            elif "lockdown" in filename_without_ext or "mitigation" in filename_without_ext:
+                sim_data = saved_lhs_values[:, :(n_ag*(n_ag+1)) // 2]
+                upper_tri_indexes = np.triu_indices(n_ag)
+                names = generate_axis_label()[upper_tri_indexes]
             else:
                 raise Exception('Matrix type is unknown!')
+
             # PRCC analysis for R0
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            if 'unit' in filename_without_ext:
+            if 'unit' in filename_without_ext or 'lockdown' in filename_without_ext or \
+                    'mitigation' in filename_without_ext:
+                title_list = filename_without_ext.split("_")
+                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0")
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
             elif 'ratio' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
                 plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
@@ -191,9 +197,12 @@ def generate_prcc_plots(sim_obj):
             # PRCC analysis for ICU maximum
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            if 'unit' in filename_without_ext:
+            if 'unit' in filename_without_ext or 'lockdown' in filename_without_ext or \
+                    'mitigation' in filename_without_ext:
+                title_list = filename_without_ext.split("_")
+                plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU")
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
             elif 'ratio' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
                 plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
