@@ -63,10 +63,12 @@ class ContactMatrixSampler(SamplerBase):
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
 
-        # Local variable for calculating lower boundary for "mitigation" approach
+        # Local variable for calculating boundaries
         lower_bound_mitigation = \
             self.contact_total * self.sim_obj.age_vector - \
             np.min((self.contact_total - self.contact_home) * self.sim_obj.age_vector)
+        cm_home_symmetric = self.contact_home * self.sim_obj.age_vector
+        cm_total_symmetric = self.contact_total * self.sim_obj.age_vector
 
         self.lhs_boundaries = \
             {
@@ -77,11 +79,11 @@ class ContactMatrixSampler(SamplerBase):
              "ratio": {"lower": np.zeros(3 * self.sim_obj.no_ag),
                        "upper": 0.5 * np.ones(3 * self.sim_obj.no_ag)},
              # Contact matrix entry level approach, full scale approach (old name: "home")
-             "lockdown": {"lower": self.contact_home[self.sim_obj.upper_tri_indexes] * self.sim_obj.age_vector,
-                          "upper": self.contact_total[self.sim_obj.upper_tri_indexes] * self.sim_obj.age_vector},
+             "lockdown": {"lower": cm_home_symmetric[self.sim_obj.upper_tri_indexes],
+                          "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]},
              # Contact matrix entry level approach, perturbation-like (old name: "normed")
              "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_indexes],
-                            "upper": self.contact_total[self.sim_obj.upper_tri_indexes] * self.sim_obj.age_vector}
+                            "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]}
              }
 
     def run(self):
