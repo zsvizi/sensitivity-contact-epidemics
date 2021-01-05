@@ -5,7 +5,7 @@ from dataloader import DataLoader
 from model import RostModelHungary
 from plotter import generate_prcc_plots, generate_stacked_plots
 from r0 import R0Generator
-from sampler import LHSGenerator
+from sampler import ContactMatrixSampler
 
 
 class Simulation:
@@ -20,14 +20,8 @@ class Simulation:
         # Define initial configs
         self._get_initial_config()
 
-        # User-defined lower matrix types
-        self.lhs_boundaries = \
-            {"unit": {"lower": np.zeros(self.no_ag),
-                      "upper": np.ones(self.no_ag) * self._get_upper_bound_factor_unit()},
-             "ratio": {"lower": np.zeros(3 * self.no_ag),
-                       "upper": 0.5 * np.ones(3 * self.no_ag)}
-             }
-        self.lower_matrix_types = list(self.lhs_boundaries.keys())
+        # For contact matrix sampling: ["unit", "ratio"]
+        self.mtx_types = ["unit", "ratio"]
 
     def run(self):
         is_lhs_generated = False
@@ -46,12 +40,13 @@ class Simulation:
                                                          population=self.population)[0]
                 self.params.update({"beta": beta})
                 # 3. Choose matrix type
-                for mtx_type in self.lower_matrix_types:
+                for mtx_type in self.mtx_types:
                     sim_state = {"base_r0": base_r0, "beta": beta, "mtx_type": mtx_type, "susc": susc,
                                  "r0generator": r0generator}
                     if is_lhs_generated:
-                        lhs_generator = LHSGenerator(sim_state=sim_state, sim_obj=self)
-                        lhs_generator.run()
+                        cm_generator = ContactMatrixSampler(sim_state=sim_state, sim_obj=self)
+                        cm_generator.run()
+
                     else:
                         if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "home":
                             analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
