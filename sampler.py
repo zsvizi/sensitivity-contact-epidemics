@@ -6,6 +6,8 @@ import numpy as np
 from smt.sampling_methods import LHS
 from tqdm import tqdm
 
+from prcc import get_contact_matrix_from_upper_triu
+
 
 class SamplerBase(ABC):
     def __init__(self, sim_state: dict, sim_obj):
@@ -57,13 +59,23 @@ class SamplerBase(ABC):
 class ContactMatrixSampler(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj):
         super().__init__(sim_state, sim_obj)
-        # User-defined lower matrix types
-        self.contact_home = self.sim_obj.data.contact_data["home"]
+        # Matrices of frequently used contact types
+        self.contact_home = self.sim_obj.data.contact_home
+        self.contact_total = self.sim_obj.contact_matrix
+
+        # Local variable for calculating lower boundary for "mitigation" approach
+        lower_bound_mitigation = \
+            self.contact_total - np.min(self.contact_total - self.contact_home * self.sim_obj.age_vector)
+
         self.lhs_boundaries = \
             {"unit": {"lower": np.zeros(self.sim_obj.no_ag),
                       "upper": np.ones(self.sim_obj.no_ag) * self._get_upper_bound_factor_unit()},
              "ratio": {"lower": np.zeros(3 * self.sim_obj.no_ag),
-                       "upper": 0.5 * np.ones(3 * self.sim_obj.no_ag)}
+                       "upper": 0.5 * np.ones(3 * self.sim_obj.no_ag)},
+             "lockdown": {"lower": self.contact_home[self.sim_obj.upper_tri_indexes],
+                          "upper": self.contact_total[self.sim_obj.upper_tri_indexes]},
+             "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_indexes],
+                            "upper": self.contact_total[self.sim_obj.upper_tri_indexes]}
              }
 
     def run(self):
@@ -76,6 +88,8 @@ class ContactMatrixSampler(SamplerBase):
             get_sim_output = self._get_sim_output_unit
         elif self.mtx_type == 'ratio':
             get_sim_output = self._get_sim_output_ratio
+        elif self.mtx_type == 'lockdown' or self.mtx_type == 'mitigation':
+            get_sim_output = self._get_sim_output_cm_entries
         else:
             raise Exception('Matrix type is unknown!')
 
@@ -94,6 +108,14 @@ class ContactMatrixSampler(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+
+    def _get_sim_output_cm_entries(self, lhs_sample: np.ndarray):
+        # Get output
+        cm_sim = get_contact_matrix_from_upper_triu(rvector=lhs_sample,
+                                                    age_vector=self.sim_obj.age_vector.reshape(-1,))
+        output = self._get_output(cm_sim=cm_sim)
+        output = np.append(lhs_sample, output)
+        return list(output)
 
     def _get_sim_output_unit(self, lhs_sample: np.ndarray):
         # Subtract lhs_sample as a column from cm_total_full (= reduction of row sum)
