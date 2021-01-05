@@ -23,10 +23,7 @@ class Analysis:
                           "_P1_".join([str(self.susc), str(self.base_r0)]))
 
     def get_full_cm(self, cm_list, legend_list):
-        cm_full = self.sim.upper_limit_matrix[self.sim.upper_tri_indexes]
-        print(np.sum(cm_full))
-        cm = get_contact_matrix_from_upper_triu(rvector=cm_full,
-                                                age_vector=self.sim.age_vector.reshape(-1, ))
+        cm = self.sim.contact_matrix
         cm_list.append(cm)
         legend_list.append("Total contact")
 
