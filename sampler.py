@@ -68,12 +68,17 @@ class ContactMatrixSampler(SamplerBase):
             self.contact_total - np.min(self.contact_total - self.contact_home * self.sim_obj.age_vector)
 
         self.lhs_boundaries = \
-            {"unit": {"lower": np.zeros(self.sim_obj.no_ag),
+            {
+             # Age group level perturbation-like approach (NOT USED)
+             "unit": {"lower": np.zeros(self.sim_obj.no_ag),
                       "upper": np.ones(self.sim_obj.no_ag) * self._get_upper_bound_factor_unit()},
+             # Age group level full scale (it is possible to make zero) approach
              "ratio": {"lower": np.zeros(3 * self.sim_obj.no_ag),
                        "upper": 0.5 * np.ones(3 * self.sim_obj.no_ag)},
+             # Contact matrix entry level approach, full scale approach (old name: "home")
              "lockdown": {"lower": self.contact_home[self.sim_obj.upper_tri_indexes],
                           "upper": self.contact_total[self.sim_obj.upper_tri_indexes]},
+             # Contact matrix entry level approach, perturbation-like (old name: "normed")
              "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_indexes],
                             "upper": self.contact_total[self.sim_obj.upper_tri_indexes]}
              }
