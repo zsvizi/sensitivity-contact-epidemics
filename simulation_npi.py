@@ -1,6 +1,6 @@
 import numpy as np
 
-from analysis import Analysis
+from analysis_npi import AnalysisNPI
 from dataloader import DataLoader
 from model import RostModelHungary
 from plotter import generate_prcc_plots
@@ -49,7 +49,7 @@ class SimulationNPI:
 
                     else:
                         if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "lockdown":
-                            analysis = Analysis(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
+                            analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
                             analysis.run()
         if is_prcc_plots_generated:
             generate_prcc_plots(sim_obj=self)

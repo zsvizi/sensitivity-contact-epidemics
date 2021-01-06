@@ -4,7 +4,7 @@ from plotter import plot_solution_inc
 from prcc import get_contact_matrix_from_upper_triu
 
 
-class Analysis:
+class AnalysisNPI:
     def __init__(self, sim, susc, base_r0, mtx_type):
         self.sim = sim
         self.susc = susc
