@@ -43,11 +43,11 @@ class NPISampler(SamplerBase):
         sleep(0.3)
 
         # Select getter for simulation output
-        if self.mtx_type == 'unit':
+        if self.type == 'unit':
             get_sim_output = self._get_sim_output_unit
-        elif self.mtx_type == 'ratio':
+        elif self.type == 'ratio':
             get_sim_output = self._get_sim_output_ratio
-        elif self.mtx_type == 'lockdown' or self.mtx_type == 'mitigation':
+        elif self.type == 'lockdown' or self.type == 'mitigation':
             get_sim_output = self._get_sim_output_cm_entries
         else:
             raise Exception('Matrix type is unknown!')

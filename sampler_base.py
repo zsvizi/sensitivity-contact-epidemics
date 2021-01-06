@@ -10,7 +10,7 @@ class SamplerBase(ABC):
         self.sim_obj = sim_obj
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
-        self.mtx_type = sim_state["mtx_type"]
+        self.type = sim_state["type"]
         self.susc = sim_state["susc"]
         self.r0generator = sim_state["r0generator"]
         self.lhs_boundaries = None
@@ -21,15 +21,15 @@ class SamplerBase(ABC):
 
     def _get_lhs_table(self):
         # Get actual limit matrices
-        lower_bound = self.lhs_boundaries[self.mtx_type]["lower"]
-        upper_bound = self.lhs_boundaries[self.mtx_type]["upper"]
+        lower_bound = self.lhs_boundaries[self.type]["lower"]
+        upper_bound = self.lhs_boundaries[self.type]["upper"]
         # Get LHS tables
         number_of_samples = 40000
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
                                        lower=lower_bound,
                                        upper=upper_bound)
         print("Simulation for", number_of_samples,
-              "samples (", "-".join([str(self.susc), str(self.base_r0), self.mtx_type]), ")")
+              "samples (", "-".join([str(self.susc), str(self.base_r0), self.type]), ")")
         return lhs_table
 
     @abstractmethod
@@ -43,7 +43,7 @@ class SamplerBase(ABC):
         # Save LHS output
         os.makedirs("./sens_data/" + folder_name, exist_ok=True)
         filename = "./sens_data/" + folder_name + "/" + folder_name + "_Hungary_" + \
-                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.mtx_type])
+                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type])
         np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
 
 

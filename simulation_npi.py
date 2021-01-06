@@ -41,7 +41,7 @@ class SimulationNPI:
                 self.params.update({"beta": beta})
                 # 3. Choose matrix type
                 for mtx_type in self.mtx_types:
-                    sim_state = {"base_r0": base_r0, "beta": beta, "mtx_type": mtx_type, "susc": susc,
+                    sim_state = {"base_r0": base_r0, "beta": beta, "type": mtx_type, "susc": susc,
                                  "r0generator": r0generator}
                     if is_lhs_generated:
                         cm_generator = NPISampler(sim_state=sim_state, sim_obj=self)
