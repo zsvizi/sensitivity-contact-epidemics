@@ -5,7 +5,7 @@ from dataloader import DataLoader
 from model import RostModelHungary
 from plotter import generate_prcc_plots, generate_stacked_plots
 from r0 import R0Generator
-from sampler import ContactMatrixSampler
+from sampler_cm import ContactMatrixSampler
 
 
 class Simulation:
