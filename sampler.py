@@ -36,14 +36,9 @@ class SamplerBase(ABC):
               "samples (", "-".join([str(self.susc), str(self.base_r0), self.mtx_type]), ")")
         return lhs_table
 
+    @abstractmethod
     def _get_output(self, cm_sim: np.ndarray):
-        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
-                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                                                               population=self.sim_obj.population)[0]
-        r0_lhs = (self.beta / beta_lhs) * self.base_r0
-        output = np.array([0, r0_lhs])
-        output = np.append(output, np.zeros(self.sim_obj.no_ag))
-        return output
+        pass
 
     def _save_output(self, output, folder_name):
         # Create directories for saving calculation outputs
@@ -116,6 +111,15 @@ class ContactMatrixSampler(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+
+    def _get_output(self, cm_sim: np.ndarray):
+        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
+                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+                                                               population=self.sim_obj.population)[0]
+        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        output = np.array([0, r0_lhs])
+        output = np.append(output, np.zeros(self.sim_obj.no_ag))
+        return output
 
     def _get_sim_output_cm_entries(self, lhs_sample: np.ndarray):
         # Get output
