@@ -7,7 +7,7 @@ from prcc import get_contact_matrix_from_upper_triu
 from sampler_base import SamplerBase
 
 
-class ContactMatrixSampler(SamplerBase):
+class NPISampler(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj):
         super().__init__(sim_state, sim_obj)
         # Matrices of frequently used contact types

@@ -5,7 +5,7 @@ from dataloader import DataLoader
 from model import RostModelHungary
 from plotter import generate_prcc_plots
 from r0 import R0Generator
-from sampler_cm import ContactMatrixSampler
+from sampler_npi import NPISampler
 
 
 class SimulationNPI:
@@ -44,7 +44,7 @@ class SimulationNPI:
                     sim_state = {"base_r0": base_r0, "beta": beta, "mtx_type": mtx_type, "susc": susc,
                                  "r0generator": r0generator}
                     if is_lhs_generated:
-                        cm_generator = ContactMatrixSampler(sim_state=sim_state, sim_obj=self)
+                        cm_generator = NPISampler(sim_state=sim_state, sim_obj=self)
                         cm_generator.run()
 
                     else:
