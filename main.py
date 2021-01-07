@@ -25,7 +25,7 @@ class Simulation:
 
     def run(self):
         is_lhs_generated = False
-        is_prcc_plots_generated = True
+        is_prcc_plots_generated = False
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
