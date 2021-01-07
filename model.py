@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import odeint
 
 
-class RostModelHungary:
+class RostModelHungaryBase:
     def __init__(self, model_data):
         self.population = model_data.age_data.flatten()
 

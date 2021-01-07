@@ -1,62 +1,13 @@
-from abc import ABC, abstractmethod
-import os
 from time import sleep
 
 import numpy as np
-from smt.sampling_methods import LHS
 from tqdm import tqdm
 
 from prcc import get_contact_matrix_from_upper_triu
+from sampler_base import SamplerBase
 
 
-class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, sim_obj):
-        self.sim_obj = sim_obj
-        self.base_r0 = sim_state["base_r0"]
-        self.beta = sim_state["beta"]
-        self.mtx_type = sim_state["mtx_type"]
-        self.susc = sim_state["susc"]
-        self.r0generator = sim_state["r0generator"]
-        self.lhs_boundaries = None
-
-    @abstractmethod
-    def run(self):
-        pass
-
-    def _get_lhs_table(self):
-        # Get actual limit matrices
-        lower_bound = self.lhs_boundaries[self.mtx_type]["lower"]
-        upper_bound = self.lhs_boundaries[self.mtx_type]["upper"]
-        # Get LHS tables
-        number_of_samples = 40000
-        lhs_table = create_latin_table(n_of_samples=number_of_samples,
-                                       lower=lower_bound,
-                                       upper=upper_bound)
-        print("Simulation for", number_of_samples,
-              "samples (", "-".join([str(self.susc), str(self.base_r0), self.mtx_type]), ")")
-        return lhs_table
-
-    def _get_output(self, cm_sim: np.ndarray):
-        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
-                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                                                               population=self.sim_obj.population)[0]
-        r0_lhs = (self.beta / beta_lhs) * self.base_r0
-        output = np.array([0, r0_lhs])
-        output = np.append(output, np.zeros(self.sim_obj.no_ag))
-        return output
-
-    def _save_output(self, output, folder_name):
-        # Create directories for saving calculation outputs
-        os.makedirs("./sens_data", exist_ok=True)
-
-        # Save LHS output
-        os.makedirs("./sens_data/" + folder_name, exist_ok=True)
-        filename = "./sens_data/" + folder_name + "/" + folder_name + "_Hungary_" + \
-                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.mtx_type])
-        np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
-
-
-class ContactMatrixSampler(SamplerBase):
+class NPISampler(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj):
         super().__init__(sim_state, sim_obj)
         # Matrices of frequently used contact types
@@ -92,11 +43,11 @@ class ContactMatrixSampler(SamplerBase):
         sleep(0.3)
 
         # Select getter for simulation output
-        if self.mtx_type == 'unit':
+        if self.type == 'unit':
             get_sim_output = self._get_sim_output_unit
-        elif self.mtx_type == 'ratio':
+        elif self.type == 'ratio':
             get_sim_output = self._get_sim_output_ratio
-        elif self.mtx_type == 'lockdown' or self.mtx_type == 'mitigation':
+        elif self.type == 'lockdown' or self.type == 'mitigation':
             get_sim_output = self._get_sim_output_cm_entries
         else:
             raise Exception('Matrix type is unknown!')
@@ -116,6 +67,15 @@ class ContactMatrixSampler(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+
+    def _get_output(self, cm_sim: np.ndarray):
+        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
+                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+                                                               population=self.sim_obj.population)[0]
+        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        output = np.array([0, r0_lhs])
+        output = np.append(output, np.zeros(self.sim_obj.no_ag))
+        return output
 
     def _get_sim_output_cm_entries(self, lhs_sample: np.ndarray):
         # Get output
@@ -172,9 +132,3 @@ class ContactMatrixSampler(SamplerBase):
         cm_diff = (self.sim_obj.contact_matrix - self.contact_home) * self.sim_obj.age_vector
         min_diff = np.min(cm_diff) / 2
         return min_diff
-
-
-def create_latin_table(n_of_samples, lower, upper):
-    bounds = np.array([lower, upper]).T
-    sampling = LHS(xlimits=bounds)
-    return sampling(n_of_samples)
