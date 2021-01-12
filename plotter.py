@@ -382,3 +382,61 @@ def plot_different_susc(file_list, c_list, l_list, title):
     plt.tight_layout()
     plt.savefig('./sens_data/dinamics/' + title + '.pdf', format="pdf")
     plt.close()
+
+
+def plot_contact_matrix_as_grouped_bars():
+    os.makedirs("./sens_data", exist_ok=True)
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif', size=14)
+    plt.margins(0, tight=False)
+
+    parameter_count = 16
+    xp = range(parameter_count)
+    param_list = list(map(lambda x: "75+" if x == 15 else str(5 * x) + "-" + str(5 * x + 4), range(parameter_count)))
+
+    age_group_vector = list(range(parameter_count))*3
+    contact_type_vector = ["school"]*16 + ["work"]*16 + ["other"]*16
+
+    data = DataLoader()
+    age_distribution = data.age_data.reshape((-1, 1))
+
+    colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
+
+    contact_school = np.sum(data.contact_data["school"] * age_distribution, axis=1)
+    contact_work = np.sum(data.contact_data["work"] * age_distribution, axis=1)
+    contact_other = np.sum(data.contact_data["other"] * age_distribution, axis=1)
+    contacts_as_vector = np.array([contact_school, contact_work, contact_other]).flatten()
+
+    plt.figure(figsize=(17, 10))
+    data_to_df = [[age_group_vector[i], contact_type_vector[i], contacts_as_vector[i]] for i in range(parameter_count * 3)]
+    df = pd.DataFrame(data_to_df, columns=['Age group', 'Contact type', 'val'])
+    dftemp = df.pivot("Age group", "Contact type", "val")
+    dftemp = dftemp[["school", "work", "other"]]
+    dftemp.plot(kind='bar', width=0.85, color=[colors["school"], colors["work"], colors["other"]])
+
+    plt.tick_params(direction="in")
+    plt.xticks(ticks=xp, labels=param_list, rotation=45)
+    plt.xlabel('Age groups', labelpad=10, fontsize=20)
+    plt.title("Contacts from symmetric CMs", y=1.03, fontsize=25)
+    plt.savefig('./sens_data/CM_symm_groupped.pdf', format="pdf", bbox_inches='tight')
+    plt.close()
+
+    contact_school = np.sum(data.contact_data["school"], axis=1)
+    contact_work = np.sum(data.contact_data["work"], axis=1)
+    contact_other = np.sum(data.contact_data["other"], axis=1)
+    contacts_as_vector = np.array([contact_school, contact_work, contact_other]).flatten()
+
+    plt.figure(figsize=(17, 10))
+    data_to_df = [[age_group_vector[i], contact_type_vector[i], contacts_as_vector[i]] for i in
+                  range(parameter_count * 3)]
+    df = pd.DataFrame(data_to_df, columns=['Age group', 'Contact type', 'val'])
+    dftemp = df.pivot("Age group", "Contact type", "val")
+    dftemp = dftemp[["school", "work", "other"]]
+    dftemp.plot(kind='bar', width=0.85, color=[colors["school"], colors["work"], colors["other"]])
+
+    plt.tick_params(direction="in")
+    plt.xticks(ticks=xp, labels=param_list, rotation=45)
+    plt.xlabel('Age groups', labelpad=10, fontsize=20)
+    plt.title("Contacts from original CMs", y=1.03, fontsize=25)
+    plt.savefig('./sens_data/CM_prem_groupped.pdf', format="pdf", bbox_inches='tight')
+    plt.close()

@@ -83,19 +83,11 @@ class AnalysisNPI:
 
         contact_school[age_group, :] *= ratio
         contact_school[:, age_group] = contact_school[age_group, :].T
-        # contact_school[:, age_group] *= ratio
-        # if ratio != 0:
-        #     contact_school[age_group, age_group] *= (1/ratio)
 
-        full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + \
-            (contact_school / self.sim.age_vector)
+        full_contact_matrix = (self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + \
+            (contact_school / self.sim.age_vector))
 
         trcm = (full_contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes]
-
-        # osszes_elvett = np.sum((self.sim.contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes] - trcm)
-        # leosztott = np.sum((self.sim.contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes] - trcm) / self.sim.age_vector[age_group]
-        #
-        # print(str(osszes_elvett) + "  " + str(leosztott))
 
         cm = get_contact_matrix_from_upper_triu(rvector=trcm, age_vector=self.sim.age_vector.reshape(-1, ))
 
@@ -115,11 +107,6 @@ class AnalysisNPI:
             (contact_school / self.sim.age_vector)
 
         trcm = (full_contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes]
-
-        # osszes_elvett = np.sum((self.sim.contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes] - trcm)
-        # leosztott = np.sum((self.sim.contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes] - trcm) / self.sim.age_vector[age_group]
-        #
-        # print(str(osszes_elvett) + "  " + str(leosztott))
 
         cm = get_contact_matrix_from_upper_triu(rvector=trcm, age_vector=self.sim.age_vector.reshape(-1, ))
 

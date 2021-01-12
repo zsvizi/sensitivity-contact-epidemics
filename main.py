@@ -1,5 +1,5 @@
 from simulation_npi import SimulationNPI
-from plotter import generate_stacked_plots
+from plotter import generate_stacked_plots, plot_contact_matrix_as_grouped_bars
 
 
 def main():
@@ -10,3 +10,4 @@ def main():
 if __name__ == '__main__':
     # generate_stacked_plots()
     main()
+    plot_contact_matrix_as_grouped_bars()
