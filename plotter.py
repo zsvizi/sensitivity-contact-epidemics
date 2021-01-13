@@ -355,13 +355,13 @@ def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
 def plot_solution_inc(obj, time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
     # for comp in compartments:
-    for idx, cm in enumerate(cm_list):
+    for legend, cm in zip(legend_list, cm_list):
         solution = obj.model.get_solution(t=time, parameters=params, cm=cm)
         plt.plot(time[:-1],
                  np.diff(np.sum(solution[:,
                                 obj.model.c_idx["c"] * obj.no_ag:(obj.model.c_idx["c"] + 1) * obj.no_ag],
                                 axis=1)),
-                 label=legend_list[idx])
+                 label=legend)
     plt.legend()
     plt.gca().set_xlabel('days')
     plt.gca().set_ylabel('Incidence')

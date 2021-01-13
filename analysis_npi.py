@@ -79,36 +79,28 @@ class AnalysisNPI:
         legend_list.append("Total contact")
 
     def get_reduced_contact(self, cm_list, legend_list, age_group, contact_type, ratio):
-        contact_school = np.copy(self.sim.data.contact_data[contact_type]) * self.sim.age_vector
+        contact_matrix_spec = np.copy(self.sim.data.contact_data[contact_type])
 
-        contact_school[age_group, :] *= ratio
-        contact_school[:, age_group] = contact_school[age_group, :].T
+        contact_matrix_spec[age_group, :] *= ratio
+        contact_matrix_spec[:, age_group] *= ratio
+        contact_matrix_spec[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
 
-        full_contact_matrix = (self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + \
-            (contact_school / self.sim.age_vector))
+        full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
 
-        trcm = (full_contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes]
-
-        cm = get_contact_matrix_from_upper_triu(rvector=trcm, age_vector=self.sim.age_vector.reshape(-1, ))
-
-        cm_list.append(cm)
+        cm_list.append(full_contact_matrix)
         legend_list.append("{r}% {c_type} reduction of a.g. {ag}".format(r=int((1-ratio)*100),
                                                                          c_type=contact_type, ag=age_group))
 
     def get_fix_reduced_contact(self, cm_list, legend_list, age_group, contact_type):
-        contact_school = np.copy(self.sim.data.contact_data[contact_type]) * self.sim.age_vector
+        cm_spec_total = np.copy(self.sim.data.contact_data[contact_type]) * self.sim.age_vector
 
-        summa = np.sum(contact_school[age_group, :])
+        all_spec_contacts = np.sum(cm_spec_total[age_group, :])
 
-        contact_school[age_group, :] -= 1000000 * contact_school[age_group, :] / summa
-        contact_school[:, age_group] = contact_school[age_group, :].T
+        cm_spec_total[age_group, :] -= 1000000 * cm_spec_total[age_group, :] / all_spec_contacts
+        cm_spec_total[:, age_group] = cm_spec_total[age_group, :].T
+        contact_matrix_spec = cm_spec_total / self.sim.age_vector
 
-        full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + \
-            (contact_school / self.sim.age_vector)
+        full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
 
-        trcm = (full_contact_matrix * self.sim.age_vector)[self.sim.upper_tri_indexes]
-
-        cm = get_contact_matrix_from_upper_triu(rvector=trcm, age_vector=self.sim.age_vector.reshape(-1, ))
-
-        cm_list.append(cm)
+        cm_list.append(full_contact_matrix)
         legend_list.append("1M {c_type} reduction of a.g. {ag}".format(c_type=contact_type, ag=age_group))
