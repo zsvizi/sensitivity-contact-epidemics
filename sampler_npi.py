@@ -116,14 +116,13 @@ class NPISampler(SamplerBase):
         # Contact data from Simulation object
         contact_data = self.sim_obj.data.contact_data
         # Modified total contact matrices (contact types: school, work, other)
-        cm_mod_school = get_factor(lhs_sample[:no_ag]) * (contact_data["school"] * self.sim_obj.age_vector)
-        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * (contact_data["work"] * self.sim_obj.age_vector)
-        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * (contact_data["other"] * self.sim_obj.age_vector)
+        cm_mod_school = get_factor(lhs_sample[:no_ag]) * contact_data["school"]
+        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * contact_data["work"]
+        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * contact_data["other"]
         # Get modified total contact matrix of type full
-        cm_total_home = contact_data["home"] * self.sim_obj.age_vector
-        cm_total_sim = cm_total_home + cm_mod_school + cm_mod_work + cm_mod_other
+        cm_sim = contact_data["home"] + cm_mod_school + cm_mod_work + cm_mod_other
+        cm_total_sim = cm_sim * self.sim_obj.age_vector
         # Get output
-        cm_sim = cm_total_sim / self.sim_obj.age_vector
         output = self._get_output(cm_sim=cm_sim)
         output = np.append(cm_total_sim[self.sim_obj.upper_tri_indexes], output)
         return list(output)
