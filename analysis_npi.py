@@ -1,7 +1,6 @@
 import numpy as np
 
 from plotter import plot_solution_inc, plot_solution_ic
-from prcc import get_contact_matrix_from_upper_triu
 
 
 class AnalysisNPI:
@@ -55,23 +54,23 @@ class AnalysisNPI:
                               "_ICUtarget_fix1M_".join([str(self.susc), str(self.base_r0)]))
 
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 1, 2, 3, 4]], [legend_list[i] for i in [0, 1, 2, 3, 4]],
-                              "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 1, 2, 3, 4]], [legend_list[i] for i in [0, 1, 2, 3, 4]],
+                             "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 5, 6, 7, 8]], [legend_list[i] for i in [0, 5, 6, 7, 8]],
-                              "_R0target_clear_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 5, 6, 7, 8]], [legend_list[i] for i in [0, 5, 6, 7, 8]],
+                             "_R0target_clear_".join([str(self.susc), str(self.base_r0)]))
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 1, 2, 3, 9]], [legend_list[i] for i in [0, 1, 2, 3, 9]],
-                              "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 1, 2, 3, 9]], [legend_list[i] for i in [0, 1, 2, 3, 9]],
+                             "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 5, 6, 7, 10]], [legend_list[i] for i in [0, 5, 6, 7, 10]],
-                              "_ICUtarget_clear_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 5, 6, 7, 10]], [legend_list[i] for i in [0, 5, 6, 7, 10]],
+                             "_ICUtarget_clear_".join([str(self.susc), str(self.base_r0)]))
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 11, 12, 13, 14]], [legend_list[i] for i in [0, 11, 12, 13, 14]],
-                              "_R0target_fix1M_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 11, 12, 13, 14]], [legend_list[i] for i in [0, 11, 12, 13, 14]],
+                             "_R0target_fix1M_".join([str(self.susc), str(self.base_r0)]))
             plot_solution_ic(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 11, 12, 13, 15]], [legend_list[i] for i in [0, 11, 12, 13, 15]],
-                              "_ICUtarget_fix1M_".join([str(self.susc), str(self.base_r0)]))
+                             [cm_list[i] for i in [0, 11, 12, 13, 15]], [legend_list[i] for i in [0, 11, 12, 13, 15]],
+                             "_ICUtarget_fix1M_".join([str(self.susc), str(self.base_r0)]))
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.sim.contact_matrix
