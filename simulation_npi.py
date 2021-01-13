@@ -26,6 +26,7 @@ class SimulationNPI:
     def run(self):
         is_lhs_generated = False
         is_prcc_plots_generated = False
+        is_analysis_run = True
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
@@ -47,10 +48,10 @@ class SimulationNPI:
                         cm_generator = NPISampler(sim_state=sim_state, sim_obj=self)
                         cm_generator.run()
 
-                    else:
-                        if susc in [1.0, 0.5] and base_r0 in [1.35] and mtx_type == "lockdown":
-                            analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0, mtx_type=mtx_type)
-                            analysis.run()
+                if is_analysis_run:
+                    analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0)
+                    analysis.run()
+
         if is_prcc_plots_generated:
             generate_prcc_plots(sim_obj=self)
 

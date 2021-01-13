@@ -5,7 +5,7 @@ from prcc import get_contact_matrix_from_upper_triu
 
 
 class AnalysisNPI:
-    def __init__(self, sim, susc, base_r0, mtx_type):
+    def __init__(self, sim, susc, base_r0, mtx_type=None):
         self.sim = sim
         self.susc = susc
         self.base_r0 = base_r0
