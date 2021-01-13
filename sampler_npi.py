@@ -28,7 +28,7 @@ class NPISampler(SamplerBase):
                       "upper": np.ones(self.sim_obj.no_ag) * self._get_upper_bound_factor_unit()},
              # Age group level full scale (it is possible to make zero) approach
              "ratio": {"lower": np.zeros(3 * self.sim_obj.no_ag),
-                       "upper": 0.5 * np.ones(3 * self.sim_obj.no_ag)},
+                       "upper": np.ones(3 * self.sim_obj.no_ag)},
              # Contact matrix entry level approach, full scale approach (old name: "home")
              "lockdown": {"lower": cm_home_symmetric[self.sim_obj.upper_tri_indexes],
                           "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]},
@@ -105,12 +105,12 @@ class NPISampler(SamplerBase):
         # Local function for calculating factor matrix for all contact types
         def get_factor(sampled_ratios):
             # get ratio matrix via multiplying 1-matrix by sampled_ratios as a column
-            ratio_col = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
+            ratio_col = 1 - np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
             # get ratio matrix via multiplying 1-matrix by sampled_ratios as a row
-            ratio_row = np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
+            ratio_row = 1 - np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
             # create factor matrix via adding up ratio_col and ratio_row
             # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
-            factor_matrix = 1 - (ratio_col + ratio_row)
+            factor_matrix = ratio_col * ratio_row
             return factor_matrix
 
         # Contact data from Simulation object
