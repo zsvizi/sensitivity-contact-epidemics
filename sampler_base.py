@@ -19,12 +19,11 @@ class SamplerBase(ABC):
     def run(self):
         pass
 
-    def _get_lhs_table(self):
+    def _get_lhs_table(self, number_of_samples: int = 40000):
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]
         upper_bound = self.lhs_boundaries[self.type]["upper"]
         # Get LHS tables
-        number_of_samples = 40000
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
                                        lower=lower_bound,
                                        upper=upper_bound)

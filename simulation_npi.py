@@ -20,8 +20,8 @@ class SimulationNPI:
         # Define initial configs
         self._get_initial_config()
 
-        # For contact matrix sampling: ["unit", "ratio", "lockdown", "mitigation"]
-        self.mtx_types = ["lockdown", "mitigation", "ratio"]
+        # For contact matrix sampling: ["lockdown", "mitigation", "lockdown_3"]
+        self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
 
     def run(self):
         is_lhs_generated = False

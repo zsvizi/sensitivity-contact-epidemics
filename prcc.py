@@ -1,12 +1,18 @@
 import numpy as np
 
 
-def get_contact_matrix_from_upper_triu(rvector, age_vector):
-    upper_tri_indexes = np.triu_indices(age_vector.shape[0])
-    new_contact_mtx = np.zeros((age_vector.shape[0], age_vector.shape[0]))
+def get_rectangular_matrix_from_upper_triu(rvector, matrix_size):
+    upper_tri_indexes = np.triu_indices(matrix_size)
+    new_contact_mtx = np.zeros((matrix_size, matrix_size))
     new_contact_mtx[upper_tri_indexes] = rvector
     new_2 = new_contact_mtx.T
     new_2[upper_tri_indexes] = rvector
+    return np.array(new_2)
+
+
+def get_contact_matrix_from_upper_triu(rvector, age_vector):
+    new_2 = get_rectangular_matrix_from_upper_triu(rvector=rvector,
+                                                   matrix_size=age_vector.shape[0])
     vector = np.array(new_2 / age_vector)
     return vector
 

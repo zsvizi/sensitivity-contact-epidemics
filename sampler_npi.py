@@ -3,7 +3,7 @@ from time import sleep
 import numpy as np
 from tqdm import tqdm
 
-from prcc import get_contact_matrix_from_upper_triu
+from prcc import get_contact_matrix_from_upper_triu, get_rectangular_matrix_from_upper_triu
 from sampler_base import SamplerBase
 
 
@@ -13,41 +13,42 @@ class NPISampler(SamplerBase):
         # Matrices of frequently used contact types
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
+        # Get number of elements in the upper triangular matrix
+        self.upper_tri_size = (self.sim_obj.no_ag + 1) * self.sim_obj.no_ag / 2
 
         # Local variable for calculating boundaries
         lower_bound_mitigation = \
             self.contact_total * self.sim_obj.age_vector - \
             np.min((self.contact_total - self.contact_home) * self.sim_obj.age_vector)
-        cm_home_symmetric = self.contact_home * self.sim_obj.age_vector
         cm_total_symmetric = self.contact_total * self.sim_obj.age_vector
 
         self.lhs_boundaries = \
             {
-             # Age group level perturbation-like approach (NOT USED)
-             "unit": {"lower": np.zeros(self.sim_obj.no_ag),
-                      "upper": np.ones(self.sim_obj.no_ag) * self._get_upper_bound_factor_unit()},
-             # Age group level full scale (it is possible to make zero) approach
-             "ratio": {"lower": np.zeros(3 * self.sim_obj.no_ag),
-                       "upper": np.ones(3 * self.sim_obj.no_ag)},
              # Contact matrix entry level approach, full scale approach (old name: "home")
-             "lockdown": {"lower": cm_home_symmetric[self.sim_obj.upper_tri_indexes],
-                          "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]},
+             "lockdown": {"lower": np.zeros(self.upper_tri_size),
+                          "upper": np.ones(self.upper_tri_size)},
              # Contact matrix entry level approach, perturbation-like (old name: "normed")
              "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_indexes],
-                            "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]}
+                            "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]},
+             # Contact matrix entry level approach, full scale approach (old name: "home")
+             "lockdown_3": {"lower": np.zeros(3 * self.upper_tri_size),
+                            "upper": np.ones(3 * self.upper_tri_size)}
              }
 
     def run(self):
         # Get LHS table
-        lhs_table = self._get_lhs_table()
+        if self.type in ["lockdown_3"]:
+            lhs_table = self._get_lhs_table(number_of_samples=1000000)
+        else:
+            lhs_table = self._get_lhs_table()
         sleep(0.3)
 
         # Select getter for simulation output
-        if self.type == 'unit':
-            get_sim_output = self._get_sim_output_unit
-        elif self.type == 'ratio':
-            get_sim_output = self._get_sim_output_ratio
-        elif self.type == 'lockdown' or self.type == 'mitigation':
+        if self.type in ["lockdown"]:
+            get_sim_output = self._get_sim_output_cm_entries_lockdown
+        elif self.type in ["lockdown_3"]:
+            get_sim_output = self._get_sim_output_cm_entries_lockdown_3
+        elif self.type in ["mitigation"]:
             get_sim_output = self._get_sim_output_cm_entries
         else:
             raise Exception('Matrix type is unknown!')
@@ -57,7 +58,7 @@ class NPISampler(SamplerBase):
         results = np.array(results)
 
         # Sort tables by R0 values
-        r0_col_idx = int((self.sim_obj.no_ag + 1) * self.sim_obj.no_ag / 2 + 1)
+        r0_col_idx = int(self.upper_tri_size + 1)
         sorted_idx = results[:, r0_col_idx].argsort()
         results = results[sorted_idx]
         lhs_table = np.array(lhs_table[sorted_idx])
@@ -85,46 +86,39 @@ class NPISampler(SamplerBase):
         output = np.append(lhs_sample, output)
         return list(output)
 
-    def _get_sim_output_unit(self, lhs_sample: np.ndarray):
-        # Subtract lhs_sample as a column from cm_total_full (= reduction of row sum)
-        cm_total_sim = self.sim_obj.contact_matrix * self.sim_obj.age_vector - lhs_sample.reshape(-1, 1)
-        # Subtract lhs_sample as a row (reduction of col sum)
-        cm_total_sim -= lhs_sample.reshape(1, -1)
-        # Diagonal elements were reduced twice -> correction
-        cm_total_sim += np.diag(lhs_sample)
+    def _get_sim_output_cm_entries_lockdown(self, lhs_sample: np.ndarray):
+        # Get ratio matrix
+        ratio_matrix = get_rectangular_matrix_from_upper_triu(rvector=lhs_sample,
+                                                              matrix_size=self.sim_obj.no_ag)
+        # Get modified full contact matrix
+        cm_sim = (1 - ratio_matrix) * (self.sim_obj.contact_matrix - self.sim_obj.contact_home)
+        cm_sim += self.sim_obj.contact_home
         # Get output
-        cm_sim = cm_total_sim / self.sim_obj.age_vector
         output = self._get_output(cm_sim=cm_sim)
-        output = np.append(cm_total_sim[self.sim_obj.upper_tri_indexes], output)
+        cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
+        output = np.append(cm_total_sim, output)
         return list(output)
 
-    def _get_sim_output_ratio(self, lhs_sample: np.ndarray):
-        # Number of age groups
-        no_ag = self.sim_obj.no_ag
-
-        # Local function for calculating factor matrix for all contact types
-        def get_factor(sampled_ratios):
-            # get ratio matrix via multiplying 1-matrix by sampled_ratios as a column
-            ratio_col = 1 - np.ones((no_ag, no_ag)) * sampled_ratios.reshape((-1, 1))
-            # get ratio matrix via multiplying 1-matrix by sampled_ratios as a row
-            ratio_row = 1 - np.ones((no_ag, no_ag)) * sampled_ratios.reshape((1, -1))
-            # create factor matrix via adding up ratio_col and ratio_row
-            # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
-            factor_matrix = ratio_col * ratio_row
-            return factor_matrix
-
-        # Contact data from Simulation object
-        contact_data = self.sim_obj.data.contact_data
-        # Modified total contact matrices (contact types: school, work, other)
-        cm_mod_school = get_factor(lhs_sample[:no_ag]) * contact_data["school"]
-        cm_mod_work = get_factor(lhs_sample[no_ag:2*no_ag]) * contact_data["work"]
-        cm_mod_other = get_factor(lhs_sample[2*no_ag:]) * contact_data["other"]
-        # Get modified total contact matrix of type full
-        cm_sim = contact_data["home"] + cm_mod_school + cm_mod_work + cm_mod_other
-        cm_total_sim = cm_sim * self.sim_obj.age_vector
+    def _get_sim_output_cm_entries_lockdown_3(self, lhs_sample: np.ndarray):
+        # Get number of elements in the upper triangular matrix
+        u_t_s = self.upper_tri_size
+        # Get ratio matrices
+        ratio_matrix_school = get_rectangular_matrix_from_upper_triu(rvector=lhs_sample[:u_t_s],
+                                                                     matrix_size=self.sim_obj.no_ag)
+        ratio_matrix_work = get_rectangular_matrix_from_upper_triu(rvector=lhs_sample[u_t_s:2*u_t_s],
+                                                                   matrix_size=self.sim_obj.no_ag)
+        ratio_matrix_other = get_rectangular_matrix_from_upper_triu(rvector=lhs_sample[2*u_t_s:],
+                                                                    matrix_size=self.sim_obj.no_ag)
+        # Get modified contact matrices per layers
+        cm_sim_school = (1 - ratio_matrix_school) * self.sim_obj.data.contact_data["school"]
+        cm_sim_work = (1 - ratio_matrix_work) * self.sim_obj.data.contact_data["work"]
+        cm_sim_other = (1 - ratio_matrix_other) * self.sim_obj.data.contact_data["other"]
+        # Get full contact matrix
+        cm_sim = self.sim_obj.contact_home + cm_sim_school + cm_sim_work + cm_sim_other
         # Get output
         output = self._get_output(cm_sim=cm_sim)
-        output = np.append(cm_total_sim[self.sim_obj.upper_tri_indexes], output)
+        cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
+        output = np.append(cm_total_sim, output)
         return list(output)
 
     def _get_upper_bound_factor_unit(self):
