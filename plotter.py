@@ -183,6 +183,10 @@ def generate_prcc_plots(sim_obj):
             # PRCC analysis for R0
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
+            if "lockdown" in filename_without_ext:
+                prcc_matrix = prcc.get_contact_matrix_from_upper_triu(prcc_list, sim_obj.age_vector) * sim_obj.age_vector
+                print("R0", (prcc_matrix.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).reshape((1, -1)))
+
             if 'unit' in filename_without_ext or 'lockdown' in filename_without_ext or \
                     'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
