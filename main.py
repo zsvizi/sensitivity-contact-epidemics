@@ -8,6 +8,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # generate_stacked_plots()
+
     main()
-    plot_contact_matrix_as_grouped_bars()
+    # generate_stacked_plots()
+    # plot_contact_matrix_as_grouped_bars()

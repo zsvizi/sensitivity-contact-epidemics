@@ -21,12 +21,12 @@ class SimulationNPI:
         self._get_initial_config()
 
         # For contact matrix sampling: ["unit", "ratio", "lockdown", "mitigation"]
-        self.mtx_types = ["lockdown", "mitigation", "ratio"]
+        self.mtx_types = ["ratio", "lockdown", "mitigation"]
 
     def run(self):
         is_lhs_generated = False
-        is_prcc_plots_generated = False
-        is_analysis_run = True
+        is_prcc_plots_generated = True
+        is_analysis_run = False
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)

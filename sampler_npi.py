@@ -111,6 +111,7 @@ class NPISampler(SamplerBase):
             # create factor matrix via adding up ratio_col and ratio_row
             # in order to get a factor for total matrix of a specific contact type, subtract the sum from 1
             factor_matrix = ratio_col * ratio_row
+            np.fill_diagonal(factor_matrix, 1 - sampled_ratios)
             return factor_matrix
 
         # Contact data from Simulation object
