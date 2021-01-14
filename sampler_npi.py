@@ -14,7 +14,7 @@ class NPISampler(SamplerBase):
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
         # Get number of elements in the upper triangular matrix
-        self.upper_tri_size = (self.sim_obj.no_ag + 1) * self.sim_obj.no_ag / 2
+        self.upper_tri_size = int((self.sim_obj.no_ag + 1) * self.sim_obj.no_ag / 2)
 
         # Local variable for calculating boundaries
         lower_bound_mitigation = \
