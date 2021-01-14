@@ -38,7 +38,7 @@ class NPISampler(SamplerBase):
     def run(self):
         # Get LHS table
         if self.type in ["lockdown_3"]:
-            lhs_table = self._get_lhs_table(number_of_samples=1000000)
+            lhs_table = self._get_lhs_table(number_of_samples=120000)
         else:
             lhs_table = self._get_lhs_table()
         sleep(0.3)
