@@ -14,15 +14,15 @@ class AnalysisNPI:
         cm_list = []
         legend_list = []
         self.get_full_cm(cm_list, legend_list)
-        self.get_reduced_contact(cm_list, legend_list, 3, "school", 0.75)
-        self.get_reduced_contact(cm_list, legend_list, 3, "other", 0.75)
         self.get_reduced_contact(cm_list, legend_list, 7, "work", 0.75)
         self.get_reduced_contact(cm_list, legend_list, 8, "work", 0.75)
+        self.get_reduced_contact(cm_list, legend_list, 7, "other", 0.75)
+        self.get_reduced_contact(cm_list, legend_list, 6, "work", 0.75)
 
-        self.get_fix_reduced_contact(cm_list, legend_list, 3, "school")
-        self.get_fix_reduced_contact(cm_list, legend_list, 3, "other")
         self.get_fix_reduced_contact(cm_list, legend_list, 7, "work")
         self.get_fix_reduced_contact(cm_list, legend_list, 8, "work")
+        self.get_fix_reduced_contact(cm_list, legend_list, 7, "other")
+        self.get_fix_reduced_contact(cm_list, legend_list, 6, "work")
 
         t = np.arange(0, 500, 0.5)
 

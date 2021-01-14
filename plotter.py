@@ -72,7 +72,7 @@ def plot_prcc_values_as_heatmap(prcc_vector, filename_without_ext, filename):
     plt.close()
 
 
-def plot_prcc_values_ratio(prcc_vector, filename_to_save, plot_title):
+def plot_prcc_values_lockdown_3(prcc_vector, filename_to_save, plot_title):
     """
     Plots a given PRCC result
     :param filename_to_save: name of the output file
@@ -149,6 +149,7 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
 
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
+    upp_tri_size = int((n_ag + 1) * n_ag / 2)
     sim_folder = "simulations_after_redei"
     lhs_folder = "lhs"
     cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
@@ -160,21 +161,20 @@ def generate_prcc_plots(sim_obj):
                                           delimiter=';')
             saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" + filename.replace("simulations", "lhs"),
                                           delimiter=';')
-            if 'unit' in filename_without_ext:
-                sim_data = np.apply_along_axis(func1d=prcc.get_prcc_input,
-                                               axis=1, arr=saved_lhs_values[:, :n_ag],
-                                               cm=cm_total_full
-                                               )
-                names = [str(i) for i in range(n_ag)]
-            elif 'ratio' in filename_without_ext:
-                sim_data = saved_lhs_values[:, :3 * n_ag]
+            if 'lockdown_3' in filename_without_ext:
+                sim_data = saved_lhs_values[:, :3 * upp_tri_size]
                 # Transform sim_data to get positively correlating variables
                 # Here ratio to subtract is negatively correlated to the targets, thus
                 # 1 - ratio (i.e. ratio of remaining contacts) is positively correlated
                 sim_data = 1 - sim_data
                 names = [str(i) for i in range(3 * n_ag)]
-            elif "lockdown" in filename_without_ext or "mitigation" in filename_without_ext:
+            elif "lockdown" in filename_without_ext:
                 sim_data = saved_lhs_values[:, :(n_ag*(n_ag+1)) // 2]
+                sim_data = 1 - sim_data
+                upper_tri_indexes = np.triu_indices(n_ag)
+                names = generate_axis_label()[upper_tri_indexes]
+            elif "mitigation" in filename_without_ext:
+                sim_data = saved_lhs_values[:, :(n_ag * (n_ag + 1)) // 2]
                 upper_tri_indexes = np.triu_indices(n_ag)
                 names = generate_axis_label()[upper_tri_indexes]
             else:
@@ -183,34 +183,54 @@ def generate_prcc_plots(sim_obj):
             # PRCC analysis for R0
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 1].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            if "lockdown" in filename_without_ext:
-                prcc_matrix = prcc.get_contact_matrix_from_upper_triu(prcc_list, sim_obj.age_vector) * sim_obj.age_vector
-                print("R0", (prcc_matrix.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).reshape((1, -1)))
+            if 'lockdown_3' in filename_without_ext:
+                prcc_matrix_school = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                prcc_matrix_work = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[upp_tri_size:2*upp_tri_size],
+                                                                               n_ag)
+                prcc_matrix_other = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[2*upp_tri_size:], n_ag)
 
-            if 'unit' in filename_without_ext or 'lockdown' in filename_without_ext or \
-                    'mitigation' in filename_without_ext:
+                agg_prcc_school = \
+                    (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                agg_prcc_work = \
+                    (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                agg_prcc_other = \
+                    (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                prcc_list = np.array([agg_prcc_school, agg_prcc_work, agg_prcc_other]).flatten()
+
+                title_list = filename_without_ext.split("_")
+                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
+                plot_prcc_values_lockdown_3(prcc_list, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
+            elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
                 plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
-            elif 'ratio' in filename_without_ext:
-                title_list = filename_without_ext.split("_")
-                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
-                plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
 
             # PRCC analysis for ICU maximum
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
             prcc_list = prcc.get_prcc_values(simulation)
-            if 'unit' in filename_without_ext or 'lockdown' in filename_without_ext or \
-                    'mitigation' in filename_without_ext:
+            if 'lockdown_3' in filename_without_ext:
+                prcc_matrix_school = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                prcc_matrix_work = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[upp_tri_size:2 * upp_tri_size],
+                                                                               n_ag)
+                prcc_matrix_other = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[2 * upp_tri_size:], n_ag)
+
+                agg_prcc_school = \
+                    (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                agg_prcc_work = \
+                    (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                agg_prcc_other = \
+                    (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                prcc_list = np.array([agg_prcc_school, agg_prcc_work, agg_prcc_other]).flatten()
+
+                title_list = filename_without_ext.split("_")
+                plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
+                plot_prcc_values_lockdown_3(prcc_list, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
+            elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
                 plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
                 plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
                                  filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
-            elif 'ratio' in filename_without_ext:
-                title_list = filename_without_ext.split("_")
-                plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
-                plot_prcc_values_ratio(prcc_list, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
 
 
 def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
