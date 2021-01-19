@@ -31,10 +31,6 @@ class SamplerBase(ABC):
               "samples (", "-".join([str(self.susc), str(self.base_r0), self.type]), ")")
         return lhs_table
 
-    @abstractmethod
-    def _get_output(self, cm_sim: np.ndarray):
-        pass
-
     def _save_output(self, output, folder_name):
         # Create directories for saving calculation outputs
         os.makedirs("./sens_data", exist_ok=True)
