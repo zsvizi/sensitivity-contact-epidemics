@@ -39,7 +39,7 @@ def plot_prcc_values_as_heatmap(prcc_vector, filename_without_ext, filename):
     :param prcc_vector: list of PRCC values
     :return: None
     """
-    os.makedirs("./sens_data/PRCC_bars", exist_ok=True)
+    os.makedirs("sens_data/PRCC_bars", exist_ok=True)
     number_of_age_groups = 16
     upper_tri_indexes = np.triu_indices(number_of_age_groups)
     new_contact_mtx = np.zeros((number_of_age_groups, number_of_age_groups))
@@ -79,7 +79,7 @@ def plot_prcc_values_lockdown_3(prcc_vector, filename_to_save, plot_title):
     :param prcc_vector: list of PRCC values
     :return: None
     """
-    os.makedirs("./sens_data/PRCC_bars", exist_ok=True)
+    os.makedirs("sens_data/PRCC_bars", exist_ok=True)
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif', size=14)
     plt.margins(0, tight=False)
@@ -124,7 +124,7 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     :param prcc_vector: list of PRCC values
     :return: None
     """
-    os.makedirs("./sens_data/PRCC_bars", exist_ok=True)
+    os.makedirs("sens_data/PRCC_bars", exist_ok=True)
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif', size=14)
     plt.margins(0, tight=False)
@@ -189,12 +189,22 @@ def generate_prcc_plots(sim_obj):
                                                                                n_ag)
                 prcc_matrix_other = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[2*upp_tri_size:], n_ag)
 
+                # Kifokok
+                # agg_prcc_school = \
+                #     (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                # agg_prcc_work = \
+                #     (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                # agg_prcc_other = \
+                #     (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+
+                # Befokok
                 agg_prcc_school = \
-                    (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_school * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
                 agg_prcc_work = \
-                    (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_work * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
                 agg_prcc_other = \
-                    (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_other * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
+
                 prcc_list = np.array([agg_prcc_school, agg_prcc_work, agg_prcc_other]).flatten()
 
                 title_list = filename_without_ext.split("_")
@@ -215,12 +225,22 @@ def generate_prcc_plots(sim_obj):
                                                                                n_ag)
                 prcc_matrix_other = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[2 * upp_tri_size:], n_ag)
 
+                # Kifokok
+                # agg_prcc_school = \
+                #     (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                # agg_prcc_work = \
+                #     (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                # agg_prcc_other = \
+                #     (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+
+                # Befokok
                 agg_prcc_school = \
-                    (prcc_matrix_school.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_school * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
                 agg_prcc_work = \
-                    (prcc_matrix_work.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_work * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
                 agg_prcc_other = \
-                    (prcc_matrix_other.dot(sim_obj.age_vector) / np.sum(sim_obj.age_vector)).flatten()
+                    (np.sum(prcc_matrix_other * sim_obj.age_vector, axis=1) / np.sum(sim_obj.age_vector)).flatten()
+
                 prcc_list = np.array([agg_prcc_school, agg_prcc_work, agg_prcc_other]).flatten()
 
                 title_list = filename_without_ext.split("_")
