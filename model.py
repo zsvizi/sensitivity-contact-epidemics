@@ -1,42 +1,62 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 from scipy.integrate import odeint
 
 
-class RostModelHungaryBase:
-    def __init__(self, model_data):
+class EpidemicModelBase(ABC):
+    def __init__(self, model_data, compartments):
         self.population = model_data.age_data.flatten()
-
-        self.compartments = ["s", "l1", "l2",
-                             "ip", "ia1", "ia2", "ia3",
-                             "is1", "is2", "is3",
-                             "ih", "ic", "icr",
-                             "r", "d", "c"]
+        self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]
 
+    def initialize(self):
+        iv = {key: np.zeros(self.n_age) for key in self.compartments}
+        return iv
+
+    def aggregate_by_age(self, solution, idx):
+        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=1)
+
+    def get_cumulative(self, solution):
+        idx = self.c_idx["c"]
+        return self.aggregate_by_age(solution, idx)
+
+    def get_deaths(self, solution):
+        idx = self.c_idx["d"]
+        return self.aggregate_by_age(solution, idx)
+
+    def get_solution(self, t, parameters, cm):
+        initial_values = self.get_initial_values()
+        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
+
+    def get_array_from_dict(self, comp_dict):
+        return np.array([comp_dict[comp] for comp in self.compartments]).flatten()
+
     def get_initial_values(self):
-        iv = {
-            "l1": np.zeros(self.n_age),
-            "l2": np.zeros(self.n_age),
+        iv = self.initialize()
+        self.update_initial_values(iv=iv)
+        return self.get_array_from_dict(comp_dict=iv)
 
-            "ip": np.zeros(self.n_age),
+    @abstractmethod
+    def update_initial_values(self, iv):
+        pass
 
-            "ia1": np.zeros(self.n_age),
-            "ia2": np.zeros(self.n_age),
-            "ia3": np.zeros(self.n_age),
+    @abstractmethod
+    def get_model(self, xs, _, ps, cm):
+        pass
 
-            "is1": np.zeros(self.n_age),
-            "is2": np.zeros(self.n_age),
-            "is3": np.zeros(self.n_age),
 
-            "ih": np.zeros(self.n_age),
-            "ic": np.zeros(self.n_age),
-            "icr": np.zeros(self.n_age),
+class RostModelHungaryBase(EpidemicModelBase):
+    def __init__(self, model_data):
+        compartments = ["s", "l1", "l2",
+                        "ip", "ia1", "ia2", "ia3",
+                        "is1", "is2", "is3",
+                        "ih", "ic", "icr",
+                        "r", "d", "c"]
+        super().__init__(model_data=model_data, compartments=compartments)
 
-            "d": np.zeros(self.n_age),
-            "r": np.zeros(self.n_age)
-        }
-
+    def update_initial_values(self, iv):
         iv["l1"][2] = 1  # np.array([0, 0, 0, 4, 3, 3, 1, 2, 1, 2, 2, 2, 5, 5, 0, 0])
         iv.update({
             "c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] + iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
@@ -45,18 +65,11 @@ class RostModelHungaryBase:
             "s": self.population - (iv["c"] + iv["l1"] + iv["l2"])
         })
 
-        return np.array([iv[comp] for comp in self.compartments]).flatten()
-
-    def get_solution(self, t, parameters, cm):
-        initial_values = self.get_initial_values()
-        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
-
     def get_model(self, xs, _, ps, cm):
         # the same order as in self.compartments!
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, self.n_age)
 
-        transmission = ps["beta"] * \
-                       np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
+        transmission = ps["beta"] * np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
 
         model_eq_dict = {
@@ -74,33 +87,18 @@ class RostModelHungaryBase:
             "is2": 3 * ps["gamma_s"] * is1 - 3 * ps["gamma_s"] * is2,  # Is2'(t)
             "is3": 3 * ps["gamma_s"] * is2 - 3 * ps["gamma_s"] * is3,  # Is3'(t)
 
-            "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3
-                  - ps["gamma_h"] * ih,  # Ih'(t)
-            "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3
-                  - ps["gamma_c"] * ic,  # Ic'(t)
+            "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3 - ps["gamma_h"] * ih,  # Ih'(t)
+            "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3 - ps["gamma_c"] * ic,  # Ic'(t)
             "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)
 
             "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3
-                 + ps["gamma_h"] * ih + ps["gamma_cr"] * icr,  # R'(t)
+            + ps["gamma_h"] * ih + ps["gamma_cr"] * icr,  # R'(t)
             "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
 
             "c": 2 * ps["alpha_l"] * l2  # C'(t)
         }
 
-        model_eq = [model_eq_dict[comp] for comp in self.compartments]
-        v = np.array(model_eq).flatten()
-        return v
-
-    def aggregate_by_age(self, solution, idx):
-        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=1)
-
-    def get_cumulative(self, solution):
-        idx = self.c_idx["c"]
-        return self.aggregate_by_age(solution, idx)
-
-    def get_deaths(self, solution):
-        idx = self.c_idx["d"]
-        return self.aggregate_by_age(solution, idx)
+        return self.get_array_from_dict(comp_dict=model_eq_dict)
 
     def get_hospitalized(self, solution):
         idx = self.c_idx["ih"]
