@@ -47,7 +47,7 @@ class EpidemicModelBase(ABC):
         pass
 
 
-class RostModelHungaryBase(EpidemicModelBase):
+class RostModelHungary(EpidemicModelBase):
     def __init__(self, model_data):
         compartments = ["s", "l1", "l2",
                         "ip", "ia1", "ia2", "ia3",

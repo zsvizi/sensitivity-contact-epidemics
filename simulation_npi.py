@@ -2,7 +2,7 @@ import numpy as np
 
 from analysis_npi import AnalysisNPI
 from dataloader import DataLoader
-from model import RostModelHungaryBase
+from model import RostModelHungary
 from plotter import generate_prcc_plots
 from r0 import R0Generator
 from sampler_npi import NPISampler
@@ -57,7 +57,7 @@ class SimulationNPI:
 
     def _get_initial_config(self):
         self.no_ag = self.data.contact_data["home"].shape[0]
-        self.model = RostModelHungaryBase(model_data=self.data)
+        self.model = RostModelHungary(model_data=self.data)
         self.population = self.model.population
         self.age_vector = self.population.reshape((-1, 1))
         self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
