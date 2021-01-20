@@ -32,7 +32,7 @@ class R0Generator:
             f = self.__get_f(cm)
             ngm_large = f @ self.v_inv
             ngm = self.e @ ngm_large @ self.e.T
-            eig_val = np.sort(np.linalg.eig(ngm)[0])
+            eig_val = np.sort(list(map(lambda x: np.abs(x), np.linalg.eig(ngm)[0])))
             eig_val_eff.append(float(eig_val[-1]))
 
         return eig_val_eff
