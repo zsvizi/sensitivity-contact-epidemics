@@ -11,12 +11,15 @@ class SamplerBase(ABC):
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
         self.type = sim_state["type"]
-        self.susc = sim_state["susc"]
         self.r0generator = sim_state["r0generator"]
         self.lhs_boundaries = None
 
     @abstractmethod
     def run(self):
+        pass
+
+    @abstractmethod
+    def _get_variable_parameters(self):
         pass
 
     def _get_lhs_table(self, number_of_samples: int = 40000):
@@ -28,7 +31,7 @@ class SamplerBase(ABC):
                                        lower=lower_bound,
                                        upper=upper_bound)
         print("Simulation for", number_of_samples,
-              "samples (", "-".join([str(self.susc), str(self.base_r0), self.type]), ")")
+              "samples (", "-".join(self._get_variable_parameters()), ")")
         return lhs_table
 
     def _save_output(self, output, folder_name):
@@ -38,7 +41,7 @@ class SamplerBase(ABC):
         # Save LHS output
         os.makedirs("./sens_data/" + folder_name, exist_ok=True)
         filename = "./sens_data/" + folder_name + "/" + folder_name + "_Hungary_" + \
-                   "_".join([str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type])
+                   "_".join(self._get_variable_parameters())
         np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
 
 

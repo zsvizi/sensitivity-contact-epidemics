@@ -10,6 +10,7 @@ from sampler_base import SamplerBase
 class NPISampler(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj):
         super().__init__(sim_state, sim_obj)
+        self.susc = sim_state["susc"]
         # Matrices of frequently used contact types
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
@@ -68,6 +69,9 @@ class NPISampler(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+
+    def _get_variable_parameters(self):
+        return [str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type]
 
     def _get_output(self, cm_sim: np.ndarray):
         beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
