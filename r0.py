@@ -1,29 +1,32 @@
+from abc import ABC, abstractmethod
 from typing import List
 
 import numpy as np
 from scipy.linalg import block_diag
 
 
-class R0Generator:
-    states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
-
-    def __init__(self, param: dict, n_age: int = 16, n_l: int = 2, n_a: int = 3, n_i: int = 3):
-        self.parameters = param
+class R0GeneratorBase(ABC):
+    def __init__(self, param: dict, states: list, n_age: int):
+        self.states = states
         self.n_age = n_age
-        self.n_l = n_l
-        self.n_a = n_a
-        self.n_i = n_i
+        self.parameters = param
         self.n_states = len(self.states)
         self.i = {self.states[index]: index for index in np.arange(0, self.n_states)}
         self.s_mtx = self.n_age * self.n_states
 
         self.v_inv = None
-        self.__get_e()
-        self.__get_v()
+        self.e = None
+        self.contact_matrix = np.zeros((n_age, n_age))
 
-    def get_eig_val(self, contact_mtx: np.array, susceptibles: np.ndarray, population: np.ndarray) -> List[np.float]:
+    def __idx(self, state: str) -> int:
+        return np.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
+
+    def get_eig_val(self, susceptibles: np.ndarray, population: np.ndarray,
+                    contact_mtx: np.array = None) -> List[np.float]:
         # contact matrix needed for effective reproduction number: [c_{j,i} * S_i(t) / N_i(t)]
-        contact_matrix = contact_mtx / population.reshape((-1, 1))
+        if contact_mtx is not None:
+            self.contact_matrix = contact_mtx
+        contact_matrix = self.contact_matrix / population.reshape((-1, 1))
         cm_tensor = np.tile(contact_matrix, (susceptibles.shape[0], 1, 1))
         susc_tensor = susceptibles.reshape((susceptibles.shape[0], susceptibles.shape[1], 1))
         contact_matrix_tensor = cm_tensor * susc_tensor
@@ -36,6 +39,30 @@ class R0Generator:
             eig_val_eff.append(float(eig_val[-1]))
 
         return eig_val_eff
+
+    @abstractmethod
+    def __get_e(self):
+        pass
+
+    @abstractmethod
+    def __get_v(self):
+        pass
+
+    @abstractmethod
+    def __get_f(self, contact_matrix: np.ndarray):
+        pass
+
+
+class R0Generator(R0GeneratorBase):
+    def __init__(self, param: dict, n_age: int = 16):
+        states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
+        super().__init__(param=param, states=states, n_age=n_age)
+        self.n_l = 2
+        self.n_a = 3
+        self.n_i = 3
+
+        self.__get_e()
+        self.__get_v()
 
     def __get_v(self) -> np.array:
         idx = self.__idx
@@ -96,6 +123,3 @@ class R0Generator:
         self.e = block
         for i in range(1, self.n_age):
             self.e = block_diag(self.e, block)
-
-    def __idx(self, state: str) -> int:
-        return np.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
