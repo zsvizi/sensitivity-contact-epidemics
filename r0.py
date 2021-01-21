@@ -18,7 +18,7 @@ class R0GeneratorBase(ABC):
         self.e = None
         self.contact_matrix = np.zeros((n_age, n_age))
 
-    def __idx(self, state: str) -> int:
+    def _idx(self, state: str) -> int:
         return np.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
 
     def get_eig_val(self, susceptibles: np.ndarray, population: np.ndarray,
@@ -32,7 +32,7 @@ class R0GeneratorBase(ABC):
         contact_matrix_tensor = cm_tensor * susc_tensor
         eig_val_eff = []
         for cm in contact_matrix_tensor:
-            f = self.__get_f(cm)
+            f = self._get_f(cm)
             ngm_large = f @ self.v_inv
             ngm = self.e @ ngm_large @ self.e.T
             eig_val = np.sort(list(map(lambda x: np.abs(x), np.linalg.eig(ngm)[0])))
@@ -41,15 +41,15 @@ class R0GeneratorBase(ABC):
         return eig_val_eff
 
     @abstractmethod
-    def __get_e(self):
+    def _get_e(self):
         pass
 
     @abstractmethod
-    def __get_v(self):
+    def _get_v(self):
         pass
 
     @abstractmethod
-    def __get_f(self, contact_matrix: np.ndarray):
+    def _get_f(self, contact_matrix: np.ndarray):
         pass
 
 
@@ -61,11 +61,11 @@ class R0Generator(R0GeneratorBase):
         self.n_a = 3
         self.n_i = 3
 
-        self.__get_e()
-        self.__get_v()
+        self._get_e()
+        self._get_v()
 
-    def __get_v(self) -> np.array:
-        idx = self.__idx
+    def _get_v(self) -> np.array:
+        idx = self._idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
         # L1 -> L2
         v[idx("l1"), idx("l1")] = self.n_l * self.parameters["alpha_l"]
@@ -96,7 +96,7 @@ class R0Generator(R0GeneratorBase):
 
         self.v_inv = np.linalg.inv(v)
 
-    def __get_f(self, contact_mtx: np.array) -> np.array:
+    def _get_f(self, contact_mtx: np.array) -> np.array:
         i = self.i
         s_mtx = self.s_mtx
         n_states = self.n_states
@@ -117,7 +117,7 @@ class R0Generator(R0GeneratorBase):
 
         return f
 
-    def __get_e(self):
+    def _get_e(self):
         block = np.zeros(self.n_states, )
         block[0] = 1
         self.e = block
