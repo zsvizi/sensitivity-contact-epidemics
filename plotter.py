@@ -136,9 +136,9 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     plt.tick_params(direction="in")
     plt.bar(xp, list(prcc_vector), align='center', color=cmap(prcc_vector))
     plt.xticks(ticks=xp, labels=param_list, rotation=90)
-    plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
+    # plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
     axes = plt.gca()
-    axes.set_ylim([0, 1])
+    # axes.set_ylim([0, 1])
     plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
     plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
     title_list = filename_without_ext.split("_")
@@ -153,6 +153,18 @@ def generate_prcc_plots(sim_obj):
     sim_folder = "simulations_after_redei"
     lhs_folder = "lhs"
     cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
+
+    agg_methods = [
+        "simple",  # 0
+        "relN",  # 2 = be-fok
+        "relNother",  # 1 = ki-fok
+        "simplecm",  # 7
+        "simplecmother",  # 6
+        "relcm",  # 4
+        "relcmother",  # 5
+        "relcmmixed"  # 3
+    ]
+
     for root, dirs, files in os.walk("./sens_data/" + sim_folder):
         for filename in files:
             filename_without_ext = os.path.splitext(filename)[0]
@@ -212,9 +224,15 @@ def generate_prcc_plots(sim_obj):
                 plot_prcc_values_lockdown_3(prcc_list, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
             elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
-                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
-                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
+
+                prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                for num, agg_type in enumerate(agg_methods):
+                    prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
+                    plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
+                                 ', Aggregation: ' + agg_type
+                    plot_prcc_values(np.arange(16), prcc_list,
+                                     filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0_" + agg_type,
+                                     plot_title)
 
             # PRCC analysis for ICU maximum
             simulation = np.append(sim_data, saved_simulation[:, -n_ag - 2].reshape((-1, 1)), axis=1)
@@ -248,9 +266,34 @@ def generate_prcc_plots(sim_obj):
                 plot_prcc_values_lockdown_3(prcc_list, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
             elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
-                plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
-                plot_prcc_values(np.array(names).flatten().tolist(), prcc_list,
-                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU", plot_title)
+                prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                for num, agg_type in enumerate(agg_methods):
+                    prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
+                    plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
+                                 ', Aggregation: ' + agg_type
+                    plot_prcc_values(np.arange(16), prcc_list,
+                                     filename_without_ext, "PRCC_bars_" + filename_without_ext + "_ICU_" + agg_type,
+                                     plot_title)
+
+
+def aggregate_prcc(prcc_mtx, cm, age_vector, agg_type='simple'):
+    if agg_type == 'simple':
+        agg_prcc = np.sum(prcc_mtx, axis=1)
+    elif agg_type == 'relN':
+        agg_prcc = np.sum(prcc_mtx * age_vector, axis=1)
+    elif agg_type == 'relNother':
+        agg_prcc = prcc_mtx @ age_vector
+    elif agg_type == ' simplecm':
+        agg_prcc = np.sum(prcc_mtx * cm, axis=1)
+    elif agg_type == 'simplecmother':
+        agg_prcc = np.sum(prcc_mtx * cm.T, axis=1)
+    elif agg_type == 'relcm':
+        agg_prcc = np.sum(prcc_mtx * cm, axis=1) / np.sum(cm, axis=1)
+    elif agg_type == 'relcmother':
+        agg_prcc = np.sum((prcc_mtx * cm.T) / (np.sum(cm, axis=1)).T, axis=1)
+    else:  # if agg_type == 'rel_cm_mixed':
+        agg_prcc = np.sum(prcc_mtx * cm, axis=1) / np.sum(cm, axis=0)
+    return agg_prcc.flatten()
 
 
 def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
