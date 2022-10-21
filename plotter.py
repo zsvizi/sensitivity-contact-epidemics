@@ -277,20 +277,21 @@ def generate_prcc_plots(sim_obj):
 
 
 def aggregate_prcc(prcc_mtx, cm, age_vector, agg_type='simple'):
+    cm_total = cm * age_vector
     if agg_type == 'simple':
         agg_prcc = np.sum(prcc_mtx, axis=1)
     elif agg_type == 'relN':
-        agg_prcc = np.sum(prcc_mtx * age_vector, axis=1)
+        agg_prcc = np.sum(prcc_mtx * age_vector, axis=1) / np.sum(age_vector)
     elif agg_type == 'relNother':
-        agg_prcc = prcc_mtx @ age_vector
+        agg_prcc = (prcc_mtx @ age_vector) / np.sum(age_vector)
     elif agg_type == ' simplecm':
         agg_prcc = np.sum(prcc_mtx * cm, axis=1)
     elif agg_type == 'simplecmother':
         agg_prcc = np.sum(prcc_mtx * cm.T, axis=1)
     elif agg_type == 'relcm':
-        agg_prcc = np.sum(prcc_mtx * cm, axis=1) / np.sum(cm, axis=1)
+        agg_prcc = np.sum(prcc_mtx * cm_total, axis=1) / np.sum(cm_total, axis=1)
     elif agg_type == 'relcmother':
-        agg_prcc = np.sum((prcc_mtx * cm.T) / (np.sum(cm, axis=1)).T, axis=1)
+        agg_prcc = np.sum((prcc_mtx * cm_total) / (np.sum(cm, axis=1)).T, axis=1)
     else:  # if agg_type == 'rel_cm_mixed':
         agg_prcc = np.sum(prcc_mtx * cm, axis=1) / np.sum(cm, axis=0)
     return agg_prcc.flatten()
