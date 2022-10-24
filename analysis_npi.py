@@ -15,26 +15,38 @@ class AnalysisNPI:
         legend_list = []
 
         self.get_full_cm(cm_list, legend_list)
-        self.get_reduced_contact(cm_list, legend_list, 7, "work", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 8, "work", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 7, "other", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 6, "work", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 5, "work", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 5, "other", 0.5)
-        self.get_reduced_contact(cm_list, legend_list, 6, "other", 0.5)
+        for i in range(16):
+            self.get_reduced_contact(cm_list, legend_list, i, None, 0.5)
+
+        # self.get_reduced_contact(cm_list, legend_list, 8, "work", 0.5)
+        # self.get_reduced_contact(cm_list, legend_list, 7, "other", 0.5)
+        # self.get_reduced_contact(cm_list, legend_list, 6, "work", 0.5)
+        # self.get_reduced_contact(cm_list, legend_list, 5, "work", 0.5)
+        # self.get_reduced_contact(cm_list, legend_list, 5, "other", 0.5)
+        # self.get_reduced_contact(cm_list, legend_list, 6, "other", 0.5)
 
         t = np.arange(0, 500, 0.5)
 
-        if self.base_r0 == 1.35 and self.susc == 1:
+        if self.base_r0 == 2.5 and self.susc == 1:
             # R0 = 1.35, Susc = 1, Target: R0
             plot_solution_inc(self.sim, t, self.sim.params,
-                              [cm_list[i] for i in [0, 1, 2, 3, 4]], [legend_list[i] for i in [0, 1, 2, 3, 4]],
+                              cm_list, legend_list,
                               "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
 
             # R0 = 1.35, Susc = 1, Target: ICU
             plot_solution_ic(self.sim, t, self.sim.params,
-                             [cm_list[i] for i in [0, 5, 6, 1, 7]], [legend_list[i] for i in [0, 5, 6, 1, 7]],
+                             cm_list, legend_list,
                              "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
+
+            # # R0 = 1.35, Susc = 1, Target: R0
+            # plot_solution_inc(self.sim, t, self.sim.params,
+            #                   [cm_list[0], cm_list[8:]], [legend_list[0], legend_list[8:]],
+            #                   "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
+            #
+            # # R0 = 1.35, Susc = 1, Target: ICU
+            # plot_solution_ic(self.sim, t, self.sim.params,
+            #                  [cm_list[0], cm_list[8:]], [legend_list[0], legend_list[8:]],
+            #                  "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.sim.contact_matrix
@@ -42,13 +54,20 @@ class AnalysisNPI:
         legend_list.append("Total contact")
 
     def get_reduced_contact(self, cm_list, legend_list, age_group, contact_type, ratio):
-        contact_matrix_spec = np.copy(self.sim.data.contact_data[contact_type])
+        if contact_type is None:
+            full_contact_matrix = np.copy(self.sim.contact_matrix)
+            full_contact_matrix[age_group, :] *= ratio
+            full_contact_matrix[:, age_group] *= ratio
+            full_contact_matrix[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
 
-        contact_matrix_spec[age_group, :] *= ratio
-        contact_matrix_spec[:, age_group] *= ratio
-        contact_matrix_spec[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
+        else:
+            contact_matrix_spec = np.copy(self.sim.data.contact_data[contact_type])
 
-        full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
+            contact_matrix_spec[age_group, :] *= ratio
+            contact_matrix_spec[:, age_group] *= ratio
+            contact_matrix_spec[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
+
+            full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
 
         cm_list.append(full_contact_matrix)
         legend_list.append("{r}% {c_type} reduction of a.g. {ag}".format(r=int((1-ratio)*100),

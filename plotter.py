@@ -1,4 +1,5 @@
 import os
+from cycler import cycler
 
 from matplotlib import pyplot as plt, cm as cm
 import matplotlib.colors as mcolors
@@ -292,7 +293,7 @@ def aggregate_prcc(prcc_mtx, cm, age_vector, agg_type='simple'):
         agg_prcc = np.sum(prcc_mtx * cm_total, axis=1) / np.sum(cm_total, axis=1)
     elif agg_type == 'relcmother':
         agg_prcc = np.sum((prcc_mtx * cm_total) / (np.sum(cm, axis=1)).T, axis=1)
-    else:  # if agg_type == 'rel_cm_mixed':
+    else:  # if agg_type == 'relcmmixed':
         agg_prcc = np.sum(prcc_mtx * cm, axis=1) / np.sum(cm, axis=0)
     return agg_prcc.flatten()
 
@@ -424,6 +425,7 @@ def generate_stacked_plots():
 
 def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
+    plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
     # for comp in compartments:
     for idx, cm in enumerate(cm_list):
         solution = obj.model.get_solution(t=time, parameters=params, cm=cm)
@@ -434,7 +436,9 @@ def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
     plt.legend()
     plt.gca().set_xlabel('days')
     plt.gca().set_ylabel('ICU usage')
-    plt.gcf().set_size_inches(6, 6)
+    # plt.gca().set_xlim([50, 150])  # zoom on peaks
+    # plt.gca().set_ylim([12500, 18750])
+    plt.gcf().set_size_inches(10, 10)
     plt.tight_layout()
     plt.savefig('./sens_data/dinamics/solution_ic' + "_" + title_part + '.pdf', format="pdf")
     plt.close()
@@ -442,6 +446,7 @@ def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
 
 def plot_solution_inc(obj, time, params, cm_list, legend_list, title_part):
     os.makedirs("./sens_data/dinamics", exist_ok=True)
+    plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
     # for comp in compartments:
     for legend, cm in zip(legend_list, cm_list):
         solution = obj.model.get_solution(t=time, parameters=params, cm=cm)
@@ -453,7 +458,9 @@ def plot_solution_inc(obj, time, params, cm_list, legend_list, title_part):
     plt.legend()
     plt.gca().set_xlabel('days')
     plt.gca().set_ylabel('Incidence')
-    plt.gcf().set_size_inches(6, 6)
+    # plt.gca().set_xlim([50, 150])  # zoom on peaks
+    # plt.gca().set_ylim([125000, 175000])
+    plt.gcf().set_size_inches(10, 10)
     plt.tight_layout()
     plt.savefig('./sens_data/dinamics/solution_inc' + "_" + title_part + '.pdf', format="pdf")
     plt.close()

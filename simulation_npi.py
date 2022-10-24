@@ -25,8 +25,8 @@ class SimulationNPI:
 
     def run(self):
         is_lhs_generated = False
-        is_prcc_plots_generated = True
-        is_analysis_run = False
+        is_prcc_plots_generated = False
+        is_analysis_run = True
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
