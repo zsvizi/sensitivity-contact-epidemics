@@ -136,7 +136,7 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     plt.figure(figsize=(35, 10))
     plt.tick_params(direction="in")
     plt.bar(xp, list(prcc_vector), align='center', color=cmap(prcc_vector))
-    plt.xticks(ticks=xp, labels=param_list, rotation=90)
+    # plt.xticks(ticks=xp, labels=param_list, rotation=90)
     # plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
     axes = plt.gca()
     # axes.set_ylim([0, 1])
@@ -227,6 +227,10 @@ def generate_prcc_plots(sim_obj):
                 title_list = filename_without_ext.split("_")
 
                 prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
+
+                prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
+
                 for num, agg_type in enumerate(agg_methods):
                     prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
                     plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
@@ -268,6 +272,8 @@ def generate_prcc_plots(sim_obj):
             elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
                 title_list = filename_without_ext.split("_")
                 prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
+                p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
+                prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
                 for num, agg_type in enumerate(agg_methods):
                     prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
                     plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
