@@ -22,14 +22,14 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, cm_diff=None):
+    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None):
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]
 
         upper_bound = self.lhs_boundaries[self.type]["upper"]
 
-        # if kappa is not None:
-        #     upper_bound = 1 - kappa / cm_diff
+        if kappa is not None:
+            upper_bound *= kappa
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
