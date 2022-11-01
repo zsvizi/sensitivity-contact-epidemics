@@ -37,11 +37,24 @@ class NPISampler(SamplerBase):
              }
 
     def run(self):
+        # check if r0_lhs contains < 1
+        print("computing kappa for base_r0=" + str(self.base_r0))
+        r0_lhs_home = self._get_output(cm_sim=self.sim_obj.contact_home)
+        kappa = None
+        if r0_lhs_home[1] < 1:
+            kappas = np.linspace(0, 1, 10_0)
+            r0_home_kappas = np.array(list(map(self.kappify, kappas)))
+            k = np.argmax(r0_home_kappas > 1)
+            kappa = kappas[k]
+            print(kappa)
+            cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
+            cm_diff = cm_diff[np.triu_indices(self.sim_obj.no_ag)]
+
         # Get LHS table
         if self.type in ["lockdown_3"]:
-            lhs_table = self._get_lhs_table(number_of_samples=120000)
+            lhs_table = self._get_lhs_table(number_of_samples=120_000)
         else:
-            lhs_table = self._get_lhs_table()
+            lhs_table = self._get_lhs_table(number_of_samples=10_0, kappa=kappa, cm_diff=cm_diff)
         sleep(0.3)
 
         # Select getter for simulation output
@@ -58,6 +71,11 @@ class NPISampler(SamplerBase):
         results = list(tqdm(map(get_sim_output, lhs_table), total=lhs_table.shape[0]))
         results = np.array(results)
 
+        # check if all r0s are > 1
+        res_min = results[:, 137].min()
+        if res_min < 1:
+            print("minimal lhs_r0: " + str(res_min))
+
         # Sort tables by R0 values
         r0_col_idx = int(self.upper_tri_size + 1)
         sorted_idx = results[:, r0_col_idx].argsort()
@@ -66,9 +84,25 @@ class NPISampler(SamplerBase):
         sim_output = np.array(results)
         sleep(0.3)
 
+        icu_maxes = list(tqdm(map(self.gen_icu_max, lhs_table), total=lhs_table.shape[0]))
+        sim_output[:, 136] = icu_maxes
+
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+
+    def gen_icu_max(self, line):
+        time = np.arange(0, 1000, 0.5)
+        cm = get_rectangular_matrix_from_upper_triu(line, self.sim_obj.no_ag)
+        solution = self.sim_obj.model.get_solution(t=time, parameters=self.sim_obj.params, cm=cm)
+        icu_max = solution[:, self.sim_obj.model.c_idx["ic"] *
+                              self.sim_obj.no_ag:(self.sim_obj.model.c_idx["ic"] + 1) * self.sim_obj.no_ag].max()
+        return icu_max
+
+    def kappify(self, kappa):
+        cm_sim = self.sim_obj.contact_home + kappa
+        r0_lhs_home_k = self._get_output(cm_sim=cm_sim)
+        return r0_lhs_home_k[1]
 
     def _get_variable_parameters(self):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type]

@@ -15,18 +15,19 @@ class SimulationNPI:
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.1, 1.35, 1.6, 2.5]
+        self.r0_choices = [1.2, 1.8, 2.5]
 
         # Define initial configs
         self._get_initial_config()
 
         # For contact matrix sampling: ["lockdown", "mitigation", "lockdown_3"]
-        self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
+        # self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
+        self.mtx_types = ["lockdown"]
 
     def run(self):
         is_lhs_generated = False
-        is_prcc_plots_generated = True
-        is_analysis_run = False
+        is_prcc_plots_generated = False
+        is_analysis_run = True
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
@@ -49,6 +50,7 @@ class SimulationNPI:
                         cm_generator.run()
 
                 if is_analysis_run:
+                    print(susc, base_r0)
                     analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0)
                     analysis.run()
 

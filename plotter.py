@@ -229,7 +229,7 @@ def generate_prcc_plots(sim_obj):
                 prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
                 p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
 
-                prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
+                # prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
 
                 for num, agg_type in enumerate(agg_methods):
                     prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
@@ -285,6 +285,7 @@ def generate_prcc_plots(sim_obj):
 
 def aggregate_prcc(prcc_mtx, cm, age_vector, agg_type='simple'):
     cm_total = cm * age_vector
+    # print(np.sum(cm_total, axis=1) / np.sum(cm_total))
     if agg_type == 'simple':
         agg_prcc = np.sum(prcc_mtx, axis=1)
     elif agg_type == 'relN':

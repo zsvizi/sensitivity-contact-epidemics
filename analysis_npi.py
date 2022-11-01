@@ -25,18 +25,18 @@ class AnalysisNPI:
         # self.get_reduced_contact(cm_list, legend_list, 5, "other", 0.5)
         # self.get_reduced_contact(cm_list, legend_list, 6, "other", 0.5)
 
-        t = np.arange(0, 500, 0.5)
+        t = np.arange(0, 1000, 0.5)
 
-        if self.base_r0 == 2.5 and self.susc == 1:
+        #if self.base_r0 == 2.5 and self.susc == 1:
             # R0 = 1.35, Susc = 1, Target: R0
-            plot_solution_inc(self.sim, t, self.sim.params,
-                              cm_list, legend_list,
-                              "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
+        plot_solution_inc(self.sim, t, self.sim.params,
+                          cm_list, legend_list,
+                          "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
 
-            # R0 = 1.35, Susc = 1, Target: ICU
-            plot_solution_ic(self.sim, t, self.sim.params,
-                             cm_list, legend_list,
-                             "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
+        # R0 = 1.35, Susc = 1, Target: ICU
+        plot_solution_ic(self.sim, t, self.sim.params,
+                         cm_list, legend_list,
+                         "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
 
             # # R0 = 1.35, Susc = 1, Target: R0
             # plot_solution_inc(self.sim, t, self.sim.params,
