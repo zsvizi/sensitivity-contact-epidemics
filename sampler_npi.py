@@ -37,7 +37,7 @@ class NPISampler(SamplerBase):
              }
 
     def run(self):
-        maxiter = 10_000
+        maxiter = 10_0
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
         r0_lhs_home = self._get_output(cm_sim=self.sim_obj.contact_home)
@@ -55,7 +55,7 @@ class NPISampler(SamplerBase):
         if self.type in ["lockdown_3"]:
             lhs_table = self._get_lhs_table(number_of_samples=120_000)
         else:
-            lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, cm_diff=cm_diff)
+            lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, cm_diff=cm_diff, sim_obj=self.sim_obj)
         sleep(0.3)
 
         # Select getter for simulation output
@@ -85,8 +85,8 @@ class NPISampler(SamplerBase):
         sim_output = np.array(results)
         sleep(0.3)
 
-        # icu_maxes = list(tqdm(map(self.gen_icu_max, lhs_table), total=lhs_table.shape[0]))
-        # sim_output[:, 136] = icu_maxes
+        icu_maxes = list(tqdm(map(self.gen_icu_max, lhs_table), total=lhs_table.shape[0]))
+        sim_output[:, 136] = icu_maxes
 
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')

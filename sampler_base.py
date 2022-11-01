@@ -22,7 +22,7 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, cm_diff=None):
+    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, cm_diff=None, sim_obj=None):  # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]
 
@@ -30,6 +30,13 @@ class SamplerBase(ABC):
 
         # if kappa is not None:
         #     upper_bound = 1 - kappa / cm_diff
+
+        if sim_obj is not None:
+            p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
+            a = np.zeroes((16, 16))
+            for i in range(16):
+                for j in range(16):
+                    a[i, j] = p_icr[i] * p_icr[j] / np.sum(p_icr) ** 2
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
