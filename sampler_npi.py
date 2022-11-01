@@ -48,14 +48,12 @@ class NPISampler(SamplerBase):
             k = np.argmax(r0_home_kappas > 1)
             kappa = kappas[k]
             print(kappa)
-            cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
-            cm_diff = cm_diff[np.triu_indices(self.sim_obj.no_ag)]
 
         # Get LHS table
         if self.type in ["lockdown_3"]:
             lhs_table = self._get_lhs_table(number_of_samples=120_000)
         else:
-            lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, cm_diff=cm_diff, sim_obj=self.sim_obj)
+            lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, sim_obj=self.sim_obj)
         sleep(0.3)
 
         # Select getter for simulation output
@@ -101,7 +99,8 @@ class NPISampler(SamplerBase):
         return icu_max
 
     def kappify(self, kappa):
-        cm_sim = self.sim_obj.contact_home + kappa
+        cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
+        cm_sim = self.sim_obj.contact_home + kappa * cm_diff
         r0_lhs_home_k = self._get_output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 

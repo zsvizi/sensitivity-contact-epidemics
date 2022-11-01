@@ -25,9 +25,9 @@ class SimulationNPI:
         self.mtx_types = ["lockdown"]
 
     def run(self):
-        is_lhs_generated = False
+        is_lhs_generated = True
         is_prcc_plots_generated = False
-        is_analysis_run = True
+        is_analysis_run = False
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
