@@ -136,7 +136,7 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
     plt.figure(figsize=(35, 10))
     plt.tick_params(direction="in")
     plt.bar(xp, list(prcc_vector), align='center', color=cmap(prcc_vector))
-    # plt.xticks(ticks=xp, labels=param_list, rotation=90)
+    plt.xticks(ticks=xp, labels=param_list, rotation=90)
     # plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
     axes = plt.gca()
     # axes.set_ylim([0, 1])
@@ -151,19 +151,19 @@ def plot_prcc_values(param_list, prcc_vector, filename_without_ext, filename_to_
 def generate_prcc_plots(sim_obj):
     n_ag = sim_obj.no_ag
     upp_tri_size = int((n_ag + 1) * n_ag / 2)
-    sim_folder = "simulations_after_redei"
+    sim_folder = "simulations"
     lhs_folder = "lhs"
     cm_total_full = sim_obj.contact_matrix * sim_obj.age_vector
 
     agg_methods = [
         "simple",  # 0
-        "relN",  # 2 = be-fok
-        "relNother",  # 1 = ki-fok
-        "simplecm",  # 7
-        "simplecmother",  # 6
-        "relcm",  # 4
-        "relcmother",  # 5
-        "relcmmixed"  # 3
+        # "relN",  # 2 = be-fok
+        # "relNother",  # 1 = ki-fok
+        # "simplecm",  # 7
+        # "simplecmother",  # 6
+        # "relcm",  # 4
+        # "relcmother",  # 5
+        # "relcmmixed"  # 3
     ]
 
     for root, dirs, files in os.walk("./sens_data/" + sim_folder):
@@ -230,6 +230,12 @@ def generate_prcc_plots(sim_obj):
                 p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
 
                 # prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
+                plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
+                labels = list(map(lambda x: str(x[0])+","+str(x[1]), np.array(np.triu_indices(16)).T))
+                plot_prcc_values(labels, prcc_list,
+                                 filename_without_ext, "PRCC_bars_" + filename_without_ext + "_R0_" ,
+                                 plot_title)
+                # continue
 
                 for num, agg_type in enumerate(agg_methods):
                     prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
@@ -273,7 +279,7 @@ def generate_prcc_plots(sim_obj):
                 title_list = filename_without_ext.split("_")
                 prcc_mtx = prcc.get_rectangular_matrix_from_upper_triu(prcc_list[:upp_tri_size], n_ag)
                 p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
-                prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
+                # prcc_mtx = prcc_mtx * np.array([p_icr]).T  # scaling values with the irc probabilities
                 for num, agg_type in enumerate(agg_methods):
                     prcc_list = aggregate_prcc(prcc_mtx, sim_obj.contact_matrix, sim_obj.age_vector, agg_type)
                     plot_title = 'Target: ICU, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
@@ -366,6 +372,7 @@ def plot_2d_contact_matrices():
     data = DataLoader()
     age_distribution = data.age_data.reshape((-1, 1))
     colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
+    cmaps = {"home": "Oranges", "work": "Reds", "school": "Greens", "other": "Blues", "total": "Purples"}
     contact_total = np.array([data.contact_data[t] for t in list(colors.keys())[:-1]]).sum(axis=0)
     for t in colors.keys():
         contact_small = data.contact_data[t] if t != "total" else contact_total
@@ -375,8 +382,7 @@ def plot_2d_contact_matrices():
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.title('Symmetric ' + t + ' contact matrix of Hungary', y=1.03, fontsize=25)
-        plt.imshow(corr, cmap=mcolors.LinearSegmentedColormap.from_list("", ["white",
-                                                                             colors[t]]),
+        plt.imshow(corr, cmap=cmaps[t],
                    origin='lower')
         plt.colorbar(pad=0.02, fraction=0.04)
         plt.grid(b=None)
@@ -443,8 +449,8 @@ def plot_solution_ic(obj, time, params, cm_list, legend_list, title_part):
     plt.legend()
     plt.gca().set_xlabel('days')
     plt.gca().set_ylabel('ICU usage')
-    # plt.gca().set_xlim([50, 150])  # zoom on peaks
-    # plt.gca().set_ylim([12500, 18750])
+    # plt.gca().set_xlim([400, 600])  # zoom on peaks
+    # plt.gca().set_ylim([800, 1200])
     plt.gcf().set_size_inches(10, 10)
     plt.tight_layout()
     plt.savefig('./sens_data/dinamics/solution_ic' + "_" + title_part + '.pdf', format="pdf")
@@ -465,8 +471,8 @@ def plot_solution_inc(obj, time, params, cm_list, legend_list, title_part):
     plt.legend()
     plt.gca().set_xlabel('days')
     plt.gca().set_ylabel('Incidence')
-    # plt.gca().set_xlim([50, 150])  # zoom on peaks
-    # plt.gca().set_ylim([125000, 175000])
+    # plt.gca().set_xlim([300, 600])  # zoom on peaks
+    # plt.gca().set_ylim([7000, 10000])
     plt.gcf().set_size_inches(10, 10)
     plt.tight_layout()
     plt.savefig('./sens_data/dinamics/solution_inc' + "_" + title_part + '.pdf', format="pdf")

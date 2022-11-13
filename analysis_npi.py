@@ -4,11 +4,12 @@ from plotter import plot_solution_inc, plot_solution_ic
 
 
 class AnalysisNPI:
-    def __init__(self, sim, susc, base_r0, mtx_type=None):
+    def __init__(self, sim, susc, base_r0, mtx_type=None, kappa=None):
         self.sim = sim
         self.susc = susc
         self.base_r0 = base_r0
         self.mtx_type = mtx_type
+        self.kappa = kappa
 
     def run(self):
         cm_list = []
@@ -16,7 +17,13 @@ class AnalysisNPI:
 
         self.get_full_cm(cm_list, legend_list)
         for i in range(16):
-            self.get_reduced_contact(cm_list, legend_list, i, None, 0.5)
+            self.get_reduced_contact(cm_list, legend_list, i, None, max(0.5, self.kappa))
+
+        # for i in [[6, 7], [7, 8], [6, 8], [7, 7], [5, 6]]:
+        #     self.get_reduced_contact_one_element(cm_list, legend_list, i, max(0.5, self.kappa))
+
+        # for i in [[6, 6], [6, 7], [6, 8], [6, 9], [6, 10]]:
+        #     self.get_reduced_contact_one_element(cm_list, legend_list, i, max(0.5, self.kappa))
 
         # self.get_reduced_contact(cm_list, legend_list, 8, "work", 0.5)
         # self.get_reduced_contact(cm_list, legend_list, 7, "other", 0.5)
@@ -25,18 +32,18 @@ class AnalysisNPI:
         # self.get_reduced_contact(cm_list, legend_list, 5, "other", 0.5)
         # self.get_reduced_contact(cm_list, legend_list, 6, "other", 0.5)
 
-        t = np.arange(0, 1000, 0.5)
+        t = np.arange(0, 350, 0.5)
 
         #if self.base_r0 == 2.5 and self.susc == 1:
             # R0 = 1.35, Susc = 1, Target: R0
         plot_solution_inc(self.sim, t, self.sim.params,
                           cm_list, legend_list,
-                          "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
+                          "_R0target_reduce_".join([str(self.susc), str(self.base_r0)]))
 
         # R0 = 1.35, Susc = 1, Target: ICU
         plot_solution_ic(self.sim, t, self.sim.params,
                          cm_list, legend_list,
-                         "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
+                         "_ICUtarget_reduce_".join([str(self.susc), str(self.base_r0)]))
 
             # # R0 = 1.35, Susc = 1, Target: R0
             # plot_solution_inc(self.sim, t, self.sim.params,
@@ -54,11 +61,19 @@ class AnalysisNPI:
         legend_list.append("Total contact")
 
     def get_reduced_contact(self, cm_list, legend_list, age_group, contact_type, ratio):
+        # if contact_type is None:
+        #     full_contact_matrix = np.copy(self.sim.contact_matrix)
+        #     full_contact_matrix[age_group, :] *= ratio
+        #     full_contact_matrix[:, age_group] *= ratio
+        #     full_contact_matrix[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
         if contact_type is None:
-            full_contact_matrix = np.copy(self.sim.contact_matrix)
-            full_contact_matrix[age_group, :] *= ratio
-            full_contact_matrix[:, age_group] *= ratio
-            full_contact_matrix[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
+            contact_matrix_spec = np.copy(self.sim.contact_matrix) - np.copy(self.sim.data.contact_data["home"])
+
+            contact_matrix_spec[age_group, :] *= ratio
+            contact_matrix_spec[:, age_group] *= ratio
+            contact_matrix_spec[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
+
+            full_contact_matrix = self.sim.data.contact_data["home"] + contact_matrix_spec
 
         else:
             contact_matrix_spec = np.copy(self.sim.data.contact_data[contact_type])
@@ -70,8 +85,15 @@ class AnalysisNPI:
             full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
 
         cm_list.append(full_contact_matrix)
-        legend_list.append("{r}% {c_type} reduction of a.g. {ag}".format(r=int((1-ratio)*100),
-                                                                         c_type=contact_type, ag=age_group))
+        legend_list.append("{r}% reduction of a.g. {ag}".format(r=int((1-ratio)*100), ag=age_group))
+
+    def get_reduced_contact_one_element(self, cm_list, legend_list, element, ratio):
+        contact_matrix_spec = np.copy(self.sim.contact_matrix) - np.copy(self.sim.data.contact_data["home"])
+        contact_matrix_spec[element[0], element[1]] *= ratio
+        full_contact_matrix = self. sim.data.contact_data["home"] + contact_matrix_spec
+
+        cm_list.append(full_contact_matrix)
+        legend_list.append("{r}% reduction of element {ag}".format(r=int((1 - ratio) * 100), ag=element))
 
     def get_fix_reduced_contact(self, cm_list, legend_list, age_group, contact_type):
         cm_spec_total = np.copy(self.sim.data.contact_data[contact_type]) * self.sim.age_vector

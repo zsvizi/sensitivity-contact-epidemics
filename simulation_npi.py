@@ -25,12 +25,13 @@ class SimulationNPI:
         self.mtx_types = ["lockdown"]
 
     def run(self):
-        is_lhs_generated = True
-        is_prcc_plots_generated = False
+        is_lhs_generated = False
+        is_prcc_plots_generated = True
         is_analysis_run = False
 
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
+        i = 0
         for susc in self.susc_choices:
             susceptibility[:4] = susc
             self.params.update({"susc": susceptibility})
@@ -50,9 +51,12 @@ class SimulationNPI:
                         cm_generator.run()
 
                 if is_analysis_run:
+                    kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
+                              0.7817781778177818, 0.41324132413241327, 0.20032003200320034]
                     print(susc, base_r0)
-                    analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0)
+                    analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0, kappa=kappas[i])
                     analysis.run()
+                    i += 1
 
         if is_prcc_plots_generated:
             generate_prcc_plots(sim_obj=self)

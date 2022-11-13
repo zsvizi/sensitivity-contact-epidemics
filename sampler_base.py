@@ -29,14 +29,18 @@ class SamplerBase(ABC):
         upper_bound = self.lhs_boundaries[self.type]["upper"]
 
         if kappa is not None:
-            upper_bound *= kappa
+            upper_bound *= (1-kappa)
 
         if sim_obj is not None:
             p_icr = (1 - sim_obj.params['p']) * sim_obj.params['h'] * sim_obj.params['xi']
-            a = np.zeroes((16, 16))
+            a = np.zeros((16, 16))
             for i in range(16):
                 for j in range(16):
                     a[i, j] = p_icr[i] * p_icr[j] / np.sum(p_icr) ** 2
+
+            # eta = kappa + a[np.triu_indices(16)] / a.max() * (1 - kappa)
+            # lower_bound += (1 - eta)
+
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
