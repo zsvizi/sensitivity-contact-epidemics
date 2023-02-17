@@ -3,15 +3,16 @@ import numpy as np
 from analysis_npi import AnalysisNPI
 from dataloader import DataLoader
 from model import RostModelHungary
-from plotter import generate_prcc_plots
 from r0 import R0Generator
 from sampler_npi import NPISampler
+from PRCC_calculation import PRCCalculator
 
 
 class SimulationNPI:
-    def __init__(self):
+    def __init__(self, sim_state):
         # Load data
         self.data = DataLoader()
+        self.sim_state = sim_state
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
@@ -24,11 +25,7 @@ class SimulationNPI:
         # self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
         self.mtx_types = ["lockdown"]
 
-    def run(self):
-        is_lhs_generated = False
-        is_prcc_plots_generated = True
-        is_analysis_run = False
-
+    def generate_lhs(self):
         # 1. Update params by susceptibility vector
         susceptibility = np.ones(self.no_ag)
         i = 0
@@ -46,20 +43,32 @@ class SimulationNPI:
                 for mtx_type in self.mtx_types:
                     sim_state = {"base_r0": base_r0, "beta": beta, "type": mtx_type, "susc": susc,
                                  "r0generator": r0generator}
-                    if is_lhs_generated:
-                        cm_generator = NPISampler(sim_state=sim_state, sim_obj=self)
-                        cm_generator.run()
+                    self.sim_state = sim_state
 
-                if is_analysis_run:
-                    kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
-                              0.7817781778177818, 0.41324132413241327, 0.20032003200320034]
-                    print(susc, base_r0)
-                    analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0, kappa=kappas[i])
-                    analysis.run()
-                    i += 1
+                    cm_generator = NPISampler(sim_state=sim_state, sim_obj=self, cm_entries=self.contact_matrix,
+                                              entries_lockdown=self.contact_matrix,
+                                              entries_lockdown3=self.contact_matrix,
+                                              get_output=self.contact_matrix)
+                    cm_generator.run()
 
-        if is_prcc_plots_generated:
-            generate_prcc_plots(sim_obj=self)
+    def get_analysis_results(self):
+        i = 0
+        for susc in self.susc_choices:
+            for base_r0 in self.r0_choices:
+                kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
+                          0.7817781778177818, 0.41324132413241327, 0.20032003200320034]
+                print(susc, base_r0)
+                analysis = AnalysisNPI(sim=self, susc=susc, base_r0=base_r0, kappa=kappas[i])
+                analysis.run()
+                i += 1
+
+    def prcc_plots_generation(self):
+        susceptibility = np.ones(self.no_ag)
+        for susc in self.susc_choices:
+            susceptibility[:4] = susc
+            for base_r0 in self.r0_choices:
+                print(base_r0)
+                PRCCalculator.calculate_prcc_values(self.contact_matrix)
 
     def _get_initial_config(self):
         self.no_ag = self.data.contact_data["home"].shape[0]

@@ -1,6 +1,6 @@
 import numpy as np
 
-from plotter import plot_solution_inc, plot_solution_ic
+from plotter import Plotter
 
 
 class AnalysisNPI:
@@ -36,14 +36,12 @@ class AnalysisNPI:
 
         #if self.base_r0 == 2.5 and self.susc == 1:
             # R0 = 1.35, Susc = 1, Target: R0
-        plot_solution_inc(self.sim, t, self.sim.params,
-                          cm_list, legend_list,
-                          "_R0target_reduce_".join([str(self.susc), str(self.base_r0)]))
+        Plotter.plot_solution_inc(self.sim, t, self.sim.params, cm_list, legend_list,
+                                  "_R0target_reduce_".join([str(self.susc), str(self.base_r0)]))
 
         # R0 = 1.35, Susc = 1, Target: ICU
-        plot_solution_ic(self.sim, t, self.sim.params,
-                         cm_list, legend_list,
-                         "_ICUtarget_reduce_".join([str(self.susc), str(self.base_r0)]))
+        Plotter.plot_solution_ic(self.sim, t, self.sim.params, cm_list, legend_list,
+                                 "_ICUtarget_reduce_".join([str(self.susc), str(self.base_r0)]))
 
             # # R0 = 1.35, Susc = 1, Target: R0
             # plot_solution_inc(self.sim, t, self.sim.params,
