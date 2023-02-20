@@ -1,5 +1,4 @@
-from simulation_npi import SimulationNPI
-from plotter import Plotter
+from src.simulation_npi import SimulationNPI
 
 
 def main():
