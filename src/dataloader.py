@@ -57,5 +57,5 @@ class DataLoader:
         # Get symmetrized matrix
         output = (matrix_1 + matrix_1.T) / 2
         # Get contact matrix
-        output /= age_distribution
+        output /= age_distribution   # divides and assign the result to output
         return output

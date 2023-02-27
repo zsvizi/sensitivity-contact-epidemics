@@ -1,10 +1,10 @@
 import numpy as np
 
-from plotter import Plotter
+from src.plotter import Plotter
 
 
 class AnalysisNPI:
-    def __init__(self, sim, susc, base_r0, mtx_type=None, kappa=None):
+    def __init__(self, sim, susc, base_r0, mtx_type=None, kappa=None) -> None:
         self.sim = sim
         self.susc = susc
         self.base_r0 = base_r0
@@ -19,23 +19,8 @@ class AnalysisNPI:
         for i in range(16):
             self.get_reduced_contact(cm_list, legend_list, i, None, max(0.5, self.kappa))
 
-        # for i in [[6, 7], [7, 8], [6, 8], [7, 7], [5, 6]]:
-        #     self.get_reduced_contact_one_element(cm_list, legend_list, i, max(0.5, self.kappa))
-
-        # for i in [[6, 6], [6, 7], [6, 8], [6, 9], [6, 10]]:
-        #     self.get_reduced_contact_one_element(cm_list, legend_list, i, max(0.5, self.kappa))
-
-        # self.get_reduced_contact(cm_list, legend_list, 8, "work", 0.5)
-        # self.get_reduced_contact(cm_list, legend_list, 7, "other", 0.5)
-        # self.get_reduced_contact(cm_list, legend_list, 6, "work", 0.5)
-        # self.get_reduced_contact(cm_list, legend_list, 5, "work", 0.5)
-        # self.get_reduced_contact(cm_list, legend_list, 5, "other", 0.5)
-        # self.get_reduced_contact(cm_list, legend_list, 6, "other", 0.5)
-
         t = np.arange(0, 350, 0.5)
 
-        #if self.base_r0 == 2.5 and self.susc == 1:
-            # R0 = 1.35, Susc = 1, Target: R0
         Plotter.plot_solution_inc(self.sim, t, self.sim.params, cm_list, legend_list,
                                   "_R0target_reduce_".join([str(self.susc), str(self.base_r0)]))
 
@@ -43,27 +28,12 @@ class AnalysisNPI:
         Plotter.plot_solution_ic(self.sim, t, self.sim.params, cm_list, legend_list,
                                  "_ICUtarget_reduce_".join([str(self.susc), str(self.base_r0)]))
 
-            # # R0 = 1.35, Susc = 1, Target: R0
-            # plot_solution_inc(self.sim, t, self.sim.params,
-            #                   [cm_list[0], cm_list[8:]], [legend_list[0], legend_list[8:]],
-            #                   "_R0target_half_".join([str(self.susc), str(self.base_r0)]))
-            #
-            # # R0 = 1.35, Susc = 1, Target: ICU
-            # plot_solution_ic(self.sim, t, self.sim.params,
-            #                  [cm_list[0], cm_list[8:]], [legend_list[0], legend_list[8:]],
-            #                  "_ICUtarget_half_".join([str(self.susc), str(self.base_r0)]))
-
     def get_full_cm(self, cm_list, legend_list):
         cm = self.sim.contact_matrix
         cm_list.append(cm)
         legend_list.append("Total contact")
 
     def get_reduced_contact(self, cm_list, legend_list, age_group, contact_type, ratio):
-        # if contact_type is None:
-        #     full_contact_matrix = np.copy(self.sim.contact_matrix)
-        #     full_contact_matrix[age_group, :] *= ratio
-        #     full_contact_matrix[:, age_group] *= ratio
-        #     full_contact_matrix[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
         if contact_type is None:
             contact_matrix_spec = np.copy(self.sim.contact_matrix) - np.copy(self.sim.data.contact_data["home"])
 

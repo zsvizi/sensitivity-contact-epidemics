@@ -1,14 +1,17 @@
 from src.simulation_npi import SimulationNPI
+from src.data_transformer import Transformer
 
 
 def main():
-    #Plotter.plot_2d_contact_matrices()
-    simulation = SimulationNPI()
-    simulation.run()
+
+    data = Transformer()
+
+    simulation = SimulationNPI(sim_state=data.sim_state, sim_obj=data.sim_obj)
+    simulation.generate_lhs()
+    simulation.prcc_plots_generation()
+    simulation.get_analysis_results()
 
 
 if __name__ == '__main__':
 
     main()
-    # generate_stacked_plots()
-    # plot_contact_matrix_as_grouped_bars()

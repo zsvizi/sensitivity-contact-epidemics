@@ -6,7 +6,7 @@ from smt.sampling_methods import LHS
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, sim_obj):
+    def __init__(self, sim_state: dict, sim_obj) -> None:
         self.sim_obj = sim_obj
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
@@ -22,7 +22,8 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, sim_obj=None):  # only computes lhs for icu with a_ij
+    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, sim_obj=None):
+        # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]
 
@@ -37,10 +38,6 @@ class SamplerBase(ABC):
             for i in range(16):
                 for j in range(16):
                     a[i, j] = p_icr[i] * p_icr[j] / np.sum(p_icr) ** 2
-
-            # eta = kappa + a[np.triu_indices(16)] / a.max() * (1 - kappa)
-            # lower_bound += (1 - eta)
-
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
@@ -61,7 +58,7 @@ class SamplerBase(ABC):
         np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
 
 
-def create_latin_table(n_of_samples, lower, upper):
+def create_latin_table(n_of_samples, lower, upper) -> np.ndarray:
     bounds = np.array([lower, upper]).T
     sampling = LHS(xlimits=bounds)
     return sampling(n_of_samples)

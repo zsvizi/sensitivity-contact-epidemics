@@ -6,18 +6,19 @@ import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 
-from dataloader import DataLoader
+from src.dataloader import DataLoader
 
 plt.style.use('seaborn-whitegrid')
 
 
 class Plotter:
-    def __init__(self, sim_obj, PRCC_calculation):
+    def __init__(self, sim_obj, prcc_calculation) -> None:
         self.data = DataLoader()
         self.sim_obj = sim_obj
-        self.prcc_data = PRCC_calculation
+        self.prcc_data = prcc_calculation
 
-    def generate_axis_label(self):
+    @ staticmethod
+    def generate_axis_label():
         # Define parameters for analysis
         # Define parameters for analysis
         ccc, xxx, vesz, alul, bal, jobb = [np.chararray((1, 16, 16))[0], np.chararray((1, 16, 16))[0],
@@ -27,16 +28,12 @@ class Plotter:
         r = np.arange(16)
         vvv = np.repeat(np.reshape(r, (-1, 1)), 16, axis=1).astype(str)
         names = ccc.astype(str) + xxx.astype(str) + alul.astype(str) + bal.astype(str) + vvv + \
-                vesz.astype(str) + vvv.T + jobb.astype(str) + ccc.astype(str)
+            vesz.astype(str) + vvv.T + jobb.astype(str) + ccc.astype(str)
         return names
 
-    def plot_prcc_values_as_heatmap(self, prcc_vector, filename_without_ext, filename):
-        """
-        Plots a given PRCC result as a heatmap
-        :param filename: name of the saved file
-        :param prcc_vector: list of PRCC values
-        :return: None
-        """
+    @staticmethod
+    def plot_prcc_values_as_heatmap(prcc_vector, filename_without_ext, filename):
+
         os.makedirs("sens_data/PRCC_bars", exist_ok=True)
         number_of_age_groups = 16
         upper_tri_indexes = np.triu_indices(number_of_age_groups)
@@ -70,32 +67,27 @@ class Plotter:
         plt.close()
 
     def generate_prcc_plots(self, filename_without_ext):
-        sim_folder, lhs_folder = ["simulations", "lhs"]
         title_list = filename_without_ext.split("_")
         plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
         self.plot_prcc_values_lockdown_3(self.prcc_data.prcc_list, "PRCC_bars_" + filename_without_ext +
                                          "_R0", plot_title)
 
-        plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
+        # plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
         labels = list(map(lambda x: str(x[0]) + "," + str(x[1]), np.array(np.triu_indices(16)).T))
         self.plot_prcc_values(labels, self.prcc_data.prcc_list, filename_without_ext, "PRCC_bars_" +
-                              filename_without_ext + "_R0_", plot_title)
+                              filename_without_ext + "_R0_")
         agg_methods = ["simple", ]
         # continue
         for num, agg_type in enumerate(agg_methods):
-            prcc_list = self.aggregate_prcc(self.prcc_data.prcc_mtx, self.sim_obj.contact_matrix)
-            plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
-                         ', Aggregation: ' + agg_type
+            # prcc_list = self.aggregate_prcc(self.prcc_data.prcc_mtx, self.sim_obj.contact_matrix)
+            # plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3] + \
+            #           ', Aggregation: ' + agg_type
             self.plot_prcc_values(np.arange(16), self.prcc_data.prcc_list, filename_without_ext,
-                                  "PRCC_bars_" + filename_without_ext + "_R0_" + agg_type, plot_title)
+                                  "PRCC_bars_" + filename_without_ext + "_R0_" + agg_type)
 
-    def plot_prcc_values_lockdown_3(self, prcc_vector, filename_to_save, plot_title):
-        """
-        Plots a given PRCC result
-        :param filename_to_save: name of the output file
-        :param prcc_vector: list of PRCC values
-        :return: None
-        """
+    @staticmethod
+    def plot_prcc_values_lockdown_3(prcc_vector, filename_to_save, plot_title):
+
         os.makedirs("sens_data/PRCC_bars", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -125,15 +117,8 @@ class Plotter:
         plt.savefig('./sens_data/PRCC_bars/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
 
-    def plot_prcc_values(self, param_list, prcc_vector, filename_without_ext, filename_to_save, plot_title):
-        """
-        Plots a given PRCC result
-        :param filename_to_save: name of the output file
-        :param filename_without_ext: name to identify the saved file
-        :param param_list: list of parameter names
-        :param prcc_vector: list of PRCC values
-        :return: None
-        """
+    @staticmethod
+    def plot_prcc_values(param_list, prcc_vector, filename_to_save, plot_title):
         os.makedirs("sens_data/PRCC_bars", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -147,11 +132,11 @@ class Plotter:
         plt.bar(xp, list(prcc_vector), align='center', color=cmap(prcc_vector))
         plt.xticks(ticks=xp, labels=param_list, rotation=90)
         # plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
-        axes = plt.gca()
+        # axes = plt.gca()
         # axes.set_ylim([0, 1])
         plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
         plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
-        title_list = filename_without_ext.split("_")
+        # title_list = filename_without_ext.split("_")
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.savefig('./sens_data/PRCC_bars/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
@@ -178,14 +163,8 @@ class Plotter:
             agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm, axis=1) / np.sum(cm, axis=0)
         return agg_prcc.flatten()
 
-    def plot_symm_contact_matrix_as_bars(self, param_list, contact_vector, file_name):
-        """
-        Plots a given contact matrix like as barplot
-        :param param_list: list of names for the corresponding contacts
-        :param contact_vector: list of contact numbers
-        :param file_name: filename to save the figure
-        :return: None
-        """
+    @staticmethod
+    def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
         ymax = max(contact_vector)
         color_map = cm.get_cmap('Blues')
         my_norm = mcolors.Normalize(vmin=-ymax / 5, vmax=ymax)
@@ -206,7 +185,8 @@ class Plotter:
         plt.savefig("./sens_data/" + file_name + ".pdf", format="pdf", bbox_inches='tight')
         plt.close()
 
-    def plot_stacked(self, list_of_flattened_matrices, param_list, labels, color_list, title=None, filename=None):
+    @staticmethod
+    def plot_stacked(list_of_flattened_matrices, param_list, labels, color_list, title=None, filename=None):
         ymax = max(np.array(list_of_flattened_matrices).sum(axis=0))
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -231,9 +211,7 @@ class Plotter:
         plt.close()
 
     def plot_2d_contact_matrices(self):
-        """
-        Plots the contact matrices of the given country as a heatmap with different colors
-        """
+
         colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
         cmaps = {"home": "Oranges", "work": "Reds", "school": "Greens", "other": "Blues", "total": "Purples"}
         contact_total = np.array([self.data.contact_data[t] for t in list(colors.keys())[:-1]]).sum(axis=0)
@@ -295,7 +273,7 @@ class Plotter:
                           filename="TNH_contacts")
 
     def plot_solution_ic(self, time, params, cm_list, legend_list, title_part):
-        os.makedirs("./sens_data/dinamics", exist_ok=True)
+        os.makedirs("../sens_data/dinamics", exist_ok=True)
         plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
         # for comp in compartments:
         for idx, cm in enumerate(cm_list):
@@ -315,7 +293,7 @@ class Plotter:
         plt.close()
 
     def plot_solution_inc(self, time, params, cm_list, legend_list, title_part):
-        os.makedirs("./sens_data/dinamics", exist_ok=True)
+        os.makedirs("../sens_data/dinamics", exist_ok=True)
         plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
         # for comp in compartments:
         for legend, cm in zip(legend_list, cm_list):
@@ -335,8 +313,9 @@ class Plotter:
         plt.savefig('./sens_data/dinamics/solution_inc' + "_" + title_part + '.pdf', format="pdf")
         plt.close()
 
-    def plot_different_susc(self, file_list, c_list, l_list, title):
-        os.makedirs("./sens_data/dinamics", exist_ok=True)
+    @staticmethod
+    def plot_different_susc(file_list, c_list, l_list, title):
+        os.makedirs("../sens_data/dinamics", exist_ok=True)
         for idx, f in enumerate(file_list):
             sol = np.loadtxt('./sens_data/dinamics/' + f)
             plt.plot(np.arange(len(sol)) / 2, sol, c_list[idx], label=l_list[idx])
@@ -348,7 +327,7 @@ class Plotter:
         plt.close()
 
     def plot_contact_matrix_as_grouped_bars(self):
-        os.makedirs("./sens_data", exist_ok=True)
+        os.makedirs("../sens_data", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
@@ -398,7 +377,6 @@ class Plotter:
         plt.title("Contacts from original CMs", y=1.03, fontsize=25)
         plt.savefig('./sens_data/CM_prem_groupped.pdf', format="pdf", bbox_inches='tight')
         plt.close()
-
 
 
 

@@ -1,12 +1,10 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
-from scipy.integrate import odeint
-from model_base import EpidemicModelBase
+
+from src.model_base import EpidemicModelBase
 
 
 class RostModelHungary(EpidemicModelBase):
-    def __init__(self, model_data):
+    def __init__(self, model_data) -> None:
         compartments = ["s", "l1", "l2",
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
@@ -23,7 +21,7 @@ class RostModelHungary(EpidemicModelBase):
             "s": self.population - (iv["c"] + iv["l1"] + iv["l2"])
         })
 
-    def get_model(self, xs, _, ps, cm):
+    def get_model(self, xs, _, ps, cm) -> np.ndarray:
         # the same order as in self.compartments!
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, self.n_age)
 
@@ -58,11 +56,11 @@ class RostModelHungary(EpidemicModelBase):
 
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_hospitalized(self, solution):
+    def get_hospitalized(self, solution) -> np.ndarray:
         idx = self.c_idx["ih"]
         idx_2 = self.c_idx["icr"]
         return self.aggregate_by_age(solution, idx) + self.aggregate_by_age(solution, idx_2)
 
-    def get_ventilated(self, solution):
+    def get_ventilated(self, solution) -> np.ndarray:
         idx = self.c_idx["ic"]
         return self.aggregate_by_age(solution, idx)
