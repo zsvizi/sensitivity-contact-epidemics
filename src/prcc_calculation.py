@@ -4,20 +4,20 @@ from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 
 
 class PRCCalculator:
-    def __init__(self, model, age_vector, params, n_ag):
-        self.model = model
+    def __init__(self, n_ag, age_vector, params):
+
+        self.n_ag = n_ag
         self.age_vector = age_vector
         self.params = params
-        self.n_ag = n_ag
-
-        self.prcc_values = dict()
 
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
+
+        self.prcc_values = dict()
+        self.prcc_mtx = []
 
         self.calculate_prcc_values()
 
     def calculate_prcc_values(self):
-
         sim_folder, lhs_folder = ["simulations", "lhs"]
 
         for root, dirs, files in os.walk("./sens_data/" + sim_folder):
@@ -54,10 +54,10 @@ class PRCCalculator:
                         get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size],
                                                                self.n_ag),
                         get_rectangular_matrix_from_upper_triu(
-                            prcc_list[self.upp_tri_size:2 * self.upp_tri_size], self.n_ag),
+                            prcc_list[self.upp_tri_size:2 * self.upp_tri_size],
+                            self.n_ag),
                         get_rectangular_matrix_from_upper_triu(prcc_list[2 * self.upp_tri_size:],
                                                                self.n_ag)]
-
                     agg_prcc_school, agg_prcc_work, agg_prcc_other = [
                         (np.sum(prcc_matrix_school * self.age_vector, axis=1) /
                          np.sum(self.age_vector)).flatten(),
@@ -80,8 +80,11 @@ class PRCCalculator:
                     )
 
                 elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
-                    prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
+                    prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size],
+                                                                      self.n_ag)
+                    self.prcc_mtx = prcc_mtx
                     p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
+                    print(p_icr)
 
                 # PRCC analysis for ICU maximum
                 simulation_2 = np.append(sim_data, saved_simulation[:, -self.n_ag - 2].reshape((-1, 1)),
@@ -121,7 +124,8 @@ class PRCCalculator:
                     )
 
                 elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
-                    prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
+                    prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size],
+                                                                      self.n_ag)
                     p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
                     # store prcc and aggregate values
                     self.prcc_values.update(

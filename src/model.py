@@ -12,7 +12,7 @@ class RostModelHungary(EpidemicModelBase):
                         "r", "d", "c"]
         super().__init__(model_data=model_data, compartments=compartments)
 
-    def update_initial_values(self, iv):
+    def update_initial_values(self, iv: dict):
         iv["l1"][2] = 1  # np.array([0, 0, 0, 4, 3, 3, 1, 2, 1, 2, 2, 2, 5, 5, 0, 0])
         iv.update({
             "c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] + iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
@@ -21,7 +21,7 @@ class RostModelHungary(EpidemicModelBase):
             "s": self.population - (iv["c"] + iv["l1"] + iv["l2"])
         })
 
-    def get_model(self, xs, _, ps, cm) -> np.ndarray:
+    def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c = xs.reshape(-1, self.n_age)
 
@@ -56,11 +56,11 @@ class RostModelHungary(EpidemicModelBase):
 
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_hospitalized(self, solution) -> np.ndarray:
+    def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:
         idx = self.c_idx["ih"]
         idx_2 = self.c_idx["icr"]
         return self.aggregate_by_age(solution, idx) + self.aggregate_by_age(solution, idx_2)
 
-    def get_ventilated(self, solution) -> np.ndarray:
+    def get_ventilated(self, solution: np.ndarray) -> np.ndarray:
         idx = self.c_idx["ic"]
         return self.aggregate_by_age(solution, idx)

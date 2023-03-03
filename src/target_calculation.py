@@ -1,20 +1,19 @@
 import numpy as np
+from src.r0generator import R0Generator
+from src.data_transformer import Transformer
 
 
 class TargetCalculator:
-    def __init__(self, cm_sim, sim_state: dict, sim_obj) -> None:
-        self.cm_sim = cm_sim
+    def __init__(self, sim_obj: Transformer):
         self.sim_obj = sim_obj
-        self.base_r0 = sim_state["base_r0"]
-        self.beta = sim_state["beta"]
-        self.r0generator = sim_state["r0generator"]
-        self.get_output(cm_sim=cm_sim)
+        self.output = []
 
-    def get_output(self, cm_sim: np.ndarray):
-        beta_lhs = self.base_r0 / self.r0generator.get_eig_val(contact_mtx=cm_sim,
-                                                               susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                                                               population=self.sim_obj.population)[0]
-        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+    def _get_output(self, cm_sim: np.ndarray):
+        r0generator = R0Generator(param=self.sim_obj.params)
+        beta_lhs = self.sim_obj.base_r0 / r0generator.get_eig_val(
+            contact_mtx=cm_sim, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+            population=self.sim_obj.population)[0]
+        r0_lhs = (self.sim_obj.beta / beta_lhs) * self.sim_obj.base_r0
         output = np.array([0, r0_lhs])
-        output = np.append(output, np.zeros(self.sim_obj.no_ag))
+        output = np.append(output, np.zeros(self.sim_obj.n_ag))
         return output

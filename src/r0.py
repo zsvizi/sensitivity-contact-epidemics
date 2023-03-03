@@ -39,7 +39,7 @@ class R0GeneratorBase(ABC):
         return eig_val_eff
 
     @abstractmethod
-    def _get_e(self):
+    def _get_e(self) -> np.ndarray:
         pass
 
     @abstractmethod

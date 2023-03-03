@@ -8,27 +8,29 @@ from src.sampler_base import SamplerBase
 from src.CMCalculatorLockdown import Lockdown
 from src.CMCalculatorLockdownTypewise import Lockdown3
 from src.target_calculation import TargetCalculator
+from src.data_transformer import Transformer
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_state: dict, sim_obj, get_sim_output: np.ndarray, get_output: TargetCalculator,
-                 mtx_type: str = "lockdown") -> None:
-        super().__init__(sim_state, sim_obj)
+    def __init__(self, sim_state: dict, sim_obj: Transformer,
+                 result: str = "lockdown") -> None:
+        self.sim_state = sim_state
+        self.sim_obj = sim_obj
+        if result == "lockdown":
+            result = Lockdown(sim_obj=self.sim_obj)
+            print(result)
+        elif result == "lockdown3":
+            result = Lockdown3(sim_obj=self.sim_obj)
+            self.result = result.output
+
+        super().__init__(sim_state, sim_obj=sim_obj)
         self.susc = sim_state["susc"]
-        self.get_output = get_output
-        self.get_sim_output = get_sim_output
-        if mtx_type == "lockdown":
-            get_sim_output = Lockdown._get_sim_output_cm_entries_lockdown(self=sim_obj, lhs_sample=get_sim_output)
-            print(get_sim_output)
-        elif mtx_type == "lockdown3":
-            get_sim_output = Lockdown3._get_sim_output_cm_entries_lockdown_3(self=sim_obj, lhs_sample=get_sim_output)
-            print(get_sim_output)
+
+        self.sim_obj = Transformer()
 
         # Matrices of frequently used contact types
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
-        # Get number of elements in the upper triangular matrix
-        self.upper_tri_size = int((self.sim_obj.n_ag + 1) * self.sim_obj.n_ag / 2)
 
         # Local variable for calculating boundaries
         lower_bound_mitigation = \
@@ -39,15 +41,19 @@ class SamplerNPI(SamplerBase):
         self.lhs_boundaries = \
             {
                 # Contact matrix entry level approach, perturbation-like (old name: "normed")
-                "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_indexes],
-                               "upper": cm_total_symmetric[self.sim_obj.upper_tri_indexes]}
+                "mitigation": {"lower": lower_bound_mitigation[self.sim_obj.upper_tri_size],
+                               "upper": cm_total_symmetric[self.sim_obj.upper_tri_size]}
             }
 
     def run(self):
         maxiter = 120_000
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-        r0_lhs_home = TargetCalculator.get_output(self=self.sim_obj, cm_sim=self.sim_obj.contact_home)
+        # get output from target calculator
+        tar_out = TargetCalculator(sim_obj=self.sim_obj)
+        r0_lhs_home = tar_out.output(cm_sim=self.sim_obj.contact_home)
+
+        # r0_lhs_home = self._get_output(cm_sim=self.sim_obj.contact_home)
         kappa = None
         if r0_lhs_home[1] < 1:
             kappas = np.linspace(0, 1, 10_000)
@@ -57,10 +63,12 @@ class SamplerNPI(SamplerBase):
             print(kappa)
 
         # Get LHS table
+            # Get LHS table
         lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, sim_obj=self.sim_obj)
         sleep(0.3)
+
         # Select getter for simulation output
-        get_sim_output = self.get_sim_output
+        get_sim_output = self.result
 
         # Generate LHS output
         results = list(tqdm(map(get_sim_output, lhs_table), total=lhs_table.shape[0]))
@@ -72,15 +80,12 @@ class SamplerNPI(SamplerBase):
             print("minimal lhs_r0: " + str(res_min))
 
         # Sort tables by R0 values
-        r0_col_idx = int(self.upper_tri_size + 1)
+        r0_col_idx = int(self.sim_obj.upper_tri_size + 1)
         sorted_idx = results[:, r0_col_idx].argsort()
         results = results[sorted_idx]
         lhs_table = np.array(lhs_table[sorted_idx])
         sim_output = np.array(results)
         sleep(0.3)
-
-        # icu_maxes = list(tqdm(map(self.gen_icu_max, lhs_table), total=lhs_table.shape[0]))
-        # sim_output[:, 136] = icu_maxes
 
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
@@ -88,19 +93,22 @@ class SamplerNPI(SamplerBase):
 
     def gen_icu_max(self, line) -> np.ndarray:
         time = np.arange(0, 1000, 0.5)
-        cm = get_rectangular_matrix_from_upper_triu(line, self.sim_obj.no_ag)
+        cm = get_rectangular_matrix_from_upper_triu(line, self.sim_obj.n_ag)
         solution = self.sim_obj.model.get_solution(t=time, parameters=self.sim_obj.params, cm=cm)
-        icu_max = solution[:, self.sim_obj.model.c_idx["ic"] * self.sim_obj.no_ag:(self.sim_obj.model.c_idx["ic"] + 1) *
-                           self.sim_obj.no_ag].max()
+        icu_max = solution[:, self.sim_obj.model.c_idx["ic"] * self.sim_obj.n_ag:(self.sim_obj.model.c_idx["ic"] + 1) *
+                           self.sim_obj.n_ag].max()
         return icu_max
 
     def kappify(self, kappa) -> float:
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
-        r0_lhs_home_k = TargetCalculator.get_output(self=self.sim_obj, cm_sim=cm_sim)
+
+        # get output from target calculator
+        tar_out = TargetCalculator(sim_obj=self.sim_obj)
+        r0_lhs_home_k = tar_out.output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 
-    def _get_variable_parameters(self) -> list:
+    def _get_variable_parameters(self):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type]
 
     def _get_upper_bound_factor_unit(self) -> np.ndarray:

@@ -9,8 +9,10 @@ class Transformer:
     def __init__(self):
         self.data = DataLoader()
 
-        self.sim_state = dict()
-        self.sim_obj = dict()
+        self.base_r0 = float()
+        self.beta = float()
+
+        self.sim_state_data = dict()
 
         self.n_ag = self.data.contact_data["home"].shape[0]
         self.model = RostModelHungary(model_data=self.data)
@@ -21,12 +23,14 @@ class Transformer:
         self.upper_tri_indexes = np.triu_indices(self.n_ag)
         # 0. Get base parameter dictionary
         self.params = self.data.model_parameters_data
+        self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
+
         self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
             self.data.contact_data["school"] + self.data.contact_data["other"]
         self.contact_home = self.data.contact_data["home"]
 
-        self.prcc_values = PRCCalculator(age_vector=self.age_vector, params=self.params, n_ag=self.n_ag,
-                                         model=self.model)
+        prcc_values = PRCCalculator(n_ag=self.n_ag, age_vector=self.age_vector, params=self.params)
+        print(prcc_values)
 
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
@@ -35,17 +39,6 @@ class Transformer:
         self.get_data_sensitivity()
 
     def get_data_sensitivity(self):
-        self.sim_obj.update({
-            "no_age": self.n_ag,
-            "model": self.model,
-            "population": self.population,
-            "age_vector": self.age_vector,
-            "contact_matrix": self.contact_matrix,
-            "contact_home": self.contact_home,
-            "susceptibles": self.susceptibles,
-            "upper_tri_indexes": self.upper_tri_indexes,
-            "params": self.params
-         })
 
         susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
@@ -60,8 +53,7 @@ class Transformer:
                 self.params.update({"beta": beta})
                 # 3. Choose matrix type
                 for mtx_type in self.mtx_types:
-                    self.sim_state.update({"base_r0": base_r0,
-                                           "beta": beta,
-                                           "type": mtx_type,
-                                           "susc": susc,
-                                           "r0generator": r0generator})
+                    self.sim_state_data.update({"base_r0": base_r0, "beta": beta, "type": mtx_type,
+                                                "susc": susc, "r0generator": r0generator})
+                    self.beta = beta
+                    self.base_r0 = base_r0
