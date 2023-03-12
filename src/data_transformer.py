@@ -30,11 +30,11 @@ class Transformer:
         self.contact_home = self.data.contact_data["home"]
 
         prcc_values = PRCCalculator(n_ag=self.n_ag, age_vector=self.age_vector, params=self.params)
-        print(prcc_values)
 
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
         self.mtx_types = ["lockdown", "lockdown3", "mitigation"]
+        self.kappas = []
 
         self.get_data_sensitivity()
 
@@ -50,6 +50,10 @@ class Transformer:
                 beta = base_r0 / r0generator.get_eig_val(contact_mtx=self.contact_matrix,
                                                          susceptibles=self.susceptibles.reshape(1, -1),
                                                          population=self.population)[0]
+                kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
+                          0.7817781778177818, 0.41324132413241327, 0.20032003200320034]
+                self.kappas = kappas
+
                 self.params.update({"beta": beta})
                 # 3. Choose matrix type
                 for mtx_type in self.mtx_types:

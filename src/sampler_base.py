@@ -15,6 +15,7 @@ class SamplerBase(ABC):
 
         self.r0generator = sim_state["r0generator"]
         self.lhs_boundaries = None
+        self._get_lhs_table()
 
     @abstractmethod
     def run(self):
@@ -46,6 +47,7 @@ class SamplerBase(ABC):
                                        upper=upper_bound)
         print("Simulation for", number_of_samples,
               "samples (", "-".join(self._get_variable_parameters()), ")")
+        self.lhs_sample = lhs_table
         return lhs_table
 
     def _save_output(self, output, folder_name):

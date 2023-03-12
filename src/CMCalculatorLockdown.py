@@ -6,11 +6,12 @@ from src.data_transformer import Transformer
 
 
 class Lockdown:
-    def __init__(self, sim_obj: Transformer) -> None:
+    def __init__(self, sim_obj: Transformer, lhs_sample: np.ndarray) -> None:
         self.sim_obj = sim_obj
+        self.lhs_sample = lhs_sample
         self.output = []
 
-        self.sim_obj = Transformer()
+        self._get_sim_output_cm_entries_lockdown(lhs_sample=lhs_sample)
 
         self.lhs_boundaries = \
             {  # Contact matrix entry level approach, full scale approach (old name: "home")
@@ -26,9 +27,9 @@ class Lockdown:
         cm_sim = (1 - ratio_matrix) * (self.sim_obj.contact_matrix - self.sim_obj.contact_home)   # first condition
         cm_sim += self.sim_obj.contact_home
         # Get output from target calculator
-        tar = TargetCalculator(sim_obj=self.sim_obj)
+        tar = TargetCalculator(sim_obj=self.sim_obj, cm_sim=cm_sim)
         output = tar.output
         cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
         output = np.append(cm_total_sim, output)
-        print(output)
+        self.output = output
         return list(output)

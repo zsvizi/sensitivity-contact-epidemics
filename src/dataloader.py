@@ -51,11 +51,12 @@ class DataLoader:
 
     def transform_matrix(self, matrix: np.ndarray):
         # Get age vector as a column vector
-        age_distribution = self.age_data.reshape((-1, 1))
+        age_distribution = self.age_data.reshape((-1, 1))   # (16, 1)
         # Get matrix of total number of contacts
-        matrix_1 = matrix * age_distribution
+        matrix_1 = matrix * age_distribution        # (16, 16)
         # Get symmetrized matrix
         output = (matrix_1 + matrix_1.T) / 2
         # Get contact matrix
-        output /= age_distribution   # divides and assign the result to output
+        output /= age_distribution   # divides and assign the result to output    (16, 16)
         return output
+

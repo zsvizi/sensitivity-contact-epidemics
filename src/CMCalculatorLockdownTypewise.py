@@ -5,9 +5,11 @@ from src.data_transformer import Transformer
 
 
 class Lockdown3:
-    def __init__(self, sim_obj: Transformer) -> None:
+    def __init__(self, sim_obj: Transformer, lhs_sample: np.ndarray) -> None:
         self.sim_obj = sim_obj
         self.output = []
+
+        self._get_sim_output_cm_entries_lockdown_3(lhs_sample=lhs_sample)
 
         self.lhs_boundaries = \
             {
@@ -33,8 +35,9 @@ class Lockdown3:
         # Get full contact matrix
         cm_sim = self.sim_obj.contact_home + cm_sim_school + cm_sim_work + cm_sim_other
         # Get output from target calculator
-        targ = TargetCalculator(sim_obj=self.sim_obj)
+        targ = TargetCalculator(sim_obj=self.sim_obj, cm_sim=cm_sim)
         output = targ.output
         cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
         output = np.append(cm_total_sim, output)
+        self.output = output
         return list(output)

@@ -1,4 +1,6 @@
 import numpy as np
+from numpy import ndarray
+from scipy.stats import beta
 
 
 def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
@@ -22,7 +24,7 @@ def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
     return np.sum(cm_total, axis=1)
 
 
-def get_prcc_values(lhs_output_table) -> np.ndarray:
+def get_prcc_values(lhs_output_table) -> ndarray:
     """
     Creates the PRCC values of last column of an ndarray depending on the columns before.
     :param lhs_output_table: ndarray
@@ -36,10 +38,14 @@ def get_prcc_values(lhs_output_table) -> np.ndarray:
         corr_mtx_inverse = np.linalg.inv(corr_mtx)
 
     parameter_count = lhs_output_table.shape[1] - 1
-
     prcc_vector = np.zeros(parameter_count)
     for w in range(parameter_count):  # compute PRCC btwn each param & sim result
         prcc_vector[w] = -corr_mtx_inverse[w, parameter_count] / \
                          np.sqrt(corr_mtx_inverse[w, w] *
                                  corr_mtx_inverse[parameter_count, parameter_count])
+
+        # p-values using beta function. Size (136)
+        dist = beta(parameter_count / 2 - 1, parameter_count / 2 - 1, loc=-1, scale=2)
+        p_value = 2 * dist.cdf(-abs(prcc_vector))
+
     return prcc_vector

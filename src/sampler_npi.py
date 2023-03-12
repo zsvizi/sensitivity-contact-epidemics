@@ -16,17 +16,16 @@ class SamplerNPI(SamplerBase):
                  result: str = "lockdown") -> None:
         self.sim_state = sim_state
         self.sim_obj = sim_obj
+        self.lhs_sample = np.array([])
         if result == "lockdown":
-            result = Lockdown(sim_obj=self.sim_obj)
+            result = Lockdown(sim_obj=self.sim_obj, lhs_sample=self.lhs_sample)
             print(result)
         elif result == "lockdown3":
-            result = Lockdown3(sim_obj=self.sim_obj)
+            result = Lockdown3(sim_obj=self.sim_obj, lhs_sample=self.lhs_sample)
             self.result = result.output
 
         super().__init__(sim_state, sim_obj=sim_obj)
         self.susc = sim_state["susc"]
-
-        self.sim_obj = Transformer()
 
         # Matrices of frequently used contact types
         self.contact_home = self.sim_obj.contact_home
@@ -50,7 +49,10 @@ class SamplerNPI(SamplerBase):
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
         # get output from target calculator
-        tar_out = TargetCalculator(sim_obj=self.sim_obj)
+        cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
+        cm_sim = self.sim_obj.contact_home + self.sim_obj.kappas * cm_diff
+
+        tar_out = TargetCalculator(sim_obj=self.sim_obj, cm_sim=cm_sim)
         r0_lhs_home = tar_out.output(cm_sim=self.sim_obj.contact_home)
 
         # r0_lhs_home = self._get_output(cm_sim=self.sim_obj.contact_home)
@@ -104,7 +106,7 @@ class SamplerNPI(SamplerBase):
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
         # get output from target calculator
-        tar_out = TargetCalculator(sim_obj=self.sim_obj)
+        tar_out = TargetCalculator(sim_obj=self.sim_obj, cm_sim=cm_sim)
         r0_lhs_home_k = tar_out.output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 

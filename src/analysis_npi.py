@@ -50,7 +50,8 @@ class AnalysisNPI:
             contact_matrix_spec[:, age_group] *= ratio
             contact_matrix_spec[age_group, age_group] *= (1/ratio if ratio > 0.0 else 0.0)
 
-            full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + contact_matrix_spec
+            full_contact_matrix = self.sim.contact_matrix - self.sim.data.contact_data[contact_type] + \
+                contact_matrix_spec
 
         cm_list.append(full_contact_matrix)
         legend_list.append("{r}% reduction of a.g. {ag}".format(r=int((1-ratio)*100), ag=age_group))

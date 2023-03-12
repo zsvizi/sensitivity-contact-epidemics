@@ -17,6 +17,8 @@ class SimulationNPI:
         self.r0_choices = [1.2, 1.8, 2.5]
 
         self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
+        self.generate_lhs()
+        self.prcc_plots_generation()
 
     def generate_lhs(self):
         # 1. Update params by susceptibility vector
@@ -52,7 +54,7 @@ class SimulationNPI:
                 i += 1
 
     def prcc_plots_generation(self):
-        susceptibility = np.ones(16)
+        susceptibility = np.ones(self.sim_obj.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
             for base_r0 in self.r0_choices:
