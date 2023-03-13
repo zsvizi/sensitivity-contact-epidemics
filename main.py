@@ -6,7 +6,7 @@ def main():
 
     data_tr = DataTransformer()
     simulation = SimulationNPI(data_tr=data_tr, sim_state=data_tr.sim_state_data)
-    simulation.prcc_plots_generation()
+    simulation.generate_prcc_values()
 
 
 if __name__ == '__main__':

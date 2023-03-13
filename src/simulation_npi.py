@@ -40,7 +40,7 @@ class SimulationNPI:
                     cm_generator = SamplerNPI(sim_state=sim_state, data_tr=self.data_tr)
                     cm_generator.run()
 
-    def prcc_plots_generation(self):
+    def generate_prcc_values(self):
         susceptibility = np.ones(self.data_tr.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
