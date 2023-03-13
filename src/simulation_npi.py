@@ -16,7 +16,7 @@ class SimulationNPI:
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
 
-        self.mtx_types = ["lockdown", "mitigation", "lockdown_3"]
+        self.mtx_types = ["lockdown", "lockdown_3"]
 
     def generate_lhs(self):
         # 1. Update params by susceptibility vector
