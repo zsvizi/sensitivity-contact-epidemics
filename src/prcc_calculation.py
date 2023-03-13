@@ -1,11 +1,12 @@
 import os
 import numpy as np
 import scipy.stats as ss
+
 from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 
 
-class PRCCalculator:
-    def __init__(self, n_ag, age_vector, params):
+class PRCCCalculator:
+    def __init__(self, n_ag: int, age_vector: np.ndarray, params: dict):
 
         self.n_ag = n_ag
         self.age_vector = age_vector
@@ -24,8 +25,6 @@ class PRCCalculator:
 
         # aggregated values using p-values
         self.prcc_p_values = dict()
-
-        self.calculate_prcc_values()
 
     def calculate_prcc_values(self):
         sim_folder, lhs_folder = ["simulations", 'lhs']

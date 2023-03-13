@@ -59,4 +59,3 @@ class DataLoader:
         # Get contact matrix
         output /= age_distribution   # divides and assign the result to output    (16, 16)
         return output
-

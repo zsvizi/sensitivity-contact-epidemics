@@ -1,11 +1,11 @@
 import numpy as np
-from src.prcc_calculation import PRCCalculator
+
 from src.dataloader import DataLoader
 from src.model import RostModelHungary
-from src.r0generator import R0Generator
+from src.r0_generator import R0Generator
 
 
-class Transformer:
+class DataTransformer:
     def __init__(self):
         self.data = DataLoader()
 
@@ -28,8 +28,6 @@ class Transformer:
         self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
             self.data.contact_data["school"] + self.data.contact_data["other"]
         self.contact_home = self.data.contact_data["home"]
-
-        prcc_values = PRCCalculator(n_ag=self.n_ag, age_vector=self.age_vector, params=self.params)
 
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]

@@ -1,23 +1,24 @@
 import os
 from cycler import cycler
 
-from matplotlib import pyplot as plt, cm as cm
+import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from src.dataloader import DataLoader
-from src.prcc_calculation import PRCCalculator
-from src.data_transformer import Transformer
+from src.prcc_calculation import PRCCCalculator
+from src.data_transformer import DataTransformer
 
 
 plt.style.use('seaborn-whitegrid')
 
 
 class Plotter:
-    def __init__(self, sim_obj: Transformer, prcc_data: PRCCalculator) -> None:
+    def __init__(self, data_tr: DataTransformer, prcc_data: PRCCCalculator) -> None:
         self.data = DataLoader()
-        self.sim_obj = sim_obj
+        self.data_tr = data_tr
         self.prcc_data = prcc_data
 
         self.prcc_vector = None
@@ -31,6 +32,8 @@ class Plotter:
         self.names = ccc.astype(str) + xxx.astype(str) + alul.astype(str) + bal.astype(str) + vvv + \
             vesz.astype(str) + vvv.T + jobb.astype(str) + ccc.astype(str)
 
+        self.c_matrices = None
+
     def plot_prcc_values_as_heatmap(self, filename):
         filename_without_ext = os.path.splitext(filename)[0]
 
@@ -40,7 +43,7 @@ class Plotter:
         plt.margins(0, tight=False)
         cmap = mcolors.LinearSegmentedColormap.from_list("", [mcolors.CSS4_COLORS["lightgrey"],
                                                               mcolors.CSS4_COLORS["crimson"]])
-        param_list = range(0, self.sim_obj.n_ag, 1)
+        param_list = range(0, self.data_tr.n_ag, 1)
         corr = pd.DataFrame(self.prcc_vector, columns=param_list, index=param_list)
         plt.figure(figsize=(12, 12))
         plt.rc('text', usetex=True)
@@ -51,8 +54,8 @@ class Plotter:
         plt.imshow(corr, cmap=cmap, origin='lower')
         plt.colorbar(pad=0.02, fraction=0.04)
         plt.grid(b=None)
-        plt.gca().set_xticks(np.arange(0.5, self.sim_obj.n_ag, 1), minor=True)
-        plt.gca().set_yticks(np.arange(0.5, self.sim_obj.n_ag, 1), minor=True)
+        plt.gca().set_xticks(np.arange(0.5, self.data_tr.n_ag, 1), minor=True)
+        plt.gca().set_yticks(np.arange(0.5, self.data_tr.n_ag, 1), minor=True)
         plt.gca().grid(which='minor', color='w', linestyle='-', linewidth=2)
         plt.xticks(ticks=param_list, labels=param_list)
         plt.yticks(ticks=param_list, labels=param_list)
@@ -132,14 +135,14 @@ class Plotter:
         plt.close()
 
     def aggregate_prcc(self, cm, agg_type='simple'):
-        cm_total = cm * self.sim_obj.age_vector
+        cm_total = cm * self.data_tr.age_vector
         if agg_type == 'simple':
             agg_prcc = np.sum(self.prcc_data.prcc_mtx, axis=1)
         elif agg_type == 'relN':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * self.sim_obj.age_vector, axis=1) / \
-                       np.sum(self.sim_obj.age_vector)
+            agg_prcc = np.sum(self.prcc_data.prcc_mtx * self.data_tr.age_vector, axis=1) / \
+                       np.sum(self.data_tr.age_vector)
         elif agg_type == 'relNother':
-            agg_prcc = (self.prcc_data.prcc_mtx @ self.sim_obj.age_vector) / np.sum(self.sim_obj.age_vector)
+            agg_prcc = (self.prcc_data.prcc_mtx @ self.data_tr.age_vector) / np.sum(self.data_tr.age_vector)
         elif agg_type == ' simplecm':
             agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm, axis=1)
         elif agg_type == 'simplecmother':
@@ -155,7 +158,7 @@ class Plotter:
     @staticmethod
     def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
         ymax = max(contact_vector)
-        color_map = cm.get_cmap('Blues')
+        color_map = mcm.get_cmap('Blues')
         my_norm = mcolors.Normalize(vmin=-ymax / 5, vmax=ymax)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -229,9 +232,9 @@ class Plotter:
     def generate_stacked_plots(self):
         # contact_matrix = self.data.contact_data["work"] + self.data.contact_data["home"] + \
         #                  data.contact_data["other"] + data.contact_data["school"]
-        symm_cm_total = self.data.contact_data * self.sim_obj.age_vector
-        self.plot_symm_contact_matrix_as_bars(np.array(self.names[self.sim_obj.upper_tri_indexes]).flatten().tolist(),
-                                              symm_cm_total[self.sim_obj.upper_tri_indexes],
+        symm_cm_total = self.data.contact_data * self.data_tr.age_vector
+        self.plot_symm_contact_matrix_as_bars(np.array(self.names[self.data_tr.upper_tri_indexes]).flatten().tolist(),
+                                              symm_cm_total[self.data_tr.upper_tri_indexes],
                                               file_name="CM_symm_Hungary")
 
         # Plot stacked home-work-school-total
@@ -242,8 +245,8 @@ class Plotter:
             contact_matrix = self.data.contact_data[n]
             age_distribution = self.data.age_data.reshape((-1, 1))
             symm_cm = contact_matrix * age_distribution
-            c_matrices.append(symm_cm[self.sim_obj.upper_tri_indexes])
-        self.plot_stacked(c_matrices, np.array(self.names[self.sim_obj.upper_tri_indexes]).flatten().tolist(), c_names,
+            c_matrices.append(symm_cm[self.data_tr.upper_tri_indexes])
+        self.plot_stacked(c_matrices, np.array(self.names[self.data_tr.upper_tri_indexes]).flatten().tolist(), c_names,
                           color_list=color_list, title="Stacked version of different types of contacts",
                           filename="HWSO_contacts")
 
@@ -251,12 +254,12 @@ class Plotter:
         c_matrices = []
         c_names = ["home", "normed", "total"]
         color_list = ["#ff96da", "#ecff7f", "#56a8ff"]
-        symm_cm_1 = self.data.contact_data["home"] * self.sim_obj.age_vector
+        symm_cm_1 = self.data.contact_data["home"] * self.data_tr.age_vector
         symm_cm_2 = symm_cm_total - np.min(symm_cm_total - symm_cm_1)
-        c_matrices.append(symm_cm_1[self.sim_obj.upper_tri_indexes])
-        c_matrices.append(symm_cm_2[self.sim_obj.upper_tri_indexes] - symm_cm_1[self.sim_obj.upper_tri_indexes])
-        c_matrices.append(symm_cm_total[self.sim_obj.upper_tri_indexes] - symm_cm_2[self.sim_obj.upper_tri_indexes])
-        self.plot_stacked(c_matrices, np.array(self.names[self.sim_obj.upper_tri_indexes]).flatten().tolist(), c_names,
+        c_matrices.append(symm_cm_1[self.data_tr.upper_tri_indexes])
+        c_matrices.append(symm_cm_2[self.data_tr.upper_tri_indexes] - symm_cm_1[self.data_tr.upper_tri_indexes])
+        c_matrices.append(symm_cm_total[self.data_tr.upper_tri_indexes] - symm_cm_2[self.data_tr.upper_tri_indexes])
+        self.plot_stacked(c_matrices, np.array(self.names[self.data_tr.upper_tri_indexes]).flatten().tolist(), c_names,
                           color_list=color_list, title="Compound version of total, normed and home contacts",
                           filename="TNH_contacts")
         self.c_matrices = c_matrices
@@ -266,10 +269,10 @@ class Plotter:
         plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
         # for comp in compartments:
         for idx, cm in enumerate(cm_list):
-            solution = self.sim_obj.model.get_solution(t=time, parameters=params, cm=cm)
+            solution = self.data_tr.model.get_solution(t=time, parameters=params, cm=cm)
             plt.plot(time, np.sum(solution[:,
-                                  self.sim_obj.model.c_idx["ic"] *
-                                  self.sim_obj.n_ag:(self.sim_obj.model.c_idx["ic"] + 1) * self.sim_obj.n_ag],
+                                  self.data_tr.model.c_idx["ic"] *
+                                  self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) * self.data_tr.n_ag],
                                   axis=1), label=legend_list[idx])
         plt.legend()
         plt.gca().set_xlabel('days')
@@ -286,11 +289,11 @@ class Plotter:
         plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
         # for comp in compartments:
         for legend, cm in zip(legend_list, cm_list):
-            solution = self.sim_obj.model.get_solution(t=time, parameters=params, cm=cm)
+            solution = self.data_tr.model.get_solution(t=time, parameters=params, cm=cm)
             plt.plot(time[:-1],
                      np.diff(np.sum(solution[:,
-                                    self.sim_obj.model.c_idx["c"] *
-                                    self.sim_obj.n_ag:(self.sim_obj.model.c_idx["c"] + 1) * self.sim_obj.n_ag],
+                                    self.data_tr.model.c_idx["c"] *
+                                    self.data_tr.n_ag:(self.data_tr.model.c_idx["c"] + 1) * self.data_tr.n_ag],
                                     axis=1)), label=legend)
         plt.legend()
         plt.gca().set_xlabel('days')
@@ -331,9 +334,9 @@ class Plotter:
 
         colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb", "other": "#ffbb96", "total": "blue"}
 
-        contact_school = np.sum(self.data.contact_data["school"] * self.sim_obj.age_vector, axis=1)
-        contact_work = np.sum(self.data.contact_data["work"] * self.sim_obj.age_vector, axis=1)
-        contact_other = np.sum(self.data.contact_data["other"] * self.sim_obj.age_vector, axis=1)
+        contact_school = np.sum(self.data.contact_data["school"] * self.data_tr.age_vector, axis=1)
+        contact_work = np.sum(self.data.contact_data["work"] * self.data_tr.age_vector, axis=1)
+        contact_other = np.sum(self.data.contact_data["other"] * self.data_tr.age_vector, axis=1)
         contacts_as_vector = np.array([contact_school, contact_work, contact_other]).flatten()
 
         plt.figure(figsize=(17, 10))
