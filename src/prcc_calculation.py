@@ -14,20 +14,30 @@ class PRCCCalculator:
 
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
 
+        self.sim_data = np.array([])
+
         self.prcc_values = dict()
         self.prcc_mtx = np.array([])
         self.p_icr = []
 
-        # p values
-        self.p_school = []
-        self.p_work = []
-        self.p_other = []
+        self.prcc_matrix_school = []  # 16 * 16
+        self.prcc_matrix_work = []
+        self.prcc_matrix_other = []
+
+        self.prcc_matrix_school_2 = []  # 16 * 16
+        self.prcc_matrix_work_2 = []
+        self.prcc_matrix_other_2 = []
 
         # aggregated values using p-values
         self.prcc_p_values = dict()
 
+        # p-values in the 3 settings
+        self.p_values = dict()  # 16 p-values corresponding to each age group
+
+        self.calculate_prcc_values()
+
     def calculate_prcc_values(self):
-        sim_folder, lhs_folder = ["simulations", 'lhs']
+        sim_folder, lhs_folder = ["simulations", "lhs"]
 
         for root, dirs, files in os.walk("./sens_data/" + sim_folder):
             for filename in files:
@@ -45,8 +55,8 @@ class PRCCCalculator:
                 elif "lockdown" in filename_without_ext:
                     sim_data = saved_lhs_values[:, :(self.n_ag * (self.n_ag + 1)) // 2]
                     sim_data = 1 - sim_data
-                elif "mitigation" in filename_without_ext:
-                    sim_data = saved_lhs_values[:, :(self.n_ag * (self.n_ag + 1)) // 2]
+                # elif "mitigation" in filename_without_ext:
+                #     sim_data = saved_lhs_values[:, :(self.n_ag * (self.n_ag + 1)) // 2]
                 else:
                     raise Exception('Matrix type is unknown!')
 
@@ -102,30 +112,11 @@ class PRCCCalculator:
                             "prcc_list": prcc_list
                         }
                     )
+                    self.prcc_matrix_school = prcc_matrix_school
+                    self.prcc_matrix_work = prcc_matrix_work
+                    self.prcc_matrix_other = prcc_matrix_other
 
-                    # Calculate the p-value using one sample t-test i.e. for a single contact matrix i.e. school.
-                    # Returns one p-value for each age group and each prcc value
-                    t_statistic_s, p_value_s = ss.ttest_1samp(prcc_matrix_school, popmean=0, axis=1)
-                    t_statistic_w, p_value_w = ss.ttest_1samp(prcc_matrix_work, popmean=0, axis=1)
-                    t_statistic_o, p_value_o = ss.ttest_1samp(prcc_matrix_other, popmean=0, axis=1)
-                    self.p_school = p_value_s
-                    self.p_work = p_value_w
-                    self.p_other = p_value_o
-
-                    # aggregate prcc values using the p-values
-                    p_agg_school, p_agg_work, p_agg_other = [
-                        np.sum(self.p_school * prcc_matrix_school, axis=1),
-                        np.sum(self.p_work * prcc_matrix_work, axis=1),
-                        np.sum(self.p_other * prcc_matrix_other, axis=1)]
-                    self.prcc_p_values.update(
-                        {
-                            "school": p_agg_school,
-                            "work": p_agg_work,
-                            "other": agg_prcc_other
-                        }
-                    )
-
-                elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
+                elif 'lockdown' in filename_without_ext:
                     prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
                     self.prcc_mtx = prcc_mtx
                     p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
@@ -165,21 +156,11 @@ class PRCCCalculator:
                             "prcc_list_2": prcc_list_2
                         }
                     )
+                    self.prcc_matrix_school_2 = prcc_matrix_school_2
+                    self.prcc_matrix_work_2 = prcc_matrix_work_2
+                    self.prcc_matrix_other_2 = prcc_matrix_other_2
 
-                    # aggregate using the p-values
-                    p_agg_school_2, p_agg_work_2, p_agg_other_2 = [
-                        np.sum(self.p_school * prcc_matrix_school_2, axis=1),
-                        np.sum(self.p_work * prcc_matrix_work_2, axis=1),
-                        np.sum(self.p_other * prcc_matrix_other_2, axis=1)]
-                    self.prcc_p_values.update(
-                        {
-                            "school_2": p_agg_school_2,
-                            "work_2": p_agg_work_2,
-                            "other_2": p_agg_other_2
-                        }
-                    )
-
-                elif 'lockdown' in filename_without_ext or 'mitigation' in filename_without_ext:
+                elif 'lockdown' in filename_without_ext:
                     prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size],
                                                                       self.n_ag)
                     p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
@@ -190,3 +171,57 @@ class PRCCCalculator:
                             "p_icr": p_icr
                         }
                     )
+
+    def calculate_p_values(self):
+        """
+        Calculate the p-value using one sample t-test i.e. for a single contact matrix i.e. school.
+        Return: one p-value for each age group and each prcc value
+        """
+        t_statistic_s, p_value_s = ss.ttest_1samp(self.prcc_matrix_school, popmean=0, axis=1)
+        t_statistic_w, p_value_w = ss.ttest_1samp(self.prcc_matrix_work, popmean=0, axis=1)
+        t_statistic_o, p_value_o = ss.ttest_1samp(self.prcc_matrix_other, popmean=0, axis=1)
+
+        # aggregate prcc values using the p-values
+        p_agg_school, p_agg_work, p_agg_other = [
+            np.sum(p_value_s * self.prcc_matrix_school, axis=1),
+            np.sum(p_value_w * self.prcc_matrix_work, axis=1),
+            np.sum(p_value_o * self.prcc_matrix_other, axis=1)]
+
+        self.prcc_p_values.update(
+             {
+                 "school": p_agg_school,
+                 "work": p_agg_work,
+                 "other": p_agg_other
+             }
+         )
+
+        # PRCC analysis for ICU maximum
+        s_statistic, p_s = ss.ttest_1samp(self.prcc_matrix_school_2, popmean=0, axis=1)
+        w_statistic, p_w = ss.ttest_1samp(self.prcc_matrix_work_2, popmean=0, axis=1)
+        o_statistic, p_o = ss.ttest_1samp(self.prcc_matrix_other_2, popmean=0, axis=1)
+
+        # aggregate prcc values using the p-values
+        p_agg_school_2, p_agg_work_2, p_agg_other_2 = [
+            np.sum(p_s * self.prcc_matrix_school_2, axis=1),
+            np.sum(p_w * self.prcc_matrix_work_2, axis=1),
+            np.sum(p_o * self.prcc_matrix_other_2, axis=1)]
+
+        self.prcc_p_values.update(
+            {
+                "school_2": p_agg_school_2,
+                "work_2": p_agg_work_2,
+                "other_2": p_agg_other_2
+            }
+        )
+
+        # get the p-values
+        self.p_values.update(
+            {
+                "school": p_value_s,
+                "work": p_value_w,
+                "other": p_value_o,
+                "school_2": p_s,
+                "work_2": p_w,
+                "other_2": p_o
+            }
+        )

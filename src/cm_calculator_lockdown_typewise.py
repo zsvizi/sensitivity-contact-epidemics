@@ -1,12 +1,12 @@
 import numpy as np
 
-from src.data_transformer import DataTransformer
+from src.simulation_base import SimulationBase
 from src.prcc import get_rectangular_matrix_from_upper_triu
 from src.target_calculation import TargetCalculator
 
 
 class CMCalculatorLockdownTypewise:
-    def __init__(self, data_tr: DataTransformer) -> None:
+    def __init__(self, data_tr: SimulationBase) -> None:
         self.data_tr = data_tr
         self.output = []
 
@@ -34,7 +34,7 @@ class CMCalculatorLockdownTypewise:
         # Get full contact matrix
         cm_sim = self.data_tr.contact_home + cm_sim_school + cm_sim_work + cm_sim_other
         # Get output from target calculator
-        targ = TargetCalculator(data_tr=self.data_tr, cm_sim=cm_sim)
+        targ = TargetCalculator(data_tr=self.data_tr)
         output = targ.output
         cm_total_sim = (cm_sim * self.data_tr.age_vector)[self.data_tr.upper_tri_indexes]
         output = np.append(cm_total_sim, output)
