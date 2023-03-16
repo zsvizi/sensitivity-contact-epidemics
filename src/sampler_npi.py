@@ -23,6 +23,8 @@ class SamplerNPI(SamplerBase):
         elif mtx_type == "lockdown_3":
             cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown_3
+        else:
+            raise Exception("Matrix type is unknown!")
 
         super().__init__(sim_state, data_tr=data_tr)
         self.susc = sim_state["susc"]
@@ -50,20 +52,20 @@ class SamplerNPI(SamplerBase):
             print("kappa", kappa)
 
             # Get LHS table
-            lhs_table = self._get_lhs_table(number_of_samples=120_000, kappa=kappa)
+            number_of_samples = 120_000
+            lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
+            # Results has shape of (number_of_samples, 136 + 1 + 1 + 16)
             results = list(tqdm(map(self.get_sim_output, lhs_table), total=lhs_table.shape[0]))
             results = np.array(results)
 
             # check if all r0s are > 1
-            # res_min = results[:, 137].min()
-            res_min = results[:, self.upper_tri_size - 1].min()
+            r0_col_idx = int(self.upper_tri_size - 1 + 2)
+            res_min = results[:, r0_col_idx].min()
             if res_min < 1:
                 print("minimal lhs_r0: " + str(res_min))
 
             # Sort tables by R0 values
-            r0_col_idx = int(self.data_tr.upper_tri_size - 1)
-            # r0_col_idx = int(self.upper_tri_size + 1)
             sorted_idx = results[:, r0_col_idx].argsort()
             results = results[sorted_idx]
             lhs_table = np.array(lhs_table[sorted_idx])
