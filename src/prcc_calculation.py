@@ -34,8 +34,6 @@ class PRCCCalculator:
         # p-values in the 3 settings
         self.p_values = dict()  # 16 p-values corresponding to each age group
 
-        self.calculate_prcc_values()
-
     def calculate_prcc_values(self):
         sim_folder, lhs_folder = ["simulations", "lhs"]
 
