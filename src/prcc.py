@@ -24,7 +24,7 @@ def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
     return np.sum(cm_total, axis=1)
 
 
-def get_prcc_values(lhs_output_table) -> ndarray:
+def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> ndarray:
     """
     Creates the PRCC values of last column of an ndarray depending on the columns before.
     :param lhs_output_table: ndarray
@@ -45,9 +45,9 @@ def get_prcc_values(lhs_output_table) -> ndarray:
                                  corr_mtx_inverse[parameter_count, parameter_count])
 
         # p-values Size (136) for lockdown and 408 for lockdown3  [formula based on Simeone Marino, Ian B. Hogue paper]
-        T = prcc_vector * np.sqrt((parameter_count - 2 - 16) / (1 - prcc_vector ** 2))
+        T = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
         # p-value for 2-sided test
-        dof = parameter_count - 2 - 16
+        dof = number_of_samples - 2 - parameter_count
         p_value = 2 * (1 - t.cdf(abs(T), dof))
 
     return prcc_vector

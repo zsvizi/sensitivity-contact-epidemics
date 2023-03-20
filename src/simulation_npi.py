@@ -41,7 +41,7 @@ class SimulationNPI(SimulationBase):
                     lhs_table, sim_output = cm_generator.run()
                     prcc_calculator = PRCCCalculator(age_vector=self.age_vector,
                                                      params=self.params, n_ag=self.n_ag, data_tr=self,
-                                                     sim_state=self.sim_state)
+                                                     sim_state=self.sim_state, number_of_samples=120000)
                     prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
                     prcc_calculator.aggregate_approach()
                     prcc_calculator.calculate_p_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)

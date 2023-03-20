@@ -6,11 +6,13 @@ from src.simulation_base import SimulationBase
 
 
 class PRCCCalculator:
-    def __init__(self, n_ag: int, age_vector: np.ndarray, params: dict, sim_state: dict, data_tr: SimulationBase):
+    def __init__(self, n_ag: int, age_vector: np.ndarray, params: dict, sim_state: dict, data_tr: SimulationBase,
+                 number_of_samples: int):
 
         self.n_ag = n_ag
         self.age_vector = age_vector
         self.params = params
+        self.number_of_samples = number_of_samples
 
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
         self.data_tr = data_tr
@@ -34,7 +36,7 @@ class PRCCCalculator:
         else:
             raise Exception('Matrix type is unknown!')
         simulation = np.append(sim_data, sim_output[:, -self.n_ag - 1].reshape((-1, 1)), axis=1)
-        prcc_list = get_prcc_values(simulation)
+        prcc_list = get_prcc_values(simulation, number_of_samples=self.number_of_samples)
         if "lockdown_3" == mtx_typ:
             prcc_matrix_school = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
             prcc_matrix_work = get_rectangular_matrix_from_upper_triu(prcc_list[self.upp_tri_size:2 * self.upp_tri_size], self.n_ag)
@@ -65,13 +67,15 @@ class PRCCCalculator:
 
     def calculate_p_values(self,  mtx_typ, lhs_table: np.ndarray, sim_output: np.ndarray):
         prcc_list = self.calculate_prcc_values(lhs_table=lhs_table, sim_output=sim_output, mtx_typ=mtx_typ)
-        T = prcc_list * np.sqrt((self.upp_tri_size - 2 - 16) / (1 - prcc_list ** 2))
+        T = prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - prcc_list ** 2))
         # p-value for 2-sided test
-        dof = self.upp_tri_size - 2 - 16
+        dof = self.number_of_samples - 2 - self.upp_tri_size
         p_value = 2 * (1 - ss.t.cdf(abs(T), dof))
         p_value_school = p_value[:self.upp_tri_size]
         p_value_work = p_value[self.upp_tri_size: 2 * self.upp_tri_size]
         p_value_other = p_value[2 * self.upp_tri_size:]
+        print("s", p_value_school)
+        print("w", p_value_work)
 
         # aggregate using p-values. First get the p-values in matrix form: 16 * 16
         if mtx_typ == "lockdown_3":
