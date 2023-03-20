@@ -8,8 +8,6 @@ class SimulationBase:
     def __init__(self):
         self.data = DataLoader()
 
-        self.base_r0 = 2.2
-        self.beta = float()
         self.sim_state = dict()
 
         self.n_ag = self.data.contact_data["home"].shape[0]
@@ -26,11 +24,3 @@ class SimulationBase:
         self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
             self.data.contact_data["school"] + self.data.contact_data["other"]
         self.contact_home = self.data.contact_data["home"]
-
-        self.kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
-                       0.7817781778177818, 0.41324132413241327, 0.20032003200320034,
-                       0.789078907890789, 0.43344334433443343, 0.22882288228822883,
-                       0.7817781778177818, 0.41324132413241327, 0.20032003200320034,
-                       0.789078907890789, 0.43344334433443343, 0.22882288228822883,
-                       0.7817781778177818
-                       ]

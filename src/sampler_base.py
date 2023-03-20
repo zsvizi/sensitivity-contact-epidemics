@@ -25,7 +25,7 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None) -> np.ndarray:
+    def _get_lhs_table(self, number_of_samples: int = 120000, kappa=None) -> np.ndarray:
         # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]

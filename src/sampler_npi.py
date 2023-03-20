@@ -18,10 +18,10 @@ class SamplerNPI(SamplerBase):
         self.data_tr = data_tr
 
         if mtx_type == "lockdown":
-            cm_calc = CMCalculatorLockdown(data_tr=self.data_tr)
+            cm_calc = CMCalculatorLockdown(data_tr=self.data_tr, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
         elif mtx_type == "lockdown_3":
-            cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr)
+            cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown_3
         else:
             raise Exception("Matrix type is unknown!")
@@ -39,20 +39,15 @@ class SamplerNPI(SamplerBase):
 
     def run(self):
         maxiter = 120000
+        kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
         # get output from target calculator
-        tar_out = TargetCalculator(data_tr=self.data_tr)
+        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
         r0_lhs_home = tar_out.get_output(cm_sim=self.contact_home)
         if r0_lhs_home[1] < 1:
-            kappas = np.linspace(0, 1, 1000)
-            r0_home_kappas = np.array(list(map(self.kappify, kappas)))
-            k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of the maximum values along an axis.
-            kappa = kappas[k]
-            print("kappa", kappa)
-
             # Get LHS table
-            number_of_samples = 120_000
+            number_of_samples = 120000
             lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
             # Results has shape of (number_of_samples, 136 + 1 + 1 + 16)
@@ -75,6 +70,7 @@ class SamplerNPI(SamplerBase):
             # Save outputs
             self._save_output(output=lhs_table, folder_name='lhs')  # (12, 000, 136)
             self._save_output(output=sim_output, folder_name='simulations')  # (12, 000, 136)
+            return lhs_table, sim_output
 
     def gen_icu_max(self, line) -> np.ndarray:
         time = np.arange(0, 1000, 0.5)
@@ -84,12 +80,20 @@ class SamplerNPI(SamplerBase):
                               self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) * self.data_tr.n_ag].max()
         return icu_max
 
+    def calculate_kappa(self):
+        kappas = np.linspace(0, 1, 1000)
+        r0_home_kappas = np.array(list(map(self.kappify, kappas)))
+        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of the maximum values along an axis.
+        kappa = kappas[k]
+        print("k", kappa)
+        return kappa
+
     def kappify(self, kappa=None) -> float:
         cm_diff = self.data_tr.contact_matrix - self.data_tr.contact_home
         cm_sim = self.data_tr.contact_home + kappa * cm_diff
 
         # get output from target calculator
-        tar_out = TargetCalculator(data_tr=self.data_tr)
+        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
         r0_lhs_home_k = tar_out.get_output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 

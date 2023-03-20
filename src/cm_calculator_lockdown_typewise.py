@@ -6,9 +6,9 @@ from src.target_calculation import TargetCalculator
 
 
 class CMCalculatorLockdownTypewise:
-    def __init__(self, data_tr: SimulationBase) -> None:
+    def __init__(self, sim_state, data_tr: SimulationBase) -> None:
         self.data_tr = data_tr
-        self.output = []
+        self.sim_state = sim_state
 
         self.lhs_boundaries = \
             {
@@ -34,9 +34,8 @@ class CMCalculatorLockdownTypewise:
         # Get full contact matrix
         cm_sim = self.data_tr.contact_home + cm_sim_school + cm_sim_work + cm_sim_other
         # Get output from target calculator
-        targ = TargetCalculator(data_tr=self.data_tr)
-        output = targ.output
+        targ = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
+        output = targ.get_output(cm_sim=cm_sim)
         cm_total_sim = (cm_sim * self.data_tr.age_vector)[self.data_tr.upper_tri_indexes]
         output = np.append(cm_total_sim, output)
-        self.output = output
         return list(output)

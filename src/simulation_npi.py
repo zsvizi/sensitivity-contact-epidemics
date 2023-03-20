@@ -38,20 +38,13 @@ class SimulationNPI(SimulationBase):
                          "susc": susc,
                          "r0generator": r0generator})
                     cm_generator = SamplerNPI(sim_state=self.sim_state, data_tr=self, mtx_type=mtx_type)
-                    cm_generator.run()
-
-    def generate_prcc_values(self):
-        susceptibility = np.ones(self.n_ag)
-        for susc in self.susc_choices:
-            susceptibility[:4] = susc
-            for base_r0 in self.r0_choices:
-                print(base_r0)
-                for mtx_type in self.mtx_types:
-                    print(mtx_type)
+                    lhs_table, sim_output = cm_generator.run()
                     prcc_calculator = PRCCCalculator(age_vector=self.age_vector,
-                                                     params=self.params, n_ag=self.n_ag)
-                    PRCCCalculator.calculate_prcc_values(self=prcc_calculator)
-                    PRCCCalculator.calculate_p_values(self=prcc_calculator)
+                                                     params=self.params, n_ag=self.n_ag, data_tr=self,
+                                                     sim_state=self.sim_state)
+                    prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
+                    prcc_calculator.aggregate_approach()
+                    prcc_calculator.calculate_p_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
 
     def _get_upper_bound_factor_unit(self):
         cm_diff = (self.contact_matrix - self.contact_home) * self.age_vector
