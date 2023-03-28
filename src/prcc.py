@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import ndarray
-from scipy.stats import beta, t
+from scipy.stats import t
 
 
 def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
@@ -51,6 +51,3 @@ def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> nda
         p_value = 2 * (1 - t.cdf(abs(T), dof))
 
     return prcc_vector
-
-
-

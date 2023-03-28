@@ -38,9 +38,12 @@ class PRCCCalculator:
         simulation = np.append(sim_data, sim_output[:, -self.n_ag - 1].reshape((-1, 1)), axis=1)
         prcc_list = get_prcc_values(simulation, number_of_samples=self.number_of_samples)
         if "lockdown_3" == mtx_typ:
-            prcc_matrix_school = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
-            prcc_matrix_work = get_rectangular_matrix_from_upper_triu(prcc_list[self.upp_tri_size:2 * self.upp_tri_size], self.n_ag)
-            prcc_matrix_other = get_rectangular_matrix_from_upper_triu(prcc_list[2 * self.upp_tri_size:], self.n_ag)
+            prcc_matrix_school = get_rectangular_matrix_from_upper_triu(
+                prcc_list[:self.upp_tri_size], self.n_ag)
+            prcc_matrix_work = get_rectangular_matrix_from_upper_triu(
+                prcc_list[self.upp_tri_size:2 * self.upp_tri_size], self.n_ag)
+            prcc_matrix_other = get_rectangular_matrix_from_upper_triu(
+                prcc_list[2 * self.upp_tri_size:], self.n_ag)
             self.prcc_matrix_school = prcc_matrix_school
             self.prcc_matrix_work = prcc_matrix_work
             self.prcc_matrix_other = prcc_matrix_other
@@ -67,10 +70,10 @@ class PRCCCalculator:
 
     def calculate_p_values(self,  mtx_typ, lhs_table: np.ndarray, sim_output: np.ndarray):
         prcc_list = self.calculate_prcc_values(lhs_table=lhs_table, sim_output=sim_output, mtx_typ=mtx_typ)
-        T = prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - prcc_list ** 2))
+        t = prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - prcc_list ** 2))
         # p-value for 2-sided test
         dof = self.number_of_samples - 2 - self.upp_tri_size
-        p_value = 2 * (1 - ss.t.cdf(abs(T), dof))
+        p_value = 2 * (1 - ss.t.cdf(abs(t), dof))
         p_value_school = p_value[:self.upp_tri_size]
         p_value_work = p_value[self.upp_tri_size: 2 * self.upp_tri_size]
         p_value_other = p_value[2 * self.upp_tri_size:]
