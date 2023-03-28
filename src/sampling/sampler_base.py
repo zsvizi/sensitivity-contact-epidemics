@@ -4,12 +4,13 @@ import os
 import numpy as np
 from smt.sampling_methods import LHS
 
-from src.simulation_base import SimulationBase
+from src.simulation_npi import SimulationNPI
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, data_tr: SimulationBase) -> None:
-        self.data_tr = data_tr
+    def __init__(self, sim_state: dict, sim_obj: SimulationNPI) -> None:
+        self.sim_obj = sim_obj
+        self.sim_state = sim_state
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
         self.type = sim_state["type"]
@@ -34,8 +35,8 @@ class SamplerBase(ABC):
         if kappa is not None:
             upper_bound *= (1-kappa)
 
-        if self.data_tr is not None:
-            p_icr = (1 - self.data_tr.params['p']) * self.data_tr.params['h'] * self.data_tr.params['xi']
+        if self.sim_obj is not None:
+            p_icr = (1 - self.sim_obj.params['p']) * self.sim_obj.params['h'] * self.sim_obj.params['xi']
             a = np.zeros((16, 16))
             for i in range(16):
                 for j in range(16):

@@ -3,37 +3,36 @@ from time import sleep
 import numpy as np
 from tqdm import tqdm
 
-from src.simulation_base import SimulationBase
-from src.cm_calculator_lockdown import CMCalculatorLockdown
-from src.cm_calculator_lockdown_typewise import CMCalculatorLockdownTypewise
+from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
+from src.sampling.cm_calculator_lockdown_typewise import CMCalculatorLockdownTypewise
 from src.prcc import get_rectangular_matrix_from_upper_triu
-from src.sampler_base import SamplerBase
-from src.target_calculation import TargetCalculator
+from src.sampling.sampler_base import SamplerBase
+from src.simulation_npi import SimulationNPI
+from src.sampling.target_calculator import TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_state: dict, data_tr: SimulationBase,
+    def __init__(self, sim_state: dict, sim_obj: SimulationNPI,
                  mtx_type: str = "lockdown") -> None:
-        self.sim_state = sim_state
-        self.data_tr = data_tr
+        super().__init__(sim_state=sim_state, sim_obj=sim_obj)
+        self.sim_obj = sim_obj
 
         if mtx_type == "lockdown":
-            cm_calc = CMCalculatorLockdown(data_tr=self.data_tr, sim_state=sim_state)
+            cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
         elif mtx_type == "lockdown_3":
-            cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr, sim_state=sim_state)
+            cm_calc = CMCalculatorLockdownTypewise(sim_obj=self.sim_obj, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown_3
         else:
             raise Exception("Matrix type is unknown!")
 
-        super().__init__(sim_state, data_tr=data_tr)
         self.susc = sim_state["susc"]
 
         # Matrices of frequently used contact types
-        self.contact_home = self.data_tr.contact_home
-        self.contact_total = self.data_tr.contact_matrix
+        self.contact_home = self.sim_obj.contact_home
+        self.contact_total = self.sim_obj.contact_matrix
 
-        self.upper_tri_size = int((self.data_tr.n_ag + 1) * self.data_tr.n_ag / 2)
+        self.upper_tri_size = int((self.sim_obj.n_ag + 1) * self.sim_obj.n_ag / 2)
 
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
@@ -42,7 +41,7 @@ class SamplerNPI(SamplerBase):
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
         # get output from target calculator
-        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
+        tar_out = TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
         r0_lhs_home = tar_out.get_output(cm_sim=self.contact_home)
         if r0_lhs_home[1] < 1:
             # Get LHS table
@@ -73,10 +72,10 @@ class SamplerNPI(SamplerBase):
 
     def gen_icu_max(self, line) -> np.ndarray:
         time = np.arange(0, 1000, 0.5)
-        cm = get_rectangular_matrix_from_upper_triu(line, self.data_tr.n_ag)
-        solution = self.data_tr.model.get_solution(t=time, parameters=self.data_tr.params, cm=cm)
-        idx_icu = self.data_tr.model.c_idx["ic"] * self.data_tr.n_ag
-        icu_max = solution[:, idx_icu:(idx_icu + self.data_tr.n_ag)].max()
+        cm = get_rectangular_matrix_from_upper_triu(line, self.sim_obj.n_ag)
+        solution = self.sim_obj.model.get_solution(t=time, parameters=self.sim_obj.params, cm=cm)
+        idx_icu = self.sim_obj.model.c_idx["ic"] * self.sim_obj.n_ag
+        icu_max = solution[:, idx_icu:(idx_icu + self.sim_obj.n_ag)].max()
         return icu_max
 
     def calculate_kappa(self):
@@ -87,12 +86,12 @@ class SamplerNPI(SamplerBase):
         print("k", kappa)
         return kappa
 
-    def kappify(self, kappa=None) -> float:
-        cm_diff = self.data_tr.contact_matrix - self.data_tr.contact_home
-        cm_sim = self.data_tr.contact_home + kappa * cm_diff
+    def kappify(self, kappa: float = None) -> float:
+        cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
+        cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
         # get output from target calculator
-        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
+        tar_out = TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
         r0_lhs_home_k = tar_out.get_output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 
@@ -100,6 +99,6 @@ class SamplerNPI(SamplerBase):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type]
 
     def _get_upper_bound_factor_unit(self) -> np.ndarray:
-        cm_diff = (self.data_tr.contact_matrix - self.contact_home) * self.data_tr.age_vector
+        cm_diff = (self.sim_obj.contact_matrix - self.contact_home) * self.sim_obj.age_vector
         min_diff = np.min(cm_diff) / 2
         return min_diff

@@ -1,13 +1,12 @@
 import numpy as np
 
 from src.dataloader import DataLoader
-from src.model import RostModelHungary
+from src.model.model import RostModelHungary
 
 
 class SimulationBase:
-    def __init__(self):
-        self.data = DataLoader()
-
+    def __init__(self, data: DataLoader):
+        self.data = data
         self.sim_state = dict()
 
         self.n_ag = self.data.contact_data["home"].shape[0]

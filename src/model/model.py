@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.model_base import EpidemicModelBase
+from src.model.model_base import EpidemicModelBase
 
 
 class RostModelHungary(EpidemicModelBase):

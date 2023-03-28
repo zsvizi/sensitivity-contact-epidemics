@@ -1,6 +1,4 @@
 import numpy as np
-from numpy import ndarray
-from scipy.stats import t
 
 
 def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
@@ -24,10 +22,11 @@ def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
     return np.sum(cm_total, axis=1)
 
 
-def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> ndarray:
+def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> np.ndarray:
     """
     Creates the PRCC values of last column of an ndarray depending on the columns before.
-    :param lhs_output_table: ndarray
+    :param ndarray lhs_output_table: ...
+    :param ndarray number_of_samples: ...
     :return: ndarray
     """
     ranked = (lhs_output_table.argsort(0)).argsort(0)
@@ -45,9 +44,9 @@ def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> nda
                                  corr_mtx_inverse[parameter_count, parameter_count])
 
         # p-values Size (136) for lockdown and 408 for lockdown3  [formula based on Simeone Marino, Ian B. Hogue paper]
-        T = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
+        t = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
         # p-value for 2-sided test
         dof = number_of_samples - 2 - parameter_count
-        p_value = 2 * (1 - t.cdf(abs(T), dof))
+        p_value = 2 * (1 - t.cdf(abs(t), dof))
 
     return prcc_vector

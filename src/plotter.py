@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from src.dataloader import DataLoader
-from src.prcc_calculation import PRCCCalculator
+from src.prcc_calculator import PRCCCalculator
 from src.simulation_npi import SimulationNPI
 
 

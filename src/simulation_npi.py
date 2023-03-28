@@ -1,19 +1,23 @@
 import numpy as np
+
+from src.dataloader import DataLoader
+from src.model.r0_generator import R0Generator
+from src.sampling.sampler_npi import SamplerNPI
 from src.simulation_base import SimulationBase
-from src.r0_generator import R0Generator
-from src.sampler_npi import SamplerNPI
-from src.prcc_calculation import PRCCCalculator
 
 
 class SimulationNPI(SimulationBase):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, data: DataLoader) -> None:
+        super().__init__(data=data)
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
-
         self.mtx_types = ["lockdown", "lockdown_3"]
+
+        self.lhs_table = None
+        self.sim_output = None
+        self.prcc_values = None
 
     def generate_lhs(self):
         # 1. Update params by susceptibility vector
@@ -37,14 +41,36 @@ class SimulationNPI(SimulationBase):
                          "type": mtx_type,
                          "susc": susc,
                          "r0generator": r0generator})
-                    cm_generator = SamplerNPI(sim_state=self.sim_state, data_tr=self, mtx_type=mtx_type)
-                    lhs_table, sim_output = cm_generator.run()
-                    prcc_calculator = PRCCCalculator(age_vector=self.age_vector,
-                                                     params=self.params, n_ag=self.n_ag, data_tr=self,
-                                                     sim_state=self.sim_state, number_of_samples=120000)
-                    prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
-                    prcc_calculator.aggregate_approach()
-                    prcc_calculator.calculate_p_values(mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
+                    sampler_npi = SamplerNPI(sim_state=self.sim_state, sim_obj=self, mtx_type=mtx_type)
+                    self.lhs_table, self.sim_output = sampler_npi.run()
+
+    def calculate_prcc_values(self):
+        for susc in self.susc_choices:
+            for base_r0 in self.r0_choices:
+                for mtx_type in self.mtx_types:
+                    if self.lhs_table is None:
+                        # read files from the generated folder based on the given parameters
+                        pass
+                    else:
+                        # prcc_calculator = PRCCCalculator(age_vector=self.age_vector,
+                        #                                  params=self.params, n_ag=self.n_ag, data_tr=self,
+                        #                                  sim_state=self.sim_state, number_of_samples=120000)
+                        # prcc_calculator.calculate_prcc_values(
+                        #     mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
+                        # prcc_calculator.calculate_p_values(mtx_typ=mtx_type)
+                        # prcc_calculator.aggregate_approach()
+                        pass
+
+    def plot_prcc_values(self):
+        for susc in self.susc_choices:
+            for base_r0 in self.r0_choices:
+                for mtx_type in self.mtx_types:
+                    if self.prcc_values is None:
+                        # read files from the generated folder based on the given parameters
+                        pass
+                    else:
+                        # use calculated PRCC values from the previous step
+                        pass
 
     def _get_upper_bound_factor_unit(self):
         cm_diff = (self.contact_matrix - self.contact_home) * self.age_vector
