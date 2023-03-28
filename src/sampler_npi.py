@@ -38,7 +38,6 @@ class SamplerNPI(SamplerBase):
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
     def run(self):
-        maxiter = 120000
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
@@ -76,8 +75,8 @@ class SamplerNPI(SamplerBase):
         time = np.arange(0, 1000, 0.5)
         cm = get_rectangular_matrix_from_upper_triu(line, self.data_tr.n_ag)
         solution = self.data_tr.model.get_solution(t=time, parameters=self.data_tr.params, cm=cm)
-        icu_max = solution[:, self.data_tr.model.c_idx["ic"] *
-                              self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) * self.data_tr.n_ag].max()
+        idx_icu = self.data_tr.model.c_idx["ic"] * self.data_tr.n_ag
+        icu_max = solution[:, idx_icu:(idx_icu + self.data_tr.n_ag)].max()
         return icu_max
 
     def calculate_kappa(self):
