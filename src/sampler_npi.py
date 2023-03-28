@@ -3,7 +3,7 @@ from time import sleep
 import numpy as np
 from tqdm import tqdm
 
-from src.data_transformer import DataTransformer
+from src.simulation_base import SimulationBase
 from src.cm_calculator_lockdown import CMCalculatorLockdown
 from src.cm_calculator_lockdown_typewise import CMCalculatorLockdownTypewise
 from src.prcc import get_rectangular_matrix_from_upper_triu
@@ -12,17 +12,19 @@ from src.target_calculation import TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_state: dict, data_tr: DataTransformer,
-                 result: str = "lockdown") -> None:
+    def __init__(self, sim_state: dict, data_tr: SimulationBase,
+                 mtx_type: str = "lockdown") -> None:
         self.sim_state = sim_state
         self.data_tr = data_tr
-        self.lhs_sample = np.array([])
-        if result == "lockdown":
-            cm_calc = CMCalculatorLockdown(data_tr=self.data_tr)
+
+        if mtx_type == "lockdown":
+            cm_calc = CMCalculatorLockdown(data_tr=self.data_tr, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
-        elif result == "lockdown3":
-            cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr)
+        elif mtx_type == "lockdown_3":
+            cm_calc = CMCalculatorLockdownTypewise(data_tr=self.data_tr, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown_3
+        else:
+            raise Exception("Matrix type is unknown!")
 
         super().__init__(sim_state, data_tr=data_tr)
         self.susc = sim_state["susc"]
@@ -31,67 +33,68 @@ class SamplerNPI(SamplerBase):
         self.contact_home = self.data_tr.contact_home
         self.contact_total = self.data_tr.contact_matrix
 
+        self.upper_tri_size = int((self.data_tr.n_ag + 1) * self.data_tr.n_ag / 2)
+
+        self.lhs_boundaries = cm_calc.lhs_boundaries
+
     def run(self):
         maxiter = 120000
+        kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
         # get output from target calculator
-        cm_diff = self.data_tr.contact_matrix - self.data_tr.contact_home
-        cm_sim = self.data_tr.contact_home + self.data_tr.kappas * cm_diff
-
-        tar_out = TargetCalculator(data_tr=self.data_tr, cm_sim=cm_sim)
-        r0_lhs_home = tar_out.output(cm_sim=self.data_tr.contact_home)
-
-        # r0_lhs_home = self._get_output(cm_sim=self.data_tr.contact_home)
-        kappa = None
+        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
+        r0_lhs_home = tar_out.get_output(cm_sim=self.contact_home)
         if r0_lhs_home[1] < 1:
-            kappas = np.linspace(0, 1, 10_000)
-            r0_home_kappas = np.array(list(map(self.kappify, kappas)))
-            k = np.argmax(r0_home_kappas > 1)
-            kappa = kappas[k]
-            print(kappa)
-
-        # Get LHS table
             # Get LHS table
-        lhs_table = self._get_lhs_table(number_of_samples=maxiter, kappa=kappa, data_tr=self.data_tr)
-        sleep(0.3)
+            number_of_samples = 120000
+            lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
-        # Generate LHS output
-        results = list(tqdm(map(self.get_sim_output, lhs_table), total=lhs_table.shape[0]))
-        results = np.array(results)
+            # Results has shape of (number_of_samples, 136 + 1 + 1 + 16)
+            results = list(tqdm(map(self.get_sim_output, lhs_table), total=lhs_table.shape[0]))
+            results = np.array(results)
 
-        # check if all r0s are > 1
-        res_min = results[:, 137].min()
-        if res_min < 1:
-            print("minimal lhs_r0: " + str(res_min))
+            # check if all r0s are > 1
+            r0_col_idx = int(self.upper_tri_size - 1 + 2)
+            res_min = results[:, r0_col_idx].min()
+            if res_min < 1:
+                print("minimal lhs_r0: " + str(res_min))
 
-        # Sort tables by R0 values
-        r0_col_idx = int(self.data_tr.upper_tri_size + 1)
-        sorted_idx = results[:, r0_col_idx].argsort()
-        results = results[sorted_idx]
-        lhs_table = np.array(lhs_table[sorted_idx])
-        sim_output = np.array(results)
-        sleep(0.3)
+            # Sort tables by R0 values
+            sorted_idx = results[:, r0_col_idx].argsort()
+            results = results[sorted_idx]
+            lhs_table = np.array(lhs_table[sorted_idx])
+            sim_output = np.array(results)
+            sleep(0.3)
 
-        # Save outputs
-        self._save_output(output=lhs_table, folder_name='lhs')
-        self._save_output(output=sim_output, folder_name='simulations')
+            # Save outputs
+            self._save_output(output=lhs_table, folder_name='lhs')  # (12, 000, 136)
+            self._save_output(output=sim_output, folder_name='simulations')  # (12, 000, 136)
+            return lhs_table, sim_output
 
     def gen_icu_max(self, line) -> np.ndarray:
         time = np.arange(0, 1000, 0.5)
         cm = get_rectangular_matrix_from_upper_triu(line, self.data_tr.n_ag)
         solution = self.data_tr.model.get_solution(t=time, parameters=self.data_tr.params, cm=cm)
-        icu_max = solution[:, self.data_tr.model.c_idx["ic"] * self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) *
-                           self.data_tr.n_ag].max()
+        icu_max = solution[:, self.data_tr.model.c_idx["ic"] *
+                              self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) * self.data_tr.n_ag].max()
         return icu_max
 
-    def kappify(self, kappa) -> float:
+    def calculate_kappa(self):
+        kappas = np.linspace(0, 1, 1000)
+        r0_home_kappas = np.array(list(map(self.kappify, kappas)))
+        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of the maximum values along an axis.
+        kappa = kappas[k]
+        print("k", kappa)
+        return kappa
+
+    def kappify(self, kappa=None) -> float:
         cm_diff = self.data_tr.contact_matrix - self.data_tr.contact_home
         cm_sim = self.data_tr.contact_home + kappa * cm_diff
 
         # get output from target calculator
-        tar_out = TargetCalculator(data_tr=self.data_tr, cm_sim=cm_sim)
-        r0_lhs_home_k = tar_out.output(cm_sim=cm_sim)
+        tar_out = TargetCalculator(data_tr=self.data_tr, sim_state=self.sim_state)
+        r0_lhs_home_k = tar_out.get_output(cm_sim=cm_sim)
         return r0_lhs_home_k[1]
 
     def _get_variable_parameters(self):

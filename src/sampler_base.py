@@ -4,11 +4,11 @@ import os
 import numpy as np
 from smt.sampling_methods import LHS
 
-from src.data_transformer import DataTransformer
+from src.simulation_base import SimulationBase
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, data_tr: DataTransformer) -> None:
+    def __init__(self, sim_state: dict, data_tr: SimulationBase) -> None:
         self.data_tr = data_tr
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
@@ -25,7 +25,7 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 40000, kappa=None, data_tr=None) -> np.ndarray:
+    def _get_lhs_table(self, number_of_samples: int = 120000, kappa=None) -> np.ndarray:
         # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries[self.type]["lower"]
@@ -34,8 +34,8 @@ class SamplerBase(ABC):
         if kappa is not None:
             upper_bound *= (1-kappa)
 
-        if data_tr is not None:
-            p_icr = (1 - data_tr.params['p']) * data_tr.params['h'] * data_tr.params['xi']
+        if self.data_tr is not None:
+            p_icr = (1 - self.data_tr.params['p']) * self.data_tr.params['h'] * self.data_tr.params['xi']
             a = np.zeros((16, 16))
             for i in range(16):
                 for j in range(16):
@@ -47,7 +47,6 @@ class SamplerBase(ABC):
                                        upper=upper_bound)
         print("Simulation for", number_of_samples,
               "samples (", "-".join(self._get_variable_parameters()), ")")
-        self.lhs_sample = lhs_table
         return lhs_table
 
     def _save_output(self, output, folder_name):

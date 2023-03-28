@@ -1,6 +1,4 @@
 import os
-from cycler import cycler
-
 import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -9,14 +7,14 @@ import pandas as pd
 
 from src.dataloader import DataLoader
 from src.prcc_calculation import PRCCCalculator
-from src.data_transformer import DataTransformer
+from src.simulation_npi import SimulationNPI
 
 
 plt.style.use('seaborn-whitegrid')
 
 
 class Plotter:
-    def __init__(self, data_tr: DataTransformer, prcc_data: PRCCCalculator) -> None:
+    def __init__(self, data_tr: SimulationNPI, prcc_data: PRCCCalculator) -> None:
         self.data = DataLoader()
         self.data_tr = data_tr
         self.prcc_data = prcc_data
@@ -31,8 +29,6 @@ class Plotter:
         vvv = np.repeat(np.reshape(r, (-1, 1)), 16, axis=1).astype(str)
         self.names = ccc.astype(str) + xxx.astype(str) + alul.astype(str) + bal.astype(str) + vvv + \
             vesz.astype(str) + vvv.T + jobb.astype(str) + ccc.astype(str)
-
-        self.c_matrices = None
 
     def plot_prcc_values_as_heatmap(self, filename):
         filename_without_ext = os.path.splitext(filename)[0]
@@ -52,6 +48,7 @@ class Plotter:
         plt.title('PRCC results for ' + title_list[-1] + ' version with\nchildren susceptibility ' + title_list[1] +
                   ' and base R0=' + title_list[2], y=1.03, fontsize=25)
         plt.imshow(corr, cmap=cmap, origin='lower')
+
         plt.colorbar(pad=0.02, fraction=0.04)
         plt.grid(b=None)
         plt.gca().set_xticks(np.arange(0.5, self.data_tr.n_ag, 1), minor=True)
@@ -59,13 +56,14 @@ class Plotter:
         plt.gca().grid(which='minor', color='w', linestyle='-', linewidth=2)
         plt.xticks(ticks=param_list, labels=param_list)
         plt.yticks(ticks=param_list, labels=param_list)
+
         plt.savefig('./sens_data/PRCC_bars/' + filename + '.pdf', cmap=cmap, format="pdf",
                     bbox_inches='tight')
         plt.close()
 
     @staticmethod
-    def generate_prcc_plots(self, filename_without_ext):
-
+    def generate_prcc_plots(self, filename):
+        filename_without_ext = os.path.splitext(filename)[0]
         title_list = filename_without_ext.split("_")
         plot_title = 'Target: R0, Susceptibility=' + title_list[2] + ', R0=' + title_list[3]
         self.plot_prcc_values_lockdown_3(self.prcc_data.prcc_list, "PRCC_bars_" + filename_without_ext +
@@ -73,14 +71,13 @@ class Plotter:
         labels = list(map(lambda x: str(x[0]) + "," + str(x[1]), np.array(np.triu_indices(16)).T))
         self.plot_prcc_values(labels, self.prcc_data.prcc_list, filename_without_ext, "PRCC_bars_" +
                               filename_without_ext + "_R0_")
-        agg_methods = ["simple", ]
+        agg_methods = ["simple"]
         # continue
         for num, agg_type in enumerate(agg_methods):
             self.plot_prcc_values(np.arange(16), self.prcc_data.prcc_list, filename_without_ext,
                                   "PRCC_bars_" + filename_without_ext + "_R0_" + agg_type)
 
-    def plot_prcc_values_lockdown_3(self, filename_to_save, plot_title):
-
+    def plot_prcc_values_lockdown_3(self, plot_title, filename_to_save):
         os.makedirs("sens_data/PRCC_bars", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -108,6 +105,7 @@ class Plotter:
         axes.set_ylim([0, 1])
         plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
         plt.xlabel('Age groups', labelpad=10, fontsize=20)
+        plt.show()
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.savefig('./sens_data/PRCC_bars/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
@@ -134,30 +132,8 @@ class Plotter:
         plt.savefig('./sens_data/PRCC_bars/' + "_" + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
 
-    def aggregate_prcc(self, cm, agg_type='simple'):
-        cm_total = cm * self.data_tr.age_vector
-        if agg_type == 'simple':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx, axis=1)
-        elif agg_type == 'relN':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * self.data_tr.age_vector, axis=1) / \
-                       np.sum(self.data_tr.age_vector)
-        elif agg_type == 'relNother':
-            agg_prcc = (self.prcc_data.prcc_mtx @ self.data_tr.age_vector) / np.sum(self.data_tr.age_vector)
-        elif agg_type == ' simplecm':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm, axis=1)
-        elif agg_type == 'simplecmother':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm.T, axis=1)
-        elif agg_type == 'relcm':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm_total, axis=1) / np.sum(cm_total, axis=1)
-        elif agg_type == 'relcmother':
-            agg_prcc = np.sum((self.prcc_data.prcc_mtx * cm_total) / (np.sum(cm, axis=1)).T, axis=1)
-        else:  # if agg_type == 'relcmmixed':
-            agg_prcc = np.sum(self.prcc_data.prcc_mtx * cm, axis=1) / np.sum(cm, axis=0)
-        return agg_prcc.flatten()
-
-    @staticmethod
-    def plot_symm_contact_matrix_as_bars(param_list, contact_vector, file_name):
-        ymax = max(contact_vector)
+    def plot_symm_contact_matrix_as_bars(self, contact_vector, file_name):
+        ymax = 5
         color_map = mcm.get_cmap('Blues')
         my_norm = mcolors.Normalize(vmin=-ymax / 5, vmax=ymax)
         plt.rc('text', usetex=True)
@@ -168,7 +144,7 @@ class Plotter:
         plt.figure(figsize=(35, 10))
         plt.tick_params(direction="in")
         plt.bar(xp, list(contact_vector), align='center', color=color_map(my_norm(contact_vector)))
-        plt.xticks(ticks=xp, labels=param_list, rotation=90)
+        plt.xticks(ticks=xp, rotation=90)
         axes = plt.gca()
         axes.set_ylim([0, 1.1 * ymax])
         plt.ylabel('Number of contacts', labelpad=10, fontsize=20)
@@ -220,22 +196,22 @@ class Plotter:
             plt.colorbar(pad=0.02, fraction=0.04)
             plt.grid(b=None)
             number_of_age_groups = 16
+            age_groups = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44",
+                          "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75+"]
+
             plt.gca().set_xticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
             plt.gca().set_yticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
             plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
-            plt.xticks(ticks=param_list, labels=param_list)
-            plt.yticks(ticks=param_list, labels=param_list)
-            plt.savefig('./sens_data/CM_symm_Hungary' + "_" + t + '.pdf', format="pdf",
-                        bbox_inches='tight')
+            plt.xticks(ticks=param_list, labels=age_groups, rotation=90)
+            plt.yticks(ticks=param_list, labels=age_groups)
+            plt.show()
+            plt.savefig('./sens_data/CM_symm_Hungary' + "_" + t + '.pdf', format="pdf", bbox_inches='tight')
             plt.close()
 
     def generate_stacked_plots(self):
-        # contact_matrix = self.data.contact_data["work"] + self.data.contact_data["home"] + \
-        #                  data.contact_data["other"] + data.contact_data["school"]
-        symm_cm_total = self.data.contact_data * self.data_tr.age_vector
+        symm_cm_total = self.data_tr.contact_matrix * self.data_tr.age_vector
         self.plot_symm_contact_matrix_as_bars(np.array(self.names[self.data_tr.upper_tri_indexes]).flatten().tolist(),
-                                              symm_cm_total[self.data_tr.upper_tri_indexes],
-                                              file_name="CM_symm_Hungary")
+                                              symm_cm_total[self.data_tr.upper_tri_indexes], file_name="CM_symm_Hungary")
 
         # Plot stacked home-work-school-total
         c_matrices = []
@@ -262,61 +238,6 @@ class Plotter:
         self.plot_stacked(c_matrices, np.array(self.names[self.data_tr.upper_tri_indexes]).flatten().tolist(), c_names,
                           color_list=color_list, title="Compound version of total, normed and home contacts",
                           filename="TNH_contacts")
-        self.c_matrices = c_matrices
-
-    def plot_solution_ic(self, time, params, cm_list, legend_list, title_part):
-        os.makedirs("../sens_data/dinamics", exist_ok=True)
-        plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
-        # for comp in compartments:
-        for idx, cm in enumerate(cm_list):
-            solution = self.data_tr.model.get_solution(t=time, parameters=params, cm=cm)
-            plt.plot(time, np.sum(solution[:,
-                                  self.data_tr.model.c_idx["ic"] *
-                                  self.data_tr.n_ag:(self.data_tr.model.c_idx["ic"] + 1) * self.data_tr.n_ag],
-                                  axis=1), label=legend_list[idx])
-        plt.legend()
-        plt.gca().set_xlabel('days')
-        plt.gca().set_ylabel('ICU usage')
-        # plt.gca().set_xlim([400, 600])  # zoom on peaks
-        # plt.gca().set_ylim([800, 1200])
-        plt.gcf().set_size_inches(10, 10)
-        plt.tight_layout()
-        plt.savefig('./sens_data/dinamics/solution_ic' + "_" + title_part + '.pdf', format="pdf")
-        plt.close()
-
-    def plot_solution_inc(self, time, params, cm_list, legend_list, title_part):
-        os.makedirs("../sens_data/dinamics", exist_ok=True)
-        plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
-        # for comp in compartments:
-        for legend, cm in zip(legend_list, cm_list):
-            solution = self.data_tr.model.get_solution(t=time, parameters=params, cm=cm)
-            plt.plot(time[:-1],
-                     np.diff(np.sum(solution[:,
-                                    self.data_tr.model.c_idx["c"] *
-                                    self.data_tr.n_ag:(self.data_tr.model.c_idx["c"] + 1) * self.data_tr.n_ag],
-                                    axis=1)), label=legend)
-        plt.legend()
-        plt.gca().set_xlabel('days')
-        plt.gca().set_ylabel('Incidence')
-        # plt.gca().set_xlim([300, 600])  # zoom on peaks
-        # plt.gca().set_ylim([7000, 10000])
-        plt.gcf().set_size_inches(10, 10)
-        plt.tight_layout()
-        plt.savefig('./sens_data/dinamics/solution_inc' + "_" + title_part + '.pdf', format="pdf")
-        plt.close()
-
-    @staticmethod
-    def plot_different_susc(file_list, c_list, l_list, title):
-        os.makedirs("../sens_data/dinamics", exist_ok=True)
-        for idx, f in enumerate(file_list):
-            sol = np.loadtxt('./sens_data/dinamics/' + f)
-            plt.plot(np.arange(len(sol)) / 2, sol, c_list[idx], label=l_list[idx])
-        plt.legend(loc='upper left')
-        plt.gca().set_xlabel('days')
-        plt.gca().set_ylabel('ICU usage')
-        plt.tight_layout()
-        plt.savefig('./sens_data/dinamics/' + title + '.pdf', format="pdf")
-        plt.close()
 
     def plot_contact_matrix_as_grouped_bars(self):
         os.makedirs("../sens_data", exist_ok=True)
@@ -351,6 +272,7 @@ class Plotter:
         plt.xticks(ticks=xp, labels=param_list, rotation=45)
         plt.xlabel('Age groups', labelpad=10, fontsize=20)
         plt.title("Contacts from symmetric CMs", y=1.03, fontsize=25)
+
         plt.savefig('./sens_data/CM_symm_groupped.pdf', format="pdf", bbox_inches='tight')
         plt.close()
 

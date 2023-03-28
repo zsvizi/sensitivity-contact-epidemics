@@ -4,9 +4,11 @@ from src.dataloader import DataLoader
 from src.model import RostModelHungary
 
 
-class DataTransformer:
+class SimulationBase:
     def __init__(self):
         self.data = DataLoader()
+
+        self.sim_state = dict()
 
         self.n_ag = self.data.contact_data["home"].shape[0]
         self.model = RostModelHungary(model_data=self.data)
@@ -22,11 +24,3 @@ class DataTransformer:
         self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
             self.data.contact_data["school"] + self.data.contact_data["other"]
         self.contact_home = self.data.contact_data["home"]
-
-        self.mtx_types = ["lockdown", "lockdown3", "mitigation"]
-        self.kappas = [0.789078907890789, 0.43344334433443343, 0.22882288228822883,
-                       0.7817781778177818, 0.41324132413241327, 0.20032003200320034]
-
-        self.base_r0 = None
-        self.beta = None
-        self.sim_state_data = dict()
