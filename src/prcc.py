@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.stats
 
 
 def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
@@ -47,6 +48,6 @@ def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> np.
         t = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
         # p-value for 2-sided test
         dof = number_of_samples - 2 - parameter_count
-        p_value = 2 * (1 - t.cdf(abs(t), dof))
+        p_value = 2 * (1 - scipy.stats.t.cdf(abs(t), dof))
 
     return prcc_vector

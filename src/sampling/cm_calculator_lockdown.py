@@ -1,12 +1,12 @@
 import numpy as np
 
+import src
 from src.prcc import get_rectangular_matrix_from_upper_triu
-from src.simulation_npi import SimulationNPI
 from src.sampling.target_calculator import TargetCalculator
 
 
 class CMCalculatorLockdown:
-    def __init__(self, sim_state, sim_obj: SimulationNPI) -> None:
+    def __init__(self, sim_state, sim_obj: src.SimulationNPI) -> None:
         self.sim_obj = sim_obj
         self.sim_state = sim_state
 

@@ -3,16 +3,16 @@ from time import sleep
 import numpy as np
 from tqdm import tqdm
 
+import src
 from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
 from src.sampling.cm_calculator_lockdown_typewise import CMCalculatorLockdownTypewise
 from src.prcc import get_rectangular_matrix_from_upper_triu
 from src.sampling.sampler_base import SamplerBase
-from src.simulation_npi import SimulationNPI
 from src.sampling.target_calculator import TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_state: dict, sim_obj: SimulationNPI,
+    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI,
                  mtx_type: str = "lockdown") -> None:
         super().__init__(sim_state=sim_state, sim_obj=sim_obj)
         self.sim_obj = sim_obj

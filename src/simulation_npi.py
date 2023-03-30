@@ -1,12 +1,11 @@
 import numpy as np
 import os
 
+import src
 from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
-from src.sampling.sampler_npi import SamplerNPI
 from src.simulation_base import SimulationBase
 from src.prcc_calculator import PRCCCalculator
-from src.plotter import Plotter
 
 
 class SimulationNPI(SimulationBase):
@@ -44,7 +43,8 @@ class SimulationNPI(SimulationBase):
                          "type": mtx_type,
                          "susc": susc,
                          "r0generator": r0generator})
-                    sampler_npi = SamplerNPI(sim_state=self.sim_state, sim_obj=self, mtx_type=mtx_type)
+                    sampler_npi = src.sampling.sampler_npi.SamplerNPI(
+                        sim_state=self.sim_state, sim_obj=self, mtx_type=mtx_type)
                     self.lhs_table, self.sim_output = sampler_npi.run()
 
     def calculate_prcc_values(self):
@@ -91,11 +91,11 @@ class SimulationNPI(SimulationBase):
                                 filename_without_ext = os.path.splitext(filename)[0]
                                 saved_prcc = np.loadtxt("./sens_data/" + prc_folder + "/" + filename, delimiter=';')
                                 print(susc, base_r0, mtx_type, filename_without_ext, saved_prcc)
-                                plot = Plotter(sim_obj=self)
+                                plot = src.plotter.Plotter(sim_obj=self)
                                 plot.generate_prcc_plots()
                     else:
                         # use calculated PRCC values from the previous step
-                        plot = Plotter(sim_obj=self)
+                        plot = src.plotter.Plotter(sim_obj=self)
                         plot.plot_contact_matrix_as_grouped_bars()
                         plot.generate_stacked_plots()
                         plot.plot_2d_contact_matrices()
