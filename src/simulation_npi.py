@@ -1,9 +1,12 @@
 import numpy as np
+import os
 
 from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
 from src.sampling.sampler_npi import SamplerNPI
 from src.simulation_base import SimulationBase
+from src.prcc_calculator import PRCCCalculator
+from src.plotter import Plotter
 
 
 class SimulationNPI(SimulationBase):
@@ -48,18 +51,33 @@ class SimulationNPI(SimulationBase):
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
                 for mtx_type in self.mtx_types:
+                    print(susc, base_r0, mtx_type)
                     if self.lhs_table is None:
                         # read files from the generated folder based on the given parameters
-                        pass
+                        sim_folder, lhs_folder = "simulations", "lhs"
+                        for root, dirs, files in os.walk("./sens_data/" + sim_folder):
+                            for filename in files:
+                                filename_without_ext = os.path.splitext(filename)[0]
+                                saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" +
+                                                              filename, delimiter=';')
+                                saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
+                                                              filename.replace("simulations", "lhs"), delimiter=';')
+                                if "lockdown" == mtx_type:
+                                    prcc_calculator = PRCCCalculator(number_of_samples=120000, sim_obj=self)
+                                    lockdown_prcc = prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type,
+                                                                                          lhs_table=saved_lhs_values,
+                                                                                          sim_output=saved_simulation)
+                                    print(filename_without_ext, lockdown_prcc)
+                                else:
+                                    print("Matrix type lockdown_3: work & other")
                     else:
-                        # prcc_calculator = PRCCCalculator(age_vector=self.age_vector,
-                        #                                  params=self.params, n_ag=self.n_ag, data_tr=self,
-                        #                                  sim_state=self.sim_state, number_of_samples=120000)
-                        # prcc_calculator.calculate_prcc_values(
-                        #     mtx_typ=mtx_type, lhs_table=lhs_table, sim_output=sim_output)
-                        # prcc_calculator.calculate_p_values(mtx_typ=mtx_type)
-                        # prcc_calculator.aggregate_approach()
-                        pass
+                        prcc_calculator = PRCCCalculator(number_of_samples=120000, sim_obj=self)
+                        prcc = prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=self.lhs_table,
+                                                                     sim_output=self.sim_output)
+                        # save prcc values
+                        os.makedirs("./sens_data/PRCC", exist_ok=True)
+                        filename = "sens_data/PRCC" + "/" + "_".join([str(susc), str(base_r0), mtx_type])
+                        np.savetxt(fname=filename + ".csv", X=prcc, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
@@ -67,10 +85,20 @@ class SimulationNPI(SimulationBase):
                 for mtx_type in self.mtx_types:
                     if self.prcc_values is None:
                         # read files from the generated folder based on the given parameters
-                        pass
+                        prc_folder = "PRCC"
+                        for root, dirs, files in os.walk("./sens_data/" + prc_folder):
+                            for filename in files:
+                                filename_without_ext = os.path.splitext(filename)[0]
+                                saved_prcc = np.loadtxt("./sens_data/" + prc_folder + "/" + filename, delimiter=';')
+                                print(susc, base_r0, mtx_type, filename_without_ext, saved_prcc)
+                                plot = Plotter(sim_obj=self)
+                                plot.generate_prcc_plots()
                     else:
                         # use calculated PRCC values from the previous step
-                        pass
+                        plot = Plotter(sim_obj=self)
+                        plot.plot_contact_matrix_as_grouped_bars()
+                        plot.generate_stacked_plots()
+                        plot.plot_2d_contact_matrices()
 
     def _get_upper_bound_factor_unit(self):
         cm_diff = (self.contact_matrix - self.contact_home) * self.age_vector
