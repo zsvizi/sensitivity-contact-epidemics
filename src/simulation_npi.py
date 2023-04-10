@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import torch
 
 import src
 from src.dataloader import DataLoader
@@ -11,6 +12,7 @@ from src.prcc_calculator import PRCCCalculator
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader) -> None:
         super().__init__(data=data)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]

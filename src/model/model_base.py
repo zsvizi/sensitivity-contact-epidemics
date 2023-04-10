@@ -1,15 +1,21 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import torch
+from torchdiffeq import odeint as ode
 from scipy.integrate import odeint
+from src.model.model_torch import EpidemicModel, get_initial_values
 
 
 class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments: list) -> None:
+    def __init__(self, model_data, compartments: list, run_ode: str = "torch") -> None:
         self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]
+        self.run_ode = run_ode
+
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def initialize(self):
         iv = {key: np.zeros(self.n_age) for key in self.compartments}
@@ -26,9 +32,16 @@ class EpidemicModelBase(ABC):
         idx = self.c_idx["d"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_solution(self, t: int, parameters: dict, cm: np.ndarray) -> np.ndarray:
+    def get_solution(self, t, parameters, cm: np.ndarray):
         initial_values = self.get_initial_values()
-        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
+
+        time = torch.linspace(1, 500, 2).to(self.device)
+        solution = EpidemicModel(self, population=self.population, cm=cm, ps=parameters).to(self.device)
+        iv_torch = get_initial_values(solution)
+        if self.run_ode == "torch":
+            return ode(solution.forward, iv_torch, time, method="euler")
+        else:
+            return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
 
     def get_array_from_dict(self, comp_dict) -> np.ndarray:
         return np.array([comp_dict[comp] for comp in self.compartments]).flatten()

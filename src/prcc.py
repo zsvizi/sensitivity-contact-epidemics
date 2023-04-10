@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.stats
+import scipy
 
 
 def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:

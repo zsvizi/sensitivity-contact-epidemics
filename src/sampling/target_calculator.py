@@ -1,10 +1,10 @@
 import numpy as np
-from src.simulation_base import SimulationBase
+from src.simulation_npi import SimulationNPI
 from src.model.r0_generator import R0Generator
 
 
 class TargetCalculator:
-    def __init__(self, sim_state: dict, sim_obj: SimulationBase):
+    def __init__(self, sim_state: dict, sim_obj: SimulationNPI):
         self.sim_obj = sim_obj
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
