@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torchdiffeq import odeint as ode
 from scipy.integrate import odeint
-from src.model.model_torch import EpidemicModel, get_initial_values
+from src.model.model_torch import EpidemicModel, Epidemic
 
 
 class EpidemicModelBase(ABC):
@@ -32,14 +32,14 @@ class EpidemicModelBase(ABC):
         idx = self.c_idx["d"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_solution(self, t, parameters, cm: np.ndarray):
+    def get_solution(self, t: int, parameters: dict, cm: np.ndarray):
         initial_values = self.get_initial_values()
 
         time = torch.linspace(1, 500, 2).to(self.device)
         solution = EpidemicModel(self, population=self.population, cm=cm, ps=parameters).to(self.device)
-        iv_torch = get_initial_values(solution)
+        iv_torch = Epidemic(self.population, cm=cm, params=parameters)
         if self.run_ode == "torch":
-            return ode(solution.forward, iv_torch, time, method="euler")
+            return ode(solution.forward, iv_torch.get_initial_values(), time, method="euler")
         else:
             return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
 

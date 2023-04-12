@@ -2,22 +2,31 @@ import numpy as np
 import torch
 
 
-def get_initial_values(self):
-    init_values = torch.cat([torch.from_numpy(self.population), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device),
-                             torch.zeros(self.n_age).to(self.device)]).to(self.device)
-    init_values[17] = 1
-    return init_values
+class Epidemic:
+    def __init__(self, population: np.ndarray, params: dict, cm: np.ndarray):
+        self.population = population
+        self.params = params
+        self.cm = cm
+        self.n_age = self.population.shape[0]
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.time = 0
+
+    def get_initial_values(self):
+        init_values = torch.cat([torch.from_numpy(self.population), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device),
+                                 torch.zeros(self.n_age).to(self.device)]).to(self.device)
+        init_values[17] = 1
+        return init_values
 
 
 class EpidemicModel(torch.nn.Module):
-    def __init__(self, model, ps: dict, population, cm):
+    def __init__(self, model, ps: dict, population: np.ndarray, cm: np.ndarray):
         super(EpidemicModel, self).__init__()
         self.model = model
         self.cm = cm
@@ -62,4 +71,3 @@ class EpidemicModel(torch.nn.Module):
             2 * ps["alpha_l"] * l2  # C'(t)
         ]
         return model_eq
-
