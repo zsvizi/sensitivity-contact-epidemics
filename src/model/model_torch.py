@@ -9,7 +9,6 @@ class Epidemic:
         self.cm = cm
         self.n_age = self.population.shape[0]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.time = 0
 
     def get_initial_values(self):
         init_values = torch.cat([torch.from_numpy(self.population), torch.zeros(self.n_age).to(self.device),
@@ -21,7 +20,7 @@ class Epidemic:
                                  torch.zeros(self.n_age).to(self.device), torch.zeros(self.n_age).to(self.device),
                                  torch.zeros(self.n_age).to(self.device),
                                  torch.zeros(self.n_age).to(self.device)]).to(self.device)
-        init_values[17] = 1
+        init_values[18] = 1
         return init_values
 
 
@@ -34,8 +33,6 @@ class EpidemicModel(torch.nn.Module):
         self.population = population
         self.ps = ps
         self.n_age = self.population.shape[0]
-
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def forward(self, _, xs: np.ndarray):
         # Set initial conditions
@@ -70,4 +67,4 @@ class EpidemicModel(torch.nn.Module):
 
             2 * ps["alpha_l"] * l2  # C'(t)
         ]
-        return model_eq
+        return torch.cat(model_eq)
