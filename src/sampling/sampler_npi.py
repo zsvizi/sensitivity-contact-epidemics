@@ -1,3 +1,4 @@
+import os
 from time import sleep
 
 import numpy as np
@@ -48,7 +49,7 @@ class SamplerNPI(SamplerBase):
             number_of_samples = 120000
             lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
-            # Results has shape of (number_of_samples, 136 + 1 + 1 + 16)
+            # Results have shape of (number_of_samples, 136 + 1 + 1 + 16)
             results = list(tqdm(map(self.get_sim_output, lhs_table), total=lhs_table.shape[0]))
             results = np.array(results)
 
@@ -87,9 +88,11 @@ class SamplerNPI(SamplerBase):
         return kappa
 
     def kappify(self, kappa: float = None) -> float:
+        os.makedirs("./sens_data/cm", exist_ok=True)
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
-
+        # save cm to use in aggregation
+        np.savetxt("sens_data/cm/cm.csv", X=cm_sim, delimiter=";")
         # get output from target calculator
         tar_out = TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
         r0_lhs_home_k = tar_out.get_output(cm_sim=cm_sim)

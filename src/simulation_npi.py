@@ -1,18 +1,16 @@
 import numpy as np
 import os
-import torch
 
 import src
+
 from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
-from src.prcc_calculator import PRCCCalculator
 
 
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader) -> None:
         super().__init__(data=data)
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
@@ -64,37 +62,60 @@ class SimulationNPI(SimulationBase):
                                                               filename, delimiter=';')
                                 saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
                                                               filename.replace("simulations", "lhs"), delimiter=';')
-                                if "lockdown" == mtx_type:
-                                    prcc_calculator = PRCCCalculator(number_of_samples=120000, sim_obj=self)
-                                    lockdown_prcc = prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type,
+                                # for lockdown_3 replace lockdown with lockdown_3
+                                if "lockdown" in filename_without_ext:
+                                    prcc_calculator = src.prcc_calculator.PRCCCalculator(number_of_samples=120000,
+                                                                                         sim_obj=self)
+                                    lockdown_prcc = prcc_calculator.calculate_prcc_values(mtx_typ="lockdown",
                                                                                           lhs_table=saved_lhs_values,
                                                                                           sim_output=saved_simulation)
-                                    print(filename_without_ext, lockdown_prcc)
-                                else:
-                                    print("Matrix type lockdown_3: work & other")
+                                    cm = np.loadtxt("sens_data/cm/cm.csv", delimiter=';')
+                                    agg_methods = ["simple", "relN", "relM", "cm", "cmT", "cmR", "CMT", "pval"]
+                                    for agg_typ in agg_methods:
+                                        prcc_calculator.aggregate_lockdown_approaches(cm=cm, agg_typ=agg_typ,
+                                                                                      mtx_typ="lockdown")
+                                        os.makedirs("./sens_data/agg_values", exist_ok=True)
+                                        filename = "sens_data/agg_values" + "/" + "_".join([str(susc), str(base_r0),
+                                                                                           "lockdown", agg_typ])
+                                        # save aggregated prcc values
+                                        np.savetxt(fname=filename + ".csv", X=prcc_calculator.agg_prcc, delimiter=";")
+                                        print(filename_without_ext, lockdown_prcc.shape)
+                                    else:
+                                        print("Matrix type lockdown_3: work & other")
                     else:
-                        prcc_calculator = PRCCCalculator(number_of_samples=120000, sim_obj=self)
-                        prcc = prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=self.lhs_table,
-                                                                     sim_output=self.sim_output)
-                        # save prcc values
-                        os.makedirs("./sens_data/PRCC", exist_ok=True)
-                        filename = "sens_data/PRCC" + "/" + "_".join([str(susc), str(base_r0), mtx_type])
-                        np.savetxt(fname=filename + ".csv", X=prcc, delimiter=";")
+                        if "lockdown" == mtx_type:
+                            prcc_calculator = src.prcc_calculator.PRCCCalculator(number_of_samples=120000,
+                                                                                 sim_obj=self)
+                            prcc = prcc_calculator.calculate_prcc_values(mtx_typ=mtx_type, lhs_table=self.lhs_table,
+                                                                         sim_output=self.sim_output)
+                            # calculate p-values
+                            p_values = prcc_calculator.calculate_p_values(mtx_typ=mtx_type)
+                            # save prcc and p values
+                            os.makedirs("./sens_data/PRCC", exist_ok=True)
+                            filename = "sens_data/PRCC" + "/" + "_".join([str(susc), str(base_r0), mtx_type])
+                            x = np.hstack([prcc, prcc_calculator.p_value]).reshape(2, 136).T
+                            np.savetxt(fname=filename + ".csv", X=prcc, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
                 for mtx_type in self.mtx_types:
                     if self.prcc_values is None:
+                        print(susc, base_r0, mtx_type)
                         # read files from the generated folder based on the given parameters
                         prc_folder = "PRCC"
                         for root, dirs, files in os.walk("./sens_data/" + prc_folder):
                             for filename in files:
                                 filename_without_ext = os.path.splitext(filename)[0]
                                 saved_prcc = np.loadtxt("./sens_data/" + prc_folder + "/" + filename, delimiter=';')
-                                print(susc, base_r0, mtx_type, filename_without_ext, saved_prcc)
+                                # load saved aggregated prcc values
+                                # saved_p = np.loadtxt("sens_data/agg_lock3/simple.csv", delimiter=';')
                                 plot = src.plotter.Plotter(sim_obj=self)
-                                plot.generate_prcc_plots()
+                                plot.generate_prcc_plots(prcc_vector=saved_prcc,
+                                                         filename_without_ext=filename_without_ext)
+                                plot.plot_2d_contact_matrices()
+                                plot.generate_stacked_plots()
+                                plot.plot_contact_matrix_as_grouped_bars()
                     else:
                         # use calculated PRCC values from the previous step
                         plot = src.plotter.Plotter(sim_obj=self)
