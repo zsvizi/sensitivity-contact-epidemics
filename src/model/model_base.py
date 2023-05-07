@@ -8,7 +8,7 @@ from src.model.model_torch import EpidemicModel, Epidemic
 
 
 class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments: list, run_ode: str = "torch") -> None:
+    def __init__(self, model_data, compartments: list, run_ode: str = "tor") -> None:
         self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}

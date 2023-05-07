@@ -25,7 +25,7 @@ class CMCalculatorLockdown:
         cm_sim += self.sim_obj.contact_home
         # Get output from target calculator
         tar = TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-        output = tar.get_output(cm_sim=cm_sim)
+        output = tar.get_output(cm_sim=cm_sim)   # 18
         cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
-        output = np.append(cm_total_sim, output)
+        output = np.append(cm_total_sim, output)  # 136 + 18
         return list(output)

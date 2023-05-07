@@ -1,7 +1,5 @@
 import numpy as np
-import os
 import scipy.stats as ss
-
 from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 from src.simulation_npi import SimulationNPI
 
@@ -9,25 +7,24 @@ from src.simulation_npi import SimulationNPI
 class PRCCCalculator:
     def __init__(self, sim_obj: SimulationNPI,
                  number_of_samples: int):
-
         self.sim_obj = sim_obj
         self.n_ag = sim_obj.n_ag
         self.age_vector = sim_obj.age_vector
         self.params = sim_obj.params
-
         self.number_of_samples = number_of_samples
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
 
         self.prcc_mtx = np.array([])
         self.p_icr = []
-
         self.prcc_matrix_school = []  # 16 * 16
         self.prcc_matrix_work = []
         self.prcc_matrix_other = []
-        self.prcc_list = None
         self.p_value = np.array([])
         self.agg_prcc = np.array([])
         self.agg_lock3 = np.array([])
+        self.prcc_list = None
+        self.p_value_mtx = None
+        self.agg_pval = None
 
     def calculate_prcc_values(self, mtx_typ, lhs_table: np.ndarray, sim_output: np.ndarray):
         if "lockdown_3" == mtx_typ:
@@ -58,8 +55,9 @@ class PRCCCalculator:
         self.prcc_list = prcc_list
         return self.prcc_list
 
-    def aggregate_lockdown_approaches(self, cm, mtx_typ, agg_typ: str="pval"):
+    def aggregate_lockdown_approaches(self, cm, mtx_typ, agg_typ):
         if "lockdown" == mtx_typ:
+
             if agg_typ == "simple":
                 agg_prcc = np.sum(self.prcc_mtx, axis=1)
             elif agg_typ == 'relN':
@@ -76,10 +74,12 @@ class PRCCCalculator:
                 agg_prcc = np.sum((self.prcc_mtx * cm.T) / (np.sum(cm, axis=1)).T, axis=1)
             elif agg_typ == 'pval':
                 self.calculate_p_values(mtx_typ=mtx_typ)
-                agg_prcc = np.sum(self.prcc_value * self.prcc_mtx, axis=1)
+                agg_prcc = np.sum(self.p_value_mtx * self.prcc_mtx, axis=1)
+            # save all the agg values from different approaches
             self.agg_prcc = agg_prcc
+            return agg_prcc.flatten()
 
-    def aggregate_lockdown_3_approach(self, cm, mtx_typ, agg_typ: str = "simple"):
+    def aggregate_lockdown_3_approach(self, cm, mtx_typ, agg_typ):
         if agg_typ == "simple":
             agg_prcc_school, agg_prcc_work, agg_prcc_other = [
                 (np.sum(self.prcc_matrix_school * self.age_vector, axis=1) /
@@ -110,7 +110,8 @@ class PRCCCalculator:
                 p_agg_school = np.sum(school * self.prcc_matrix_school, axis=1)
                 p_agg_work = np.sum(work * self.prcc_matrix_work, axis=1)
                 p_agg_other = np.sum(other * self.prcc_matrix_other, axis=1)
-                prcc_list = np.array([p_agg_school, p_agg_work, p_agg_other])
+                prcc_list = np.array([p_agg_school, p_agg_work, p_agg_other]).flatten()
+        # save all the aggregated values from the different approaches
         self.agg_lock3 = prcc_list
 
     def calculate_p_values(self, mtx_typ):
@@ -123,16 +124,39 @@ class PRCCCalculator:
         p_value_work = p_value[self.upp_tri_size: 2 * self.upp_tri_size]
         p_value_other = p_value[2 * self.upp_tri_size:]
 
-        # get the p-values in matrix form: 16 * 16
+        # get the p-values in matrix form: 16 * 16 to be used in aggregation
         if mtx_typ == "lockdown_3":
             school = get_rectangular_matrix_from_upper_triu(p_value[:self.upp_tri_size], self.n_ag)
-            work = get_rectangular_matrix_from_upper_triu(p_value[self.upp_tri_size:2 * self.upp_tri_size], self.n_ag)
+            work = get_rectangular_matrix_from_upper_triu(p_value[self.upp_tri_size:2 * self.upp_tri_size],
+                                                          self.n_ag)
             other = get_rectangular_matrix_from_upper_triu(p_value[2 * self.upp_tri_size:], self.n_ag)
             return school, work, other
         elif mtx_typ == "lockdown":
             prcc_p_value = get_rectangular_matrix_from_upper_triu(p_value[:self.upp_tri_size], self.n_ag)
-            self.prcc_value = prcc_p_value
+            self.p_value_mtx = prcc_p_value
             return prcc_p_value
 
-
+    def aggregate_p_values_approach(self, cm, mtx_typ, agg_typ):
+        # using the same approaches used to aggregate the prcc values, one best approach can be selected for both
+        # most probably the same approach to aggregate both the prcc and p_values
+        if mtx_typ == "lockdown":
+            if agg_typ == "simple":
+                agg_pval = np.sum(self.p_value_mtx, axis=1)
+            elif agg_typ == 'relN':
+                agg_pval = np.sum(self.p_value_mtx * self.age_vector, axis=1) / np.sum(self.age_vector)
+            elif agg_typ == 'relM':
+                agg_pval = (self.p_value_mtx @ self.age_vector) / np.sum(self.age_vector)
+            elif agg_typ == 'cm':
+                agg_pval = np.sum(self.p_value_mtx * cm, axis=1)
+            elif agg_typ == 'cmT':
+                agg_pval = np.sum(self.p_value_mtx * cm.T, axis=1)
+            elif agg_typ == 'cmR':
+                agg_pval = np.sum(self.p_value_mtx * cm, axis=1) / np.sum(cm, axis=1)
+            elif agg_typ == 'CMT':
+                agg_pval = np.sum((self.p_value_mtx * cm.T) / (np.sum(cm, axis=1)).T, axis=1)
+            elif agg_typ == 'pval':
+                agg_pval = np.sum(self.p_value_mtx * self.prcc_mtx, axis=1)
+            # save all the agg values from different approaches
+            self.agg_pval = agg_pval
+            return agg_pval.flatten()
 

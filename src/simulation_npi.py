@@ -47,6 +47,37 @@ class SimulationNPI(SimulationBase):
                         sim_state=self.sim_state, sim_obj=self, mtx_type=mtx_type)
                     self.lhs_table, self.sim_output = sampler_npi.run()
 
+                    # run and save all the necessary files for plotting
+                    # calculate prcc and p_values and save the files stacked to each other
+                    prcc_calculator = src.prcc_calculator.PRCCCalculator(number_of_samples=120000,
+                                                                         sim_obj=self)
+                    lockdown_prcc = prcc_calculator.calculate_prcc_values(mtx_typ="lockdown",
+                                                                          lhs_table=self.lhs_table,
+                                                                          sim_output=self.sim_output)
+                    p_values = prcc_calculator.calculate_p_values(mtx_typ="lockdown")
+                    stack_prcc_pval = np.hstack([prcc_calculator.prcc_list, prcc_calculator.p_value]).reshape(2, 136).T
+                    os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
+                    filename = "sens_data/PRCC_Pvalues" + "/" + "_".join([str(susc), str(base_r0), mtx_type])
+                    np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
+
+                    # save aggregated prcc values that generate values using different approach
+                    agg_methods = ["simple", "relN", "relM", "cm", "cmT", "cmR", "CMT", "pval"]
+                    for agg_typ in agg_methods:
+                        agg_prcc = prcc_calculator.aggregate_lockdown_approaches(cm=self.contact_matrix,
+                                                                                 agg_typ=agg_typ, mtx_typ="lockdown")
+                        agg_pval = prcc_calculator.aggregate_p_values_approach(cm=self.contact_matrix,
+                                                                                 agg_typ=agg_typ, mtx_typ="lockdown")
+                        stack_agg_prcc_pval = np.hstack([agg_prcc, agg_pval]).reshape(2, 16).T
+                        os.makedirs("./sens_data/agg_values", exist_ok=True)
+                        filename = "sens_data/agg_values" + "/" + "_".join([str(susc), str(base_r0),
+                                                                            "lockdown", agg_typ])
+                        np.savetxt(fname=filename + ".csv", X=stack_agg_prcc_pval, delimiter=";")
+
+                    # for plotting the number of deaths
+                    time = np.arange(0, 250, 0.5)
+                    solution = self.model.get_solution(t=time, parameters=self.params,
+                                                       cm=self.contact_matrix)
+
     def calculate_prcc_values(self):
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
@@ -62,26 +93,16 @@ class SimulationNPI(SimulationBase):
                                                               filename, delimiter=';')
                                 saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
                                                               filename.replace("simulations", "lhs"), delimiter=';')
-                                # for lockdown_3 replace lockdown with lockdown_3
+
                                 if "lockdown" in filename_without_ext:
                                     prcc_calculator = src.prcc_calculator.PRCCCalculator(number_of_samples=120000,
                                                                                          sim_obj=self)
                                     lockdown_prcc = prcc_calculator.calculate_prcc_values(mtx_typ="lockdown",
                                                                                           lhs_table=saved_lhs_values,
                                                                                           sim_output=saved_simulation)
-                                    cm = np.loadtxt("sens_data/cm/cm.csv", delimiter=';')
-                                    agg_methods = ["simple", "relN", "relM", "cm", "cmT", "cmR", "CMT", "pval"]
-                                    for agg_typ in agg_methods:
-                                        prcc_calculator.aggregate_lockdown_approaches(cm=cm, agg_typ=agg_typ,
-                                                                                      mtx_typ="lockdown")
-                                        os.makedirs("./sens_data/agg_values", exist_ok=True)
-                                        filename = "sens_data/agg_values" + "/" + "_".join([str(susc), str(base_r0),
-                                                                                           "lockdown", agg_typ])
-                                        # save aggregated prcc values
-                                        np.savetxt(fname=filename + ".csv", X=prcc_calculator.agg_prcc, delimiter=";")
-                                        print(filename_without_ext, lockdown_prcc.shape)
-                                    else:
-                                        print("Matrix type lockdown_3: work & other")
+                                    print(filename_without_ext, lockdown_prcc)
+                                else:
+                                    print("Matrix type lockdown_3: work & other")
                     else:
                         if "lockdown" == mtx_type:
                             prcc_calculator = src.prcc_calculator.PRCCCalculator(number_of_samples=120000,
@@ -90,11 +111,7 @@ class SimulationNPI(SimulationBase):
                                                                          sim_output=self.sim_output)
                             # calculate p-values
                             p_values = prcc_calculator.calculate_p_values(mtx_typ=mtx_type)
-                            # save prcc and p values
-                            os.makedirs("./sens_data/PRCC", exist_ok=True)
-                            filename = "sens_data/PRCC" + "/" + "_".join([str(susc), str(base_r0), mtx_type])
                             x = np.hstack([prcc, prcc_calculator.p_value]).reshape(2, 136).T
-                            np.savetxt(fname=filename + ".csv", X=prcc, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
@@ -103,19 +120,16 @@ class SimulationNPI(SimulationBase):
                     if self.prcc_values is None:
                         print(susc, base_r0, mtx_type)
                         # read files from the generated folder based on the given parameters
-                        prc_folder = "PRCC"
-                        for root, dirs, files in os.walk("./sens_data/" + prc_folder):
+                        load_folder = "PRCC_Pvalues"
+                        for root, dirs, files in os.walk("./sens_data/" + load_folder):
                             for filename in files:
                                 filename_without_ext = os.path.splitext(filename)[0]
-                                saved_prcc = np.loadtxt("./sens_data/" + prc_folder + "/" + filename, delimiter=';')
-                                # load saved aggregated prcc values
-                                # saved_p = np.loadtxt("sens_data/agg_lock3/simple.csv", delimiter=';')
+                                saved_file = np.loadtxt("./sens_data/" + load_folder + "/" + filename, delimiter=';')
                                 plot = src.plotter.Plotter(sim_obj=self)
-                                plot.generate_prcc_plots(prcc_vector=saved_prcc,
-                                                         filename_without_ext=filename_without_ext)
-                                plot.plot_2d_contact_matrices()
-                                plot.generate_stacked_plots()
-                                plot.plot_contact_matrix_as_grouped_bars()
+                                plot.generate_prcc_plots(prcc_vector=abs(saved_file[:, 0]), p_values=saved_file[:, 1],
+                                                          filename_without_ext=filename_without_ext)
+                                # plot.plot_death_from_model(params=self.params, cm=saved_file,
+                                #                         filename_without_ext=filename_without_ext)
                     else:
                         # use calculated PRCC values from the previous step
                         plot = src.plotter.Plotter(sim_obj=self)

@@ -2,11 +2,13 @@ import os
 import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from matplotlib.tri import Triangulation
 import numpy as np
 import pandas as pd
 
 from src.dataloader import DataLoader
 from src.simulation_npi import SimulationNPI
+from src.prcc import get_rectangular_matrix_from_upper_triu
 
 plt.style.use('seaborn-whitegrid')
 
@@ -107,27 +109,139 @@ class Plotter:
         xp = range(parameter_count)
         plt.figure(figsize=(35, 10))
         plt.tick_params(direction="in")
-        plt.bar(xp, list(prcc_vector), align='center', color=cmap(prcc_vector))
-
+        # aggregation use abs values
+        color_list = ["#ff96da", "#96ffbb", "#96daff", "#ffbb96"]
+        # colors = [color_list[0] if i < xp[16] else color_list[1] if i < xp[32] else color_list[3] for i in xp]
+        # plt.bar(xp, list(abs(prcc_vector)), align='center', color=cmap(prcc_vector))
+        plt.bar(xp, list(abs(prcc_vector)), align='center', color=color_list[0])
+        # x = plt.bar(xp, list(abs(prcc_vector)), align='center', color=colors)
         plt.xticks(ticks=xp, labels=param_list, rotation=90)
-        plt.yticks(ticks=np.arange(-1, 1.05, 0.1))
+        plt.yticks(ticks=np.arange(-1, 3.7, 0.1))
         axes = plt.gca()
-        axes.set_ylim([0, 1])
-        plt.ylabel('PRCC indices', labelpad=10, fontsize=20)
-        plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
+        plt.legend()
+        # agg legend
+        # plt.legend((x[0:16], x[16:32], x[32:48]), ('school', 'work', 'other'))
+        axes.set_ylim([0, 3.7])
+        plt.ylabel('Aggregated PRCC indices', labelpad=10, fontsize=20)
+        plt.xlabel('Age groups', labelpad=10, fontsize=20)
         title_list = filename_without_ext.split("_")
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.savefig('./sens_data/PRCC_plot/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
 
-    def generate_prcc_plots(self, prcc_vector, filename_without_ext):
+    def stacked_prcc_pvalues(self, param_list, prcc_vector, p_values, filename_without_ext,
+                             filename_to_save, plot_title):
+        os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif', size=14)
+        plt.margins(0, tight=False)
+        # parameter_count = len(list(prcc_vector))
+        parameter_count = 16
+        xp = range(parameter_count)
+        # plt.figure(figsize=(35, 10))
+        plt.figure(figsize=(15, 12))
+        color_list = ["#ff96da", "#96ffbb", "#96daff", "#ffbb96"]
+        colors = ["r" if i < 0.01 else "orange" if 0.01 < i < 0.05 else "pink" if 0.05 < i < 0.1 else
+        "purple" for i in p_values]
+        plt.tick_params(direction="in")
+        plt.bar(xp, list(prcc_vector), align='center', width=0.6, color="g", label="PRCC")  # used absolute prcc
+        plt.bar(xp, list(p_values < 0.01), width=0.6, align='center', bottom=np.array(prcc_vector),
+                  color="r", label="P_value less than 0.01")
+        plt.bar(xp, list([0.01 < i < 0.05 for i in p_values]), align='center', width=0.6,
+                  bottom=np.array(prcc_vector), color="orange", label="P_value 0.01 - 0.05")
+        plt.bar(xp, list([0.05 < i < 0.1 for i in p_values]), align='center', width=0.6,
+                  bottom=np.array(prcc_vector), color="pink", label="P_value 0.05 - 0.1")
+        plt.bar(xp, list(p_values > 0.1), align='center', width=0.6, bottom=np.array(prcc_vector),
+                  color="purple", label="P_value greater than 0.1")
+        # plt.xticks(ticks=xp, labels=param_list, rotation=90)
+        plt.xticks(ticks=xp, rotation=90)
+        plt.yticks(ticks=np.arange(-1, 2.5, 0.2))
+        plt.legend()
+        axes = plt.gca()
+        axes.set_ylim([0, 2.5])
+        plt.ylabel('PRCC and P_values', labelpad=10, fontsize=20)
+        plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
+        plt.title("PRCC values and their corresponding P values")
+        title_list = filename_without_ext.split("_")
+        plt.title(plot_title, y=1.03, fontsize=20)
+        plt.savefig('./sens_data/PRCC_PVAL_PLOT/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
+        plt.close()
+
+    def plot_prcc_p_values_as_heatmap(self, prcc, p_values, filename_without_ext, filename_to_save, plot_title):
+        os.makedirs("sens_data/heatmap", exist_ok=True)
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif', size=14)
+        plt.margins(0, tight=False)
+        PRC_mtx = get_rectangular_matrix_from_upper_triu(prcc[:self.sim_obj.upper_tri_size], self.sim_obj.n_ag)
+        P_values_mtx = get_rectangular_matrix_from_upper_triu(p_values[:self.sim_obj.upper_tri_size], self.sim_obj.n_ag)
+        # vertices of the little squares
+        xv, yv = np.meshgrid(np.arange(-0.5, self.sim_obj.n_ag), np.arange(-0.5, self.sim_obj.n_ag))
+        # centers of the little square
+        xc, yc = np.meshgrid(np.arange(0, self.sim_obj.n_ag), np.arange(0, self.sim_obj.n_ag))
+        x = np.concatenate([xv.ravel(), xc.ravel()])
+        y = np.concatenate([yv.ravel(), yc.ravel()])
+        start = (self.sim_obj.n_ag + 1) * (self.sim_obj.n_ag + 1)  # indices of the centers
+        trianglesPRCC = [(i + j * (self.sim_obj.n_ag + 1), i + 1 + j * (self.sim_obj.n_ag + 1),
+                          i + (j + 1) * (self.sim_obj.n_ag + 1))
+                         for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
+        trianglesP = [(i + 1 + j * (self.sim_obj.n_ag + 1), i + 1 + (j + 1) * (self.sim_obj.n_ag + 1),
+                       i + (j + 1) * (self.sim_obj.n_ag + 1))
+                      for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
+        triangul = [Triangulation(x, y, triangles) for triangles in [trianglesPRCC, trianglesP]]
+        values = PRC_mtx, P_values_mtx
+        cmaps = ['Greens', 'Reds']
+        norms = [plt.Normalize(-0.001, 1) for _ in range(2)]
+
+        fig, ax = plt.subplots()
+        images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, norm=norm, ec='white')
+                  for t, val, cmap, norm in zip(triangul, values, cmaps, norms)]
+
+        cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)
+        cbar = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7)
+        ax.set_xticks(range(self.sim_obj.n_ag))
+        ax.set_yticks(range(self.sim_obj.n_ag))
+        plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
+        ax.margins(x=0, y=0)
+        ax.set_aspect('equal', 'box')  # square cells
+        plt.tight_layout()
+        title_list = filename_without_ext.split("_")
+        plt.title(plot_title, y=1.03, fontsize=25)
+        plt.title(plot_title, y=1.03, fontsize=25)
+        plt.savefig('./sens_data/heatmap/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
+        plt.close()
+
+    def plot_aggregation(self, agg_values, filename_without_ext):
+        title_list = filename_without_ext.split("_")
+        plot_title = 'Target: R0, Susceptibility=' + title_list[0] + ', R0=' + title_list[1] + \
+                     ', Aggregation: ' + title_list[3]
+        self.plot_prcc_values(np.arange(16), agg_values, filename_without_ext, "agg_plot_" +
+                              filename_without_ext, plot_title)
+
+    def generate_prcc_plots(self, prcc_vector, p_values, filename_without_ext):
+        title_list = filename_without_ext.split("_")
+        names = np.array(self.generate_axis_label()[self.sim_obj.upper_tri_indexes])
+        plot_title = 'Target: Epidemic size, Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
+        # self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
+        #                                     "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
+        self.stacked_prcc_pvalues(16, prcc_vector, p_values, filename_without_ext,
+                                  "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
+        # self.stacked_prcc_pvalues(names.flatten().tolist(), prcc_vector, p_values, filename_without_ext,
+        #                            "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
+        # self.plot_prcc_values(names.flatten().tolist(), prcc_vector, filename_without_ext,
+        #                       "PRCC_plot_" + filename_without_ext + "_R0", plot_title)
+
+    def generate_lockdown3_prcc(self, prcc_vector, filename_without_ext):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target: R0, Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
-        names = np.array(self.generate_axis_label()[self.sim_obj.upper_tri_indexes])
         self.plot_prcc_values_lockdown_3(prcc_vector, "PRCC_bars_" + filename_without_ext + "_R0", plot_title)
-        if "lockdown_3" not in filename_without_ext:
-            self.plot_prcc_values(names.flatten().tolist(), prcc_vector, filename_without_ext,
-                                  "PRCC_plot_" + filename_without_ext + "_R0", plot_title)
+        # if "lockdown_3" not in filename_without_ext:
+
+    def scatter_plot(self, p_values, prcc_vector):
+        plt.figure(figsize=(16, 10))
+        plt.plot(p_values, prcc_vector, linewidth=3.0, linestyle='--')
+        plt.ylabel("PRCC", fontsize=20)
+        plt.xlabel("time (days)", fontsize=20)
+        plt.show()
 
     def plot_symm_contact_matrix_as_bars(self, param_list, contact_vector, file_name):
         ymax = max(contact_vector)
@@ -161,9 +275,12 @@ class Plotter:
         plt.figure(figsize=(35, 10))
         plt.tick_params(direction="in")
         plt.bar(xp, list(list_of_flattened_matrices[0]), align='center', label=labels[0], color=color_list[0])
+        plt.bar(xp, list(list_of_flattened_matrices), align='center', label=param_list, color=color_list[0])
         for t in range(1, len(list_of_flattened_matrices)):
             plt.bar(xp, list(list_of_flattened_matrices[t]), align='center',
                     bottom=np.array(list_of_flattened_matrices[:t]).sum(axis=0), label=labels[t], color=color_list[t])
+        plt.bar(xp, list(list_of_flattened_matrices), align='center',
+                bottom=np.array(list_of_flattened_matrices).sum(axis=0), label=param_list, color=color_list[0])
         plt.xticks(ticks=xp, labels=param_list, rotation=90)
         plt.legend()
         axes = plt.gca()
@@ -288,3 +405,76 @@ class Plotter:
         plt.title("Contacts from original CMs", y=1.03, fontsize=25)
         plt.savefig('./sens_data/CM_prem_grouped.pdf', format="pdf", bbox_inches='tight')
         plt.close()
+
+    def plot_model(self, params, cm, filename_without_ext, filename_to_save, plot_title):
+        os.makedirs("sens_data/death", exist_ok=True)
+        cm_list = []
+        time = np.arange(0, 250, 0.5)
+        color_list = ["#ff96da", "#96ffbb", "#96daff", "#ffbb96"]
+        # plot uses contact matrix
+        solution_cmx = self.sim_obj.model.get_solution(t=time, parameters=params, cm=self.sim_obj.contact_matrix)
+        for idx, cm in enumerate(cm_list):
+            # plot uses manipulated contact matrix (cm)
+            solution = self.sim_obj.model.get_solution(t=time, parameters=params, cm=cm)
+            # consider the total number of deaths
+            plt.plot(time, np.sum(solution[:, self.sim_obj.model.c_idx["d"] *
+                                              self.sim_obj.n_ag:(self.sim_obj.model.c_idx["d"] + 1) *
+                                                      self.sim_obj.n_ag], axis=1),
+                     label="all ages", color=color_list[0], linewidth=3.0)
+            plt.plot(time, np.sum(solution_cmx[:, self.sim_obj.model.c_idx["d"] *
+                                                  self.sim_obj.n_ag:(self.sim_obj.model.c_idx["d"] + 1) *
+                                                                self.sim_obj.n_ag], axis=1),
+                     label="all ages c_mtx", color=color_list[0], linewidth=3.0, linestyle='--')
+            # 75+
+            plt.plot(time, np.sum(solution[:, self.sim_obj.model.c_idx["d"] *
+                                              self.sim_obj.n_ag + 15:self.sim_obj.model.c_idx["d"] *
+                                                                     self.sim_obj.n_ag + 16], axis=1),
+                     label="75+", color="blue", linewidth=3.0)
+            plt.plot(time, np.sum(solution_cmx[:, self.sim_obj.model.c_idx["d"] *
+                                                  self.sim_obj.n_ag + 15:self.sim_obj.model.c_idx["d"] *
+                                                                     self.sim_obj.n_ag + 16], axis=1),
+                     label="75+ c_mtx", color="blue", linewidth=3.0, linestyle='--')
+
+            # age 65-75
+            plt.plot(time, np.sum(solution[:, self.sim_obj.model.c_idx["d"] *
+                                              self.sim_obj.n_ag + 13:self.sim_obj.model.c_idx["d"] *
+                                                           self.sim_obj.n_ag + 15], axis=1),
+                     label="65-74", color=color_list[1], linewidth=3.0)
+            plt.plot(time, np.sum(solution_cmx[:, self.sim_obj.model.c_idx["d"] *
+                                                  self.sim_obj.n_ag + 13:self.sim_obj.model.c_idx["d"] *
+                                                                     self.sim_obj.n_ag + 15], axis=1),
+                     label="65-74 c_mtx", color=color_list[1], linewidth=3.0, linestyle='--')
+            # age 25-64
+            plt.plot(time, np.sum(solution[:, self.sim_obj.model.c_idx["d"] *
+                                              self.sim_obj.n_ag + 5:self.sim_obj.model.c_idx["d"] *
+                                                           self.sim_obj.n_ag + 13], axis=1),
+                     label="25-64", color="orange", linewidth=3.0)
+            plt.plot(time, np.sum(solution_cmx[:, self.sim_obj.model.c_idx["d"] *
+                                                  self.sim_obj.n_ag + 5:self.sim_obj.model.c_idx["d"] *
+                                                                    self.sim_obj.n_ag + 13], axis=1),
+                     label="25-64", color="orange", linewidth=3.0, linestyle='--')
+            # age 0-24
+            plt.plot(time, np.sum(solution[:, self.sim_obj.model.c_idx["d"] *
+                                              self.sim_obj.n_ag:self.sim_obj.model.c_idx["d"] *
+                                                                    self.sim_obj.n_ag + 5], axis=1),
+                     label="0-24", color="black", linewidth=3.0)
+            plt.plot(time, np.sum(solution_cmx[:, self.sim_obj.model.c_idx["d"] *
+                                                  self.sim_obj.n_ag:self.sim_obj.model.c_idx["d"] *
+                                                                self.sim_obj.n_ag + 5], axis=1),
+                     label="0-24", color="black", linewidth=3.0, linestyle='--')
+
+            plt.legend()
+            plt.gca().set_xlabel('DAYS')
+            plt.gca().set_ylabel('deaths')
+            plt.gcf().set_size_inches(12, 8)
+            plt.tight_layout()
+            plt.title(plot_title, y=1.03, fontsize=15)
+            title_list = filename_without_ext.split("_")
+            plt.savefig('./sens_data/death/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
+            plt.close()
+
+    def plot_death_from_model(self, params, cm, filename_without_ext):
+        title_list = filename_without_ext.split("_")
+        plot_title = 'Target: R0, Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
+        self.plot_model(params=params, cm=cm, filename_without_ext=filename_without_ext, filename_to_save=
+                        "death_" + filename_without_ext, plot_title=plot_title)
