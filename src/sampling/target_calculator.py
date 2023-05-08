@@ -1,6 +1,7 @@
 import numpy as np
-from src.simulation_npi import SimulationNPI
+
 from src.model.r0_generator import R0Generator
+from src.simulation_npi import SimulationNPI
 
 
 class TargetCalculator:

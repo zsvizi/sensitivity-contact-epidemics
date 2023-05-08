@@ -11,10 +11,8 @@ class CMCalculatorLockdown:
         self.sim_state = sim_state
 
         self.lhs_boundaries = \
-            {  # Contact matrix entry level approach, full scale approach (old name: "home")
-                "lockdown": {"lower": np.zeros(self.sim_obj.upper_tri_size),
-                             "upper": np.ones(self.sim_obj.upper_tri_size)}
-            }
+            {"lower": np.zeros(self.sim_obj.upper_tri_size),
+             "upper": np.ones(self.sim_obj.upper_tri_size)}
 
     def get_sim_output_cm_entries_lockdown(self, lhs_sample: np.ndarray):
         # Get ratio matrix

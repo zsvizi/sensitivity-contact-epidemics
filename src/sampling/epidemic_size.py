@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 from src.simulation_npi import SimulationNPI
 

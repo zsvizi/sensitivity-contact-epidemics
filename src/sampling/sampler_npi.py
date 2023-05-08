@@ -4,19 +4,21 @@ import numpy as np
 from tqdm import tqdm
 
 import src
-from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
 from src.prcc import get_rectangular_matrix_from_upper_triu
+from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
+from src.sampling.epidemic_size import FinalSize
 from src.sampling.sampler_base import SamplerBase
 from src.sampling.target_calculator import TargetCalculator
-from src.sampling.epidemic_size import FinalSize
 
 
 class SamplerNPI(SamplerBase):
     def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI,
-                 mtx_type: str = "lockdown", target: str = "r0") -> None:
+                 mtx_type: str = "lockdown", target: str = "r0",
+                 n_sims: int = 1200) -> None:
         super().__init__(sim_state=sim_state, sim_obj=sim_obj)
         self.sim_obj = sim_obj
         self.target = target
+        self.n_sims = n_sims
 
         if mtx_type == "lockdown":
             cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_state)
@@ -51,7 +53,7 @@ class SamplerNPI(SamplerBase):
         elif self.target == "r0":
             if self.r0_lhs_home[1] < 1:
                 # Get LHS table
-                number_of_samples = 120000
+                number_of_samples = self.n_sims
                 lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
                 # Results have shape of (number_of_samples, 136 + 1 + 1 + 16)
@@ -106,7 +108,7 @@ class SamplerNPI(SamplerBase):
         return r0_lhs_home_k[1]  # 2nd column which has r0
 
     def _get_variable_parameters(self):
-        return [str(self.susc), str(self.base_r0), format(self.beta, '.5f'), self.type]
+        return [str(self.susc), str(self.base_r0), format(self.beta, '.5f')]
 
     def _get_upper_bound_factor_unit(self) -> np.ndarray:
         cm_diff = (self.sim_obj.contact_matrix - self.contact_home) * self.sim_obj.age_vector

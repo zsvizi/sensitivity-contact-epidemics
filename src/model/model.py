@@ -14,8 +14,8 @@ class RostModelHungary(EpidemicModelBase):
 
     def update_initial_values(self, iv: dict):
         iv["l1"][2] = 1  # np.array([0, 0, 0, 4, 3, 3, 1, 2, 1, 2, 2, 2, 5, 5, 0, 0])
-        iv.update({"c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] + iv["is2"] + iv["is3"] + iv["r"] +
-                        iv["d"]
+        iv.update({"c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] +
+                   iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
                    })
 
         iv.update({"s": self.population - (iv["c"] + iv["l1"] + iv["l2"])})
@@ -47,7 +47,7 @@ class RostModelHungary(EpidemicModelBase):
             "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)
 
             "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3 + ps["gamma_h"] * ih +
-                 ps["gamma_cr"] * icr,  # R'(t)
+            ps["gamma_cr"] * icr,  # R'(t)
             "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
 
             "c": 2 * ps["alpha_l"] * l2  # C'(t)

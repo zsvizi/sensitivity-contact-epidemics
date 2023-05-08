@@ -13,7 +13,6 @@ class SamplerBase(ABC):
         self.sim_state = sim_state
         self.base_r0 = sim_state["base_r0"]
         self.beta = sim_state["beta"]
-        self.type = sim_state["type"]
 
         self.r0generator = sim_state["r0generator"]
         self.lhs_boundaries = None
@@ -29,8 +28,8 @@ class SamplerBase(ABC):
     def _get_lhs_table(self, number_of_samples: int = 120000, kappa=None) -> np.ndarray:
         # only computes lhs for icu with a_ij
         # Get actual limit matrices
-        lower_bound = self.lhs_boundaries[self.type]["lower"]
-        upper_bound = self.lhs_boundaries[self.type]["upper"]
+        lower_bound = self.lhs_boundaries["lower"]
+        upper_bound = self.lhs_boundaries["upper"]
 
         if kappa is not None:
             upper_bound *= (1-kappa)
