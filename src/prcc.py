@@ -1,7 +1,8 @@
 import numpy as np
+import scipy
 
 
-def get_rectangular_matrix_from_upper_triu(rvector, matrix_size):
+def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
     upper_tri_indexes = np.triu_indices(matrix_size)
     new_contact_mtx = np.zeros((matrix_size, matrix_size))
     new_contact_mtx[upper_tri_indexes] = rvector
@@ -10,7 +11,7 @@ def get_rectangular_matrix_from_upper_triu(rvector, matrix_size):
     return np.array(new_2)
 
 
-def get_contact_matrix_from_upper_triu(rvector, age_vector):
+def get_contact_matrix_from_upper_triu(rvector, age_vector) -> np.ndarray:
     new_2 = get_rectangular_matrix_from_upper_triu(rvector=rvector,
                                                    matrix_size=age_vector.shape[0])
     vector = np.array(new_2 / age_vector)
@@ -22,10 +23,11 @@ def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
     return np.sum(cm_total, axis=1)
 
 
-def get_prcc_values(lhs_output_table):
+def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> np.ndarray:
     """
     Creates the PRCC values of last column of an ndarray depending on the columns before.
-    :param lhs_output_table: ndarray
+    :param ndarray lhs_output_table: ...
+    :param ndarray number_of_samples: ...
     :return: ndarray
     """
     ranked = (lhs_output_table.argsort(0)).argsort(0)
@@ -36,10 +38,16 @@ def get_prcc_values(lhs_output_table):
         corr_mtx_inverse = np.linalg.inv(corr_mtx)
 
     parameter_count = lhs_output_table.shape[1] - 1
-
     prcc_vector = np.zeros(parameter_count)
     for w in range(parameter_count):  # compute PRCC btwn each param & sim result
         prcc_vector[w] = -corr_mtx_inverse[w, parameter_count] / \
                          np.sqrt(corr_mtx_inverse[w, w] *
                                  corr_mtx_inverse[parameter_count, parameter_count])
+
+        # p-values Size (136) for lockdown and 408 for lockdown3  [formula based on Simeone Marino, Ian B. Hogue paper]
+        t = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
+        # p-value for 2-sided test
+        dof = number_of_samples - 2 - parameter_count
+        p_value = 2 * (1 - scipy.stats.t.cdf(abs(t), dof))
+
     return prcc_vector

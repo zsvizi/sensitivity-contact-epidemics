@@ -10,9 +10,9 @@ PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class DataLoader:
     def __init__(self):
-        self._model_parameters_data_file = os.path.join(PROJECT_PATH, "data", "model_parameters.json")
-        self._contact_data_file = os.path.join(PROJECT_PATH, "data", "contact_matrices.xls")
-        self._age_data_file = os.path.join(PROJECT_PATH, "data", "age_distribution.xls")
+        self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "model_parameters.json")
+        self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "contact_matrices.xls")
+        self._age_data_file = os.path.join(PROJECT_PATH, "../data", "age_distribution.xls")
 
         self._get_age_data()
         self._get_model_parameters_data()
@@ -51,11 +51,11 @@ class DataLoader:
 
     def transform_matrix(self, matrix: np.ndarray):
         # Get age vector as a column vector
-        age_distribution = self.age_data.reshape((-1, 1))
+        age_distribution = self.age_data.reshape((-1, 1))   # (16, 1)
         # Get matrix of total number of contacts
-        matrix_1 = matrix * age_distribution
+        matrix_1 = matrix * age_distribution        # (16, 16)
         # Get symmetrized matrix
         output = (matrix_1 + matrix_1.T) / 2
         # Get contact matrix
-        output /= age_distribution
+        output /= age_distribution   # divides and assign the result to output    (16, 16)
         return output

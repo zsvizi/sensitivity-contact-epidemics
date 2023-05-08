@@ -1,14 +1,14 @@
-from simulation_npi import SimulationNPI
-from plotter import generate_stacked_plots, plot_contact_matrix_as_grouped_bars
+import src
+from src.dataloader import DataLoader
 
 
 def main():
-    simulation = SimulationNPI()
-    simulation.run()
+    data = DataLoader()
+    simulation = src.SimulationNPI(data=data)
+    simulation.generate_lhs()
+    simulation.calculate_prcc_values()
+    simulation.plot_prcc_values()
 
 
 if __name__ == '__main__':
-
     main()
-    # generate_stacked_plots()
-    # plot_contact_matrix_as_grouped_bars()
