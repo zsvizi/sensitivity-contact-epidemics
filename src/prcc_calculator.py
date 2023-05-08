@@ -1,12 +1,12 @@
 import numpy as np
 import scipy.stats as ss
 
+import src
 from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
-from src.simulation_npi import SimulationNPI
 
 
 class PRCCCalculator:
-    def __init__(self, sim_obj: SimulationNPI,
+    def __init__(self, sim_obj: src.SimulationNPI,
                  number_of_samples: int):
         self.sim_obj = sim_obj
         self.n_ag = sim_obj.n_ag
@@ -37,7 +37,6 @@ class PRCCCalculator:
         p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
         self.p_icr = p_icr
         self.prcc_list = prcc_list
-        return self.prcc_list
 
     def aggregate_lockdown_approaches(self, cm, agg_typ):
         agg_prcc = None
@@ -71,28 +70,10 @@ class PRCCCalculator:
 
         prcc_p_value = get_rectangular_matrix_from_upper_triu(p_value[:self.upp_tri_size], self.n_ag)
         self.p_value_mtx = prcc_p_value
-        return prcc_p_value
 
     def aggregate_p_values_approach(self, cm, agg_typ):
         # using the same approaches used to aggregate the prcc values, one best approach can be selected for both
         # most probably the same approach to aggregate both the prcc and p_values
-        agg_pval = None
         if agg_typ == "simple":
-            agg_pval = np.sum(self.p_value_mtx, axis=1)
-        elif agg_typ == 'relN':
-            agg_pval = np.sum(self.p_value_mtx * self.age_vector, axis=1) / np.sum(self.age_vector)
-        elif agg_typ == 'relM':
-            agg_pval = (self.p_value_mtx @ self.age_vector) / np.sum(self.age_vector)
-        elif agg_typ == 'cm':
-            agg_pval = np.sum(self.p_value_mtx * cm, axis=1)
-        elif agg_typ == 'cmT':
-            agg_pval = np.sum(self.p_value_mtx * cm.T, axis=1)
-        elif agg_typ == 'cmR':
-            agg_pval = np.sum(self.p_value_mtx * cm, axis=1) / np.sum(cm, axis=1)
-        elif agg_typ == 'CMT':
-            agg_pval = np.sum((self.p_value_mtx * cm.T) / (np.sum(cm, axis=1)).T, axis=1)
-        elif agg_typ == 'pval':
-            agg_pval = np.sum(self.p_value_mtx * self.prcc_mtx, axis=1)
-        # save all the agg values from different approaches
-        self.agg_pval = agg_pval
-        return agg_pval.flatten()
+            pass
+        return np.zeros((cm.shape[0], )).flatten()

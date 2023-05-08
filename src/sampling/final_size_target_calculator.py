@@ -1,11 +1,12 @@
 import numpy as np
 
 from src.simulation_npi import SimulationNPI
+from src.sampling.target_calculator import TargetCalculator
 
 
-class FinalSize:
+class FinalSizeTargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: SimulationNPI):
-        self.sim_obj = sim_obj
+        super().__init__(sim_obj=sim_obj)
         self.sample_params = dict()
 
     def get_output(self, cm: np.ndarray):

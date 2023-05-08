@@ -2,7 +2,7 @@ import numpy as np
 
 import src
 from src.prcc import get_rectangular_matrix_from_upper_triu
-from src.sampling.target_calculator import TargetCalculator
+from src.sampling.r0_target_calculator import R0TargetCalculator
 
 
 class CMCalculatorLockdown:
@@ -22,7 +22,7 @@ class CMCalculatorLockdown:
         cm_sim = (1 - ratio_matrix) * (self.sim_obj.contact_matrix - self.sim_obj.contact_home)   # first condition
         cm_sim += self.sim_obj.contact_home
         # Get output from target calculator
-        tar = TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+        tar = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
         output = tar.get_output(cm_sim=cm_sim)   # 18
         cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
         output = np.append(cm_total_sim, output)  # 136 + 18

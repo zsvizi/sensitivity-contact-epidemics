@@ -4,11 +4,11 @@ import os
 import numpy as np
 from smt.sampling_methods import LHS
 
-from src.simulation_npi import SimulationNPI
+import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, sim_obj: SimulationNPI) -> None:
+    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI) -> None:
         self.sim_obj = sim_obj
         self.sim_state = sim_state
         self.base_r0 = sim_state["base_r0"]
@@ -25,21 +25,14 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 120000, kappa=None) -> np.ndarray:
+    def _get_lhs_table(self, number_of_samples: int = 120000, kappa: float = None) -> np.ndarray:
         # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries["lower"]
         upper_bound = self.lhs_boundaries["upper"]
 
         if kappa is not None:
-            upper_bound *= (1-kappa)
-
-        if self.sim_obj is not None:
-            p_icr = (1 - self.sim_obj.params['p']) * self.sim_obj.params['h'] * self.sim_obj.params['xi']
-            a = np.zeros((16, 16))
-            for i in range(16):
-                for j in range(16):
-                    a[i, j] = p_icr[i] * p_icr[j] / np.sum(p_icr) ** 2
+            upper_bound *= (1 - kappa)
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
