@@ -1,13 +1,10 @@
-import os
 from time import sleep
 
 import numpy as np
-import torch
 from tqdm import tqdm
 
 import src
 from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
-from src.sampling.cm_calculator_lockdown_typewise import CMCalculatorLockdownTypewise
 from src.prcc import get_rectangular_matrix_from_upper_triu
 from src.sampling.sampler_base import SamplerBase
 from src.sampling.target_calculator import TargetCalculator
@@ -24,9 +21,6 @@ class SamplerNPI(SamplerBase):
         if mtx_type == "lockdown":
             cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_state)
             self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
-        elif mtx_type == "lockdown_3":
-            cm_calc = CMCalculatorLockdownTypewise(sim_obj=self.sim_obj, sim_state=sim_state)
-            self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown_3
         else:
             raise Exception("Matrix type is unknown!")
 
