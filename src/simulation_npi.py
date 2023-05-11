@@ -58,52 +58,37 @@ class SimulationNPI(SimulationBase):
                 #     cm=self.contact_matrix)
 
     def calculate_prcc_values(self):
-        for susc in self.susc_choices:
-            for base_r0 in self.r0_choices:
-                print(susc, base_r0)
-                if self.lhs_table is None:
-                    # read files from the generated folder based on the given parameters
-                    sim_folder, lhs_folder = "simulations", "lhs"
-                    for root, dirs, files in os.walk("./sens_data/" + sim_folder):
-                        for filename in files:
-                            saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" +
-                                                          filename, delimiter=';')
-                            saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
-                                                          filename.replace("simulations", "lhs"), delimiter=';')
+        # read files from the generated folder based on the given parameters
+        sim_folder, lhs_folder = "simulations", "lhs"
+        for root, dirs, files in os.walk("./sens_data/" + sim_folder):
+            for filename in files:
+                saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" +
+                                              filename, delimiter=';')
+                saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
+                                              filename.replace("simulations", "lhs"), delimiter=';')
 
-                            # Calculate PRCC values
-                            prcc_calculator = src.prcc_calculator.PRCCCalculator(
-                                number_of_samples=self.n_samples,
-                                sim_obj=self)
-                            prcc_calculator.calculate_prcc_values(
-                                lhs_table=saved_lhs_values,
-                                sim_output=saved_simulation)
-                            # filename_without_ext = os.path.splitext(filename)[0]
-                            # print(filename_without_ext, lockdown_prcc)
+                susc = float(filename.split("_")[2])
+                base_r0 = float(filename.split("_")[3])
 
-                            # aggregate PRCC values
-                            fname = "_".join([filename.split("_")[2], filename.split("_")[3]])
-                            self.aggregate_prcc_values(prcc_calculator=prcc_calculator,
-                                                       fname=fname)
-                else:
-                    prcc_calculator = src.prcc_calculator.PRCCCalculator(
-                        number_of_samples=self.n_samples,
-                        sim_obj=self)
-                    prcc_calculator.calculate_prcc_values(
-                        lhs_table=self.lhs_table,
-                        sim_output=self.sim_output)
-                    # calculate p-values
-                    prcc_calculator.calculate_p_values()
+                # Calculate PRCC values
+                prcc_calculator = src.prcc_calculator.PRCCCalculator(
+                    number_of_samples=self.n_samples,
+                    sim_obj=self)
+                prcc_calculator.calculate_prcc_values(
+                    lhs_table=saved_lhs_values,
+                    sim_output=saved_simulation)
+                # calculate p-values
+                prcc_calculator.calculate_p_values()
 
-                    stack_prcc_pval = np.hstack([prcc_calculator.prcc_list, prcc_calculator.p_value]).reshape(2, 136).T
-                    os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
-                    filename = "sens_data/PRCC_Pvalues" + "/" + "_".join([str(susc), str(base_r0)])
-                    np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
+                stack_prcc_pval = np.hstack([prcc_calculator.prcc_list, prcc_calculator.p_value]).reshape(2, 136).T
+                os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
+                fname = "_".join([str(susc), str(base_r0)])
+                filename = "sens_data/PRCC_Pvalues" + "/" + fname
+                np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
-                    # aggregate PRCC values
-                    fname = "_".join([str(susc), str(base_r0)])
-                    self.aggregate_prcc_values(prcc_calculator=prcc_calculator,
-                                               fname=fname)
+                # aggregate PRCC values
+                self.aggregate_prcc_values(prcc_calculator=prcc_calculator,
+                                           fname=fname)
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:

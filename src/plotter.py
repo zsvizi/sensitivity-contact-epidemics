@@ -222,10 +222,10 @@ class Plotter:
         title_list = filename_without_ext.split("_")
         names = np.array(self.generate_axis_label()[self.sim_obj.upper_tri_indexes])
         plot_title = 'Target: Epidemic size, Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
-        # self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
-        #                                     "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
-        self.stacked_prcc_pvalues(16, prcc_vector, p_values, filename_without_ext,
-                                  "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
+        self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
+                                            "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
+        # self.stacked_prcc_pvalues(16, prcc_vector, p_values, filename_without_ext,
+        #                           "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
         # self.stacked_prcc_pvalues(names.flatten().tolist(), prcc_vector, p_values, filename_without_ext,
         #                            "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
         # self.plot_prcc_values(names.flatten().tolist(), prcc_vector, filename_without_ext,
