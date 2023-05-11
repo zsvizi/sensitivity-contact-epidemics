@@ -1,3 +1,4 @@
+from functools import partial
 from time import sleep
 
 import numpy as np
@@ -22,11 +23,11 @@ class SamplerNPI(SamplerBase):
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":
-            tar_out = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-            self.r0_lhs_home = tar_out.get_output(cm_sim=self.sim_obj.contact_home)
+            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+            self.r0_lhs_home = self.calc.get_output(cm_sim=self.sim_obj.contact_home)
         elif self.target == "epidemic_size":
-            tar_out = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
-            self.final_size = tar_out.get_output(cm=self.sim_obj.contact_matrix)
+            self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
+            self.final_size = self.calc.get_output(cm=self.sim_obj.contact_matrix)
 
         self.susc = sim_state["susc"]
 
@@ -42,36 +43,39 @@ class SamplerNPI(SamplerBase):
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-        if self.target == "epidemic_size":
-            if self.final_size[1] < 40000:
-                pass
-        elif self.target == "r0":
-            if self.r0_lhs_home[1] < 1:
-                # Get LHS table
-                number_of_samples = self.n_samples
-                lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
+        # if self.target == "epidemic_size":
+        #     if self.final_size[1] < 40000:
+        #         pass
+        # elif self.target == "r0":
+        #     if self.r0_lhs_home[1] < 1:
+        #         Get LHS table
+        number_of_samples = self.n_samples
+        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
-                # Results have shape of (number_of_samples, 136 + 1 + 1 + 16)
-                results = list(tqdm(map(self.get_sim_output, lhs_table), total=lhs_table.shape[0]))
-                results = np.array(results)
+        # Results have shape of (number_of_samples, 136 + 1 + 1 + 16)
+        results = list(tqdm(
+            map(partial(self.get_sim_output, calc=self.calc),
+                lhs_table),
+            total=lhs_table.shape[0]))
+        results = np.array(results)
 
-                # check if all r0s are > 1
-                r0_col_idx = int(self.upper_tri_size - 1 + 2)  # r0 position
-                res_min = results[:, r0_col_idx].min()
-                if res_min < 1:
-                    print("minimal lhs_r0: " + str(res_min))
+        # check if all r0s are > 1
+        r0_col_idx = int(self.upper_tri_size - 1 + 2)  # r0 position
+        res_min = results[:, r0_col_idx].min()
+        if res_min < 1:
+            print("minimal lhs_r0: " + str(res_min))
 
-                # Sort tables by R0 values
-                sorted_idx = results[:, r0_col_idx].argsort()
-                results = results[sorted_idx]
-                lhs_table = np.array(lhs_table[sorted_idx])
-                sim_output = np.array(results)
-                sleep(0.3)
+        # Sort tables by R0 values
+        sorted_idx = results[:, r0_col_idx].argsort()
+        results = results[sorted_idx]
+        lhs_table = np.array(lhs_table[sorted_idx])
+        sim_output = np.array(results)
+        sleep(0.3)
 
-                # Save outputs
-                self._save_output(output=lhs_table, folder_name='lhs')
-                self._save_output(output=sim_output, folder_name='simulations')
-                return lhs_table, sim_output
+        # Save outputs
+        self._save_output(output=lhs_table, folder_name='lhs')
+        self._save_output(output=sim_output, folder_name='simulations')
+        return lhs_table, sim_output
 
     def calculate_kappa(self):
         kappas = np.linspace(0, 1, 1000)

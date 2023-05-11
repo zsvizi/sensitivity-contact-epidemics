@@ -48,7 +48,8 @@ class SimulationNPI(SimulationBase):
                 sampler_npi = src.SamplerNPI(
                     sim_state=self.sim_state,
                     sim_obj=self,
-                    n_samples=self.n_samples)
+                    n_samples=self.n_samples,
+                    target="epidemic_size")
                 self.lhs_table, self.sim_output = sampler_npi.run()
                 # for plotting the number of deaths
                 # time = np.arange(0, 250, 0.5)
