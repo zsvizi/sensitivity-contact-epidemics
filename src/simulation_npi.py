@@ -1,4 +1,5 @@
 import os
+import itertools
 
 import numpy as np
 
@@ -20,7 +21,7 @@ class SimulationNPI(SimulationBase):
         self.sim_output = None
         self.prcc_values = None
 
-        self.n_samples = 1200
+        self.n_samples = 120000
 
     def generate_lhs(self):
         # 1. Update params by susceptibility vector
@@ -51,12 +52,6 @@ class SimulationNPI(SimulationBase):
                     n_samples=self.n_samples,
                     target="epidemic_size")
                 self.lhs_table, self.sim_output = sampler_npi.run()
-                # for plotting the number of deaths
-                # time = np.arange(0, 250, 0.5)
-                # solution = self.model.get_solution(
-                #     t=time,
-                #     parameters=self.params,
-                #     cm=self.contact_matrix)
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters
@@ -97,26 +92,34 @@ class SimulationNPI(SimulationBase):
                 if self.prcc_values is None:
                     print(susc, base_r0)
                     # read files from the generated folder based on the given parameters
-                    load_folder = "PRCC_Pvalues"
-                    for root, dirs, files in os.walk("./sens_data/" + load_folder):
+                    prcc_pvalues, agg_values = "PRCC_Pvalues", "agg_values"
+                    for root, dirs, files in os.walk("./sens_data/" + prcc_pvalues):
                         for filename in files:
                             filename_without_ext = os.path.splitext(filename)[0]
-                            saved_file = np.loadtxt("./sens_data/" + load_folder + "/" + filename, delimiter=';')
-
+                            # load prcc-pvalues
+                            saved_prcc_pval = np.loadtxt("./sens_data/" + prcc_pvalues + "/" + filename,
+                                                         delimiter=';')
+                            # load agg-prcc-pvalues
+                            # saved_agg_values = np.loadtxt("./sens_data/" + agg_values + "/" +
+                            #                               filename.replace("PRCC_Pvalues", "agg_values"),
+                            #                               delimiter=';')
                             # Plot results
                             plot = src.Plotter(sim_obj=self)
-                            plot.generate_prcc_plots(
-                                prcc_vector=abs(saved_file[:, 0]),
-                                p_values=saved_file[:, 1],
-                                filename_without_ext=filename_without_ext)
-                            # plot.plot_death_from_model(params=self.params, cm=saved_file,
-                            #                            filename_without_ext=filename_without_ext)
+                            plot.plot_contact_matrices_hungary(filename="contact_matrix")
+                            plot.generate_prcc_p_values_heatmaps(
+                                prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                p_values=saved_prcc_pval[:, 1],
+                                filename_without_ext=filename_without_ext, target="R0")
+
+                            # plot.plot_aggregation_prcc_pvalues(
+                            #     prcc_vector=abs(saved_agg_values[:, 0]),
+                            #     p_values=saved_agg_values[:, 1],
+                            #     filename_without_ext=filename_without_ext)
+
                 else:
                     # use calculated PRCC values from the previous step
                     plot = src.Plotter(sim_obj=self)
-                    plot.plot_contact_matrix_as_grouped_bars()
-                    plot.generate_stacked_plots()
-                    plot.plot_2d_contact_matrices()
+                    plot.plot_contact_matrices_hungary(filename="contact_matrx")
 
     def aggregate_prcc_values(self, prcc_calculator, fname):
         # save aggregated prcc values that generate values using different approach
