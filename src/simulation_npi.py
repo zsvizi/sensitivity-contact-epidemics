@@ -85,6 +85,13 @@ class SimulationNPI(SimulationBase):
                 # aggregate PRCC values
                 self.aggregate_prcc_values(prcc_calculator=prcc_calculator,
                                            fname=fname)
+                options = ["first", "second", "third"]
+                for option in options:
+                    agg_option = prcc_calculator.new_prcc_pval_aggregation(option=option)
+                    stack_value = np.hstack([prcc_calculator.agg_option, prcc_calculator.agg_var]).reshape(2, 16).T
+                    os.makedirs("./sens_data/agg_values_options", exist_ok=True)
+                    filename = "sens_data/agg_values_options" + "/" + "_".join([fname, option])
+                    np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
@@ -92,8 +99,8 @@ class SimulationNPI(SimulationBase):
                 if self.prcc_values is None:
                     print(susc, base_r0)
                     # read files from the generated folder based on the given parameters
-                    prcc_pvalues, agg_values = "PRCC_Pvalues", "agg_values"
-                    for root, dirs, files in os.walk("./sens_data/" + prcc_pvalues):
+                    prcc_pvalues, agg_values = "PRCC_Pvalues", "agg_values_options"
+                    for root, dirs, files in os.walk("./sens_data/" + "PRCC_Pvalues"):
                         for filename in files:
                             filename_without_ext = os.path.splitext(filename)[0]
                             # load prcc-pvalues
@@ -112,8 +119,8 @@ class SimulationNPI(SimulationBase):
                                 filename_without_ext=filename_without_ext, target="R0")
 
                             # plot.plot_aggregation_prcc_pvalues(
-                            #     prcc_vector=abs(saved_agg_values[:, 0]),
-                            #     p_values=saved_agg_values[:, 1],
+                            #     prcc_vector=abs(saved_prcc_pval[:, 0]),
+                            #     p_values=abs(saved_prcc_pval[:, 1]),
                             #     filename_without_ext=filename_without_ext)
 
                 else:

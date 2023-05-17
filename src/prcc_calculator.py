@@ -22,6 +22,8 @@ class PRCCCalculator:
         self.prcc_matrix_other = []
         self.p_value = np.array([])
         self.agg_prcc = np.array([])
+        self.agg_option = np.array([])
+        self.agg_var = np.array([])
         self.agg_lock3 = np.array([])
         self.prcc_list = None
         self.p_value_mtx = None
@@ -37,6 +39,25 @@ class PRCCCalculator:
         p_icr = (1 - self.params['p']) * self.params['h'] * self.params['xi']
         self.p_icr = p_icr
         self.prcc_list = prcc_list
+
+    def new_prcc_pval_aggregation(self, option):
+        agg_option, agg_var = None, None
+        if option == "first":
+            agg_option = np.sum((self.prcc_mtx * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
+            agg_option_square = np.sum((self.prcc_mtx ** 2 * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
+            agg_var = agg_option_square - agg_option ** 2
+        elif option == "second":
+            agg_option = np.sum((self.prcc_mtx * self.prcc_mtx / np.sum(self.prcc_mtx)), axis=1)
+            agg_option_square = np.sum((self.prcc_mtx ** 2 * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
+            agg_var = agg_option_square - agg_option ** 2
+        elif option == "third":
+            agg_option = np.sum((self.prcc_mtx * (1 - self.p_value_mtx / np.sum(self.p_value_mtx))), axis=1)
+            agg_option_square = np.sum((self.prcc_mtx ** 2 * (1 - self.p_value_mtx /
+                                                              np.sum(self.p_value_mtx))), axis=1)
+            agg_var = agg_option_square - agg_option ** 2
+        self.agg_option = agg_option
+        self.agg_var = agg_var
+        return agg_option.flatten(), agg_var.flatten()
 
     def aggregate_lockdown_approaches(self, cm, agg_typ):
         agg_prcc = None
@@ -65,7 +86,7 @@ class PRCCCalculator:
         t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2))
         # p-value for 2-sided test
         dof = self.number_of_samples - 2 - self.upp_tri_size
-        p_value = 2 * (1 - ss.t.cdf(abs(t), dof))
+        p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
         self.p_value = p_value
 
         prcc_p_value = get_rectangular_matrix_from_upper_triu(p_value[:self.upp_tri_size], self.n_ag)
