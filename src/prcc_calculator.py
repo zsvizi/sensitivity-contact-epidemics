@@ -41,7 +41,7 @@ class PRCCCalculator:
         self.prcc_list = prcc_list
 
     def new_prcc_pval_aggregation(self, option):
-        distribution_p_val = 1 - self.p_value_mtx / np.sum(self.p_value_mtx, axis=0)
+        distribution_p_val = (1 - self.p_value_mtx) / np.sum(1 - self.p_value_mtx, axis=0)
         distribution_prcc = self.prcc_mtx / np.sum(self.prcc_mtx, axis=0)
         distribution_prcc_p_val = \
             (self.prcc_mtx * distribution_p_val) / \
