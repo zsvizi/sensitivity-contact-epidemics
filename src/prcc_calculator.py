@@ -41,22 +41,30 @@ class PRCCCalculator:
         self.prcc_list = prcc_list
 
     def new_prcc_pval_aggregation(self, option):
-        agg_option, agg_var = None, None
-        if option == "first":
-            agg_option = np.sum((self.prcc_mtx * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
-            agg_option_square = np.sum((self.prcc_mtx ** 2 * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
-            agg_var = agg_option_square - agg_option ** 2
-        elif option == "second":
-            agg_option = np.sum((self.prcc_mtx * self.prcc_mtx / np.sum(self.prcc_mtx)), axis=1)
-            agg_option_square = np.sum((self.prcc_mtx ** 2 * self.p_value_mtx / np.sum(self.p_value_mtx)), axis=1)
-            agg_var = agg_option_square - agg_option ** 2
-        elif option == "third":
-            agg_option = np.sum((self.prcc_mtx * (1 - self.p_value_mtx / np.sum(self.p_value_mtx))), axis=1)
-            agg_option_square = np.sum((self.prcc_mtx ** 2 * (1 - self.p_value_mtx /
-                                                              np.sum(self.p_value_mtx))), axis=1)
-            agg_var = agg_option_square - agg_option ** 2
+        distribution_p_val = 1 - self.p_value_mtx / np.sum(self.p_value_mtx, axis=0)
+        distribution_prcc = self.prcc_mtx / np.sum(self.prcc_mtx, axis=0)
+        distribution_prcc_p_val = \
+            (self.prcc_mtx * distribution_p_val) / \
+            np.sum(self.prcc_mtx * distribution_p_val, axis=0)
+
+        option_dict = {
+            "first": distribution_p_val,
+            "second": distribution_prcc,
+            "third": distribution_prcc_p_val
+        }
+        agg_option = np.sum(
+            self.prcc_mtx * option_dict[option],
+            axis=0
+        )
+        agg_option_square = np.sum(
+            self.prcc_mtx ** 2 * option_dict[option],
+            axis=0
+        )
+        agg_var = agg_option_square - agg_option ** 2
+
         self.agg_option = agg_option
         self.agg_var = agg_var
+
         return agg_option.flatten(), agg_var.flatten()
 
     def aggregate_lockdown_approaches(self, cm, agg_typ):
