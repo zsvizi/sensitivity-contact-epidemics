@@ -1,7 +1,10 @@
 import os
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.ticker import LogFormatter
+from matplotlib.ticker import LogLocator, LogFormatterSciNotation as LogFormatter
+import matplotlib.colors as colors
+
 from matplotlib.tri import Triangulation
 import numpy as np
 import pandas as pd
@@ -9,7 +12,6 @@ import pandas as pd
 from src.dataloader import DataLoader
 from src.simulation_npi import SimulationNPI
 from src.prcc import get_rectangular_matrix_from_upper_triu
-
 plt.style.use('seaborn-whitegrid')
 
 
@@ -22,8 +24,8 @@ class Plotter:
         os.makedirs("sens_data/contact_matrices", exist_ok=True)
         cols = {"home": "PRGn", "work": "Paired_r", "school": "RdYlGn_r", "other": "PiYG_r",
                   "total": "gist_earth_r"}
-        cmaps = {"home": "RdYlGn_r", "work": "RdYlGn_r", "school": "RdYlGn_r", "other": "RdYlGn_r",
-                 "total": "RdYlGn_r"}
+        cmaps = {"home": "gist_earth_r", "work": "gist_earth_r", "school": "gist_earth_r",
+                 "other": "gist_earth_r", "total": "gist_earth_r"}
         contact_full = np.array([self.data.contact_data[i] for i in list(cols.keys())[:-1]]).sum(axis=0)
         for i in cols.keys():
             contacts = self.data.contact_data[i] if i != "total" else contact_full
@@ -115,20 +117,28 @@ class Plotter:
         values_all = [PRC_mtx, P_values_mtx]
         values = np.triu(values_all, k=0)
         mask = np.where(values[0] == 0, np.nan, values_all)
-        my_cmap = ListedColormap(['darkred', 'red', 'orange', 'pink', 'purple', 'y', 'yellow',
-                                  'black', 'cyan', 'b'])
-        bounds = [0, 0.01, 0.05, 0.5, 1]
-        normalize = mcolors.BoundaryNorm(bounds, my_cmap.N)
-        cmaps = ['Greens', my_cmap]
-        norms = [plt.Normalize(-0.01, 1) for _ in range(2)]
+        p_value_cmap = ListedColormap(['Orange', 'Coral', 'red', 'darkred'])
+        cmaps = ["Greens", p_value_cmap]
+
+        log_norm = colors.LogNorm(vmin=1e-4, vmax=1e0)    # used for p_values
+        norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
 
         fig, ax = plt.subplots()
-        images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, norm=norm, ec="white")
-                  for t, val, cmap, norm in zip(triang, mask, cmaps, norms)]
+        images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
+                  for t, val, cmap in zip(triang, mask, cmaps)]
 
         cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)   # for the prcc values
-        cbar_pval = fig.colorbar(images[1], cmap=my_cmap, norm=normalize, ax=ax,
-                                 shrink=0.7, aspect=20 * 0.7, spacing='proportional')
+        cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7)
+
+        images[1].set_norm(norm=log_norm)
+        images[0].set_norm(norm=norm)
+
+        locator = LogLocator()
+        formatter = LogFormatter()
+        cbar_pval.locator = locator
+        cbar_pval.formatter = formatter
+        cbar_pval.update_normal(images[1])
+
         ax.set_xticks(range(self.sim_obj.n_ag))
         ax.set_yticks(range(self.sim_obj.n_ag))
         plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
@@ -142,7 +152,7 @@ class Plotter:
         plt.close()
 
     def generate_prcc_p_values_heatmaps(self, prcc_vector, p_values, filename_without_ext, target:
-                                        str = "R0"):
+                                        str = "Final death size"):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
@@ -157,21 +167,18 @@ class Plotter:
         xp = range(param_list)
         plt.figure(figsize=(15, 12))
         plt.tick_params(direction="in")
-        plt.bar(xp, list(prcc_vector), align='center', width=0.6, color="g", label="PRCC")  # used absolute prcc
-        plt.bar(xp, list(p_values < 0.01), width=0.6, align='center', bottom=np.array(prcc_vector),
-                  color="r", label="P_value less than 0.01")
-        plt.bar(xp, list([0.01 < i < 0.05 for i in p_values]), align='center', width=0.6,
-                  bottom=np.array(prcc_vector), color="orange", label="P_value 0.01 - 0.05")
-        plt.bar(xp, list([0.05 < i < 0.1 for i in p_values]), align='center', width=0.6,
-                  bottom=np.array(prcc_vector), color="pink", label="P_value 0.05 - 0.1")
-        plt.bar(xp, list(p_values > 0.1), align='center', width=0.6, bottom=np.array(prcc_vector),
-                  color="purple", label="P_value greater than 0.1")
+        fig, ax = plt.subplots()
+        plt.bar(xp, list(abs(prcc_vector)), align='center', width=0.8, alpha=0.5, color="g", label="PRCC")
+        for pos, y, err in zip(xp, list(abs(prcc_vector)), list(abs(p_values))):
+            plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
+                         markersize=5, capsize=4, ecolor="r", elinewidth=4,
+                        color='b')
         plt.xticks(ticks=xp, rotation=90)
-        plt.yticks(ticks=np.arange(-1, 2.5, 0.2))
+        plt.yticks(ticks=np.arange(-1, 1.2, 0.2))
         plt.legend()
         axes = plt.gca()
-        axes.set_ylim([0, 2.5])
-        plt.ylabel('PRCC and P_values', labelpad=10, fontsize=20)
+        axes.set_ylim([0, 1.2])
+        plt.ylabel('Aggregated PRCC', labelpad=10, fontsize=20)
         plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
         plt.title("PRCC values and their corresponding P values")
         title_list = filename_without_ext.split("_")
@@ -180,8 +187,9 @@ class Plotter:
         format="pdf", bbox_inches='tight')
         plt.close()
 
-    def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext):
+    def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext,
+                                      target: str = "R0"):
         title_list = filename_without_ext.split("_")
-        plot_title = 'Target: R0, Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
+        plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         self.aggregated_prcc_pvalues_plots(16, prcc_vector, p_values, filename_without_ext,
                                    "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)

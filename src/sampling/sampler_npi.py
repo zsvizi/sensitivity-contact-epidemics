@@ -24,7 +24,7 @@ class SamplerNPI(SamplerBase):
 
         if self.target == "r0":
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-            self.r0_lhs_home = self.calc.get_output(cm_sim=self.sim_obj.contact_home)
+            self.r0_lhs_home = self.calc.get_output(cm=self.sim_obj.contact_home)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
             self.final_size = self.calc.get_output(cm=self.sim_obj.contact_matrix)
@@ -75,6 +75,8 @@ class SamplerNPI(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
+        if self.target == "epidemic_size":
+            self._save_output(output=self.calc.age_deaths, folder_name='age_deaths')
         return lhs_table, sim_output
 
     def calculate_kappa(self):
@@ -92,7 +94,7 @@ class SamplerNPI(SamplerBase):
         # get output from target calculator and epidemic_size
         if self.target == "r0":
             tar_out = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-            r0_lhs_home_k = tar_out.get_output(cm_sim=cm_sim)
+            r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
         else:
             tar_out = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
             r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
