@@ -1,4 +1,5 @@
 import os
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.ticker import LogFormatter
@@ -12,13 +13,21 @@ import pandas as pd
 from src.dataloader import DataLoader
 from src.simulation_npi import SimulationNPI
 from src.prcc import get_rectangular_matrix_from_upper_triu
+
 plt.style.use('seaborn-whitegrid')
 
 
 class Plotter:
     def __init__(self, sim_obj: SimulationNPI) -> None:
+        self.f2 = None
         self.data = DataLoader()
         self.sim_obj = sim_obj
+        self.f1 = np.array([])
+        self.f2 = np.array([])
+        self.f3 = np.array([])
+        self.f4 = np.array([])
+        self.f5 = np.array([])
+        self.f6 = np.array([])
 
     def plot_contact_matrices_hungary(self, filename):
         os.makedirs("sens_data/contact_matrices", exist_ok=True)
@@ -117,10 +126,10 @@ class Plotter:
         values_all = [PRC_mtx, P_values_mtx]
         values = np.triu(values_all, k=0)
         mask = np.where(values[0] == 0, np.nan, values_all)
-        p_value_cmap = ListedColormap(['Orange', 'Coral', 'red', 'darkred'])
+        p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
 
-        log_norm = colors.LogNorm(vmin=1e-4, vmax=1e0)    # used for p_values
+        log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)    # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
 
         fig, ax = plt.subplots()
@@ -188,8 +197,71 @@ class Plotter:
         plt.close()
 
     def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext,
-                                      target: str = "R0"):
+                                      target: str = "Final death size"):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         self.aggregated_prcc_pvalues_plots(16, prcc_vector, p_values, filename_without_ext,
                                    "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
+
+    def plot_horizontal_bars(self):
+        os.makedirs("./sens_data", exist_ok=True)
+        mortality_values = "age_deaths"
+        for root, dirs, files in os.walk("./sens_data/" + "age_deaths"):
+            for filename in files:
+                filename_without_ext = os.path.splitext(filename)[0]
+                # load the mortality values
+                saved_files = np.loadtxt("./sens_data/" + mortality_values + "/" + filename, delimiter=';')
+
+                susc = filename.split("_")[3]
+                base_r0 = filename.split("_")[4]
+
+                if susc == str(0.5) and base_r0 == str(1.2) in filename_without_ext:
+                    self.f1 = saved_files   # only the file with susc = 0.5 and base_r0 = 1.2
+
+                elif susc == str(1.0) and base_r0 == str(2.5) in filename_without_ext:
+                    self.f6 = saved_files    # only the file with susc = 1.0 and base_r0 = 2.5
+
+                elif susc == str(0.5) and base_r0 == str(2.5) in filename_without_ext:
+                    self.f3 = saved_files  # only the file with susc = 0.5 and base_r0 = 1.8
+
+                elif susc == str(1.0) and base_r0 == str(1.2) in filename_without_ext:
+                    self.f4 = saved_files  # only the file with susc = 1.0 and base_r0 = 1.2
+
+                elif susc == str(1.0) and base_r0 == str(1.8) in filename_without_ext:
+                    self.f5 = saved_files  # only the file with susc = 1.0 and base_r0 = 1.8
+
+                elif susc == str(0.5) and base_r0 == str(1.8) in filename_without_ext:
+                    self.f2 = saved_files  # only the file with susc = 0.5 and base_r0 = 1.8
+                    results = pd.DataFrame({
+                        "susc:0.5, R0:1.2": self.f1,
+                        "susc:0.5, R0:1.8": self.f2,
+                        "susc:0.5, R0:2.5": self.f3,
+                        "susc:1.0, R0:1.2": self.f4,
+                        "susc:1.0, R0:1.8": self.f5,
+                        "susc:1.0, R0:2.5": self.f6
+
+                    }
+                    )
+                    index = ["age 0", "age 1", "age 2", "age 3", "age 4", "age 5", "age 6",
+                             "age 7", "age 8", "age 9", "age 10", "age 11", "age 12",
+                             "age 13", "age 14", "age 15"]
+                    results.index = index
+                    results = results.T
+                    plt.tick_params(direction="in")
+                    fig, ax = plt.subplots(1, 1, figsize=(120, 30))
+                    plt.tick_params(direction="in")
+                    color = ['yellow', 'gold', '#ece75f',  # children
+                             'plum', 'violet', 'purple',  # young adults
+                              'orange', '#BC5449', '#ff0000', 'darkred',  # middle adults
+                             '#ADD8E6', '#89CFF0', '#6495ED',   # older adults
+                             '#98FB98', '#50C878', 'green']    # elderly adults
+
+                    results.plot(kind='barh', stacked=True,
+                                 color=color)
+                    plt.legend(bbox_to_anchor=(1, 1), loc="upper left", title="age groups")
+                    plt.xlabel("Age groups distribution")
+                    axes = plt.gca()
+                    plt.xticks(ticks=np.arange(0, 1, 0.1))
+                    axes.set_xlim([0, 1])
+                    plt.savefig('./sens_data/horizontal_plot.pdf', format="pdf", bbox_inches='tight')
+                    plt.close()
