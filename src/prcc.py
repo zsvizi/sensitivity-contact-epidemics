@@ -44,10 +44,4 @@ def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> np.
                          np.sqrt(corr_mtx_inverse[w, w] *
                                  corr_mtx_inverse[parameter_count, parameter_count])
 
-        # p-values Size (136) for lockdown and 408 for lockdown3  [formula based on Simeone Marino, Ian B. Hogue paper]
-        t = prcc_vector * np.sqrt((number_of_samples - 2 - parameter_count) / (1 - prcc_vector ** 2))
-        # p-value for 2-sided test
-        dof = number_of_samples - 2 - parameter_count
-        p_value = 2 * (1 - scipy.stats.t.cdf(abs(t), dof))
-
     return prcc_vector

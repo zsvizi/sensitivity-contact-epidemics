@@ -17,7 +17,8 @@ class FinalSizeTargetCalculator(TargetCalculator):
         # consider the total number of deaths
         idx_death = self.sim_obj.model.c_idx["d"] * self.sim_obj.n_ag     # 224:240
         age_group_deaths = solution[-1:, idx_death:(idx_death + self.sim_obj.n_ag)]
-        self.age_deaths = age_group_deaths.reshape((-1, 1))
+        age_deaths = age_group_deaths / np.sum(age_group_deaths)
+        self.age_deaths = age_deaths.reshape((-1, 1))
         death_final = np.sum(solution[-1:, idx_death:(idx_death + self.sim_obj.n_ag)])  # deaths at time t i.e 239:240
 
         # consider icu_max

@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 
 import src
@@ -82,15 +81,11 @@ class SimulationNPI(SimulationBase):
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
                 # aggregate PRCC values
-                self.aggregate_prcc_values(prcc_calculator=prcc_calculator,
-                                           fname=fname)
-                options = ["first", "second", "third"]
-                for option in options:
-                    agg_option = prcc_calculator.new_prcc_pval_aggregation(option=option)
-                    stack_value = np.hstack([prcc_calculator.agg_option, prcc_calculator.agg_std]).reshape(2, 16).T
-                    os.makedirs("./sens_data/agg_values_options", exist_ok=True)
-                    filename = "sens_data/agg_values_options" + "/" + "_".join([fname, option])
-                    np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
+                agg = prcc_calculator.aggregate_prcc_values()
+                stack_value = np.hstack([prcc_calculator.agg_option, prcc_calculator.agg_std]).reshape(2, 16).T
+                os.makedirs("./sens_data/agg_prcc", exist_ok=True)
+                filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
+                np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
@@ -99,44 +94,32 @@ class SimulationNPI(SimulationBase):
                     print(susc, base_r0)
                     # read files from the generated folder based on the given parameters
                     prcc_pvalues = "PRCC_Pvalues"
-                    agg_values = "agg_values_options"  # for plotting the aggregation methods
-                    for root, dirs, files in os.walk("./sens_data/" + "PRCC_Pvalues"):
+                    agg_values = "agg_prcc"  # for plotting the aggregation methods
+                    for root, dirs, files in os.walk("./sens_data/" + "agg_prcc"):
                         for filename in files:
                             filename_without_ext = os.path.splitext(filename)[0]
                             # load prcc-pvalues
-                            saved_prcc_pval = np.loadtxt("./sens_data/" + prcc_pvalues + "/" + filename,
+                            saved_prcc_pval = np.loadtxt("./sens_data/" + agg_values + "/" + filename,
                                                          delimiter=';')
 
                             # Plot results
                             plot = src.Plotter(sim_obj=self)
-                            # plot.plot_contact_matrices_hungary(filename="contact_matrix")
+
+                            plot.plot_horizontal_bars()
+                            plot.plot_contact_matrices_hungary(filename="contact_matrix")
+
                             plot.generate_prcc_p_values_heatmaps(
                                 prcc_vector=abs(saved_prcc_pval[:, 0]),
                                 p_values=saved_prcc_pval[:, 1],
                                 filename_without_ext=filename_without_ext, target="Final death size")
 
                             # requires the folder "agg_values_options" to be loaded
-                            # plot.plot_aggregation_prcc_pvalues(
-                            #     prcc_vector=abs(saved_prcc_pval[:, 0]),
-                            #     p_values=abs(saved_prcc_pval[:, 1]),
-                            #     filename_without_ext=filename_without_ext, target="R0")
+                            plot.plot_aggregation_prcc_pvalues(
+                                prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                p_values=abs(saved_prcc_pval[:, 1]),
+                                filename_without_ext=filename_without_ext, target="Final death size")
 
                 else:
                     # use calculated PRCC values from the previous step
                     plot = src.Plotter(sim_obj=self)
                     plot.plot_contact_matrices_hungary(filename="contact_matrx")
-
-    def aggregate_prcc_values(self, prcc_calculator, fname):
-        # save aggregated prcc values that generate values using different approach
-        agg_methods = ["simple", "relN", "relM", "cm", "cmT", "cmR", "CMT", "pval"]
-        for agg_typ in agg_methods:
-            agg_prcc = prcc_calculator.aggregate_lockdown_approaches(
-                cm=self.contact_matrix,
-                agg_typ=agg_typ)
-            agg_pval = prcc_calculator.aggregate_p_values_approach(
-                cm=self.contact_matrix,
-                agg_typ=agg_typ)
-            stack_agg_prcc_pval = np.hstack([agg_prcc, agg_pval]).reshape(2, 16).T
-            os.makedirs("./sens_data/agg_values", exist_ok=True)
-            filename = "sens_data/agg_values" + "/" + "_".join([fname, agg_typ])
-            np.savetxt(fname=filename + ".csv", X=stack_agg_prcc_pval, delimiter=";")

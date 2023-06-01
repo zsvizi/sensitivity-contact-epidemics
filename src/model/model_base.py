@@ -5,12 +5,11 @@ from scipy.integrate import odeint
 
 
 class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments: list, run_ode: str = "tor") -> None:
+    def __init__(self, model_data, compartments: list) -> None:
         self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]
-        self.run_ode = run_ode
 
     def initialize(self):
         iv = {key: np.zeros(self.n_age) for key in self.compartments}

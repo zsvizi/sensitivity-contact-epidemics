@@ -43,12 +43,7 @@ class SamplerNPI(SamplerBase):
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-        # if self.target == "epidemic_size":
-        #     if self.final_size[1] < 40000:
-        #         pass
-        # elif self.target == "r0":
-        #     if self.r0_lhs_home[1] < 1:
-        #         Get LHS table
+
         number_of_samples = self.n_samples
         lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
@@ -88,6 +83,7 @@ class SamplerNPI(SamplerBase):
         return kappa
 
     def kappify(self, kappa: float = None) -> float:
+        r0_lhs_home_k = None
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
@@ -95,7 +91,7 @@ class SamplerNPI(SamplerBase):
         if self.target == "r0":
             tar_out = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
             r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
-        else:
+        elif self.target == "epidemic_size":
             tar_out = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
             r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
         return r0_lhs_home_k[1]  # 2nd column which has r0
