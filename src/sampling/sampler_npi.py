@@ -83,23 +83,21 @@ class SamplerNPI(SamplerBase):
         return kappa
 
     def kappify(self, kappa: float = None) -> float:
-        r0_lhs_home_k = None
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
-        # get output from target calculator and epidemic_size
+        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+        r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
+        r0_lhs_home_k = r0_lhs_home_k[1]
+
+        tar_out_death = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
+        death_final_k = tar_out_death.get_output(cm=cm_sim)
+        death_final_k = death_final_k[1]
+
         if self.target == "r0":
-            tar_out = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-            r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
+            return r0_lhs_home_k
         elif self.target == "epidemic_size":
-            tar_out = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
-            r0_lhs_home_k = tar_out.get_output(cm=cm_sim)
-        return r0_lhs_home_k[1]  # 2nd column which has r0
+            return death_final_k
 
     def _get_variable_parameters(self):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f')]
-
-    def _get_upper_bound_factor_unit(self) -> np.ndarray:
-        cm_diff = (self.sim_obj.contact_matrix - self.contact_home) * self.sim_obj.age_vector
-        min_diff = np.min(cm_diff) / 2
-        return min_diff
