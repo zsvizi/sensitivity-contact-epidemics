@@ -43,7 +43,6 @@ class SamplerNPI(SamplerBase):
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-
         number_of_samples = self.n_samples
         lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
@@ -88,16 +87,7 @@ class SamplerNPI(SamplerBase):
 
         tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
         r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
-        r0_lhs_home_k = r0_lhs_home_k[1]
-
-        tar_out_death = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
-        death_final_k = tar_out_death.get_output(cm=cm_sim)
-        death_final_k = death_final_k[1]
-
-        if self.target == "r0":
-            return r0_lhs_home_k
-        elif self.target == "epidemic_size":
-            return death_final_k
+        return r0_lhs_home_k[1]
 
     def _get_variable_parameters(self):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f')]
