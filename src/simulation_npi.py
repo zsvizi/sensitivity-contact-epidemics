@@ -81,7 +81,6 @@ class SimulationNPI(SimulationBase):
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
                 # aggregate PRCC values
-                agg = prcc_calculator.aggregate_prcc_values()
                 stack_value = np.hstack([prcc_calculator.agg_option, prcc_calculator.agg_std]).reshape(2, 16).T
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
@@ -93,7 +92,6 @@ class SimulationNPI(SimulationBase):
                 if self.prcc_values is None:
                     print(susc, base_r0)
                     # read files from the generated folder based on the given parameters
-                    prcc_pvalues = "PRCC_Pvalues"
                     agg_values = "agg_prcc"  # for plotting the aggregation methods
                     for root, dirs, files in os.walk("./sens_data/" + "agg_prcc"):
                         for filename in files:

@@ -2,7 +2,6 @@ import numpy as np
 
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
-#from src.model.model_base_torch import RostModelHungary
 
 
 class SimulationBase:

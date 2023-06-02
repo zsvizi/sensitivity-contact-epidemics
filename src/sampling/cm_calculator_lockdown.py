@@ -2,7 +2,6 @@ import numpy as np
 
 import src
 from src.prcc import get_rectangular_matrix_from_upper_triu
-from src.sampling.r0_target_calculator import R0TargetCalculator
 
 
 class CMCalculatorLockdown:
