@@ -81,7 +81,7 @@ class SimulationNPI(SimulationBase):
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
                 # aggregate PRCC values
-                stack_value = np.hstack([prcc_calculator.agg_option, prcc_calculator.agg_std]).reshape(2, 16).T
+                stack_value = np.hstack([prcc_calculator.agg_prcc, prcc_calculator.agg_std]).reshape(2, 16).T
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
                 np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
@@ -104,18 +104,18 @@ class SimulationNPI(SimulationBase):
                             plot = src.Plotter(sim_obj=self)
 
                             plot.plot_horizontal_bars()
-                            plot.plot_contact_matrices_hungary(filename="contact_matrix")
-
+                            # plot.plot_contact_matrices_hungary(filename="contact_matrix")
+                            #
                             plot.generate_prcc_p_values_heatmaps(
                                 prcc_vector=abs(saved_prcc_pval[:, 0]),
                                 p_values=saved_prcc_pval[:, 1],
                                 filename_without_ext=filename_without_ext, target="Final death size")
 
-                            # requires the folder "agg_values_options" to be loaded
-                            plot.plot_aggregation_prcc_pvalues(
-                                prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                p_values=abs(saved_prcc_pval[:, 1]),
-                                filename_without_ext=filename_without_ext, target="Final death size")
+                            # # requires the folder "agg_values_options" to be loaded
+                            # plot.plot_aggregation_prcc_pvalues(
+                            #     prcc_vector=abs(saved_prcc_pval[:, 0]),
+                            #     p_values=abs(saved_prcc_pval[:, 1]),
+                            #     filename_without_ext=filename_without_ext, target="Final death size")
 
                 else:
                     # use calculated PRCC values from the previous step

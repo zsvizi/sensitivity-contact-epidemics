@@ -21,7 +21,6 @@ class PRCCCalculator:
         self.prcc_list = None
         self.p_value = None
         self.agg_prcc = None
-        self.agg_option = None
         self.agg_std = None
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
@@ -51,8 +50,7 @@ class PRCCCalculator:
         agg_std = np.sqrt(agg_square - agg ** 2)
 
         self.agg_std = agg_std
-        self.agg_option = agg
-
+        self.agg_prcc = agg
         return agg.flatten(), agg_std.flatten()
 
     def calculate_p_values(self):
