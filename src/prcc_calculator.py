@@ -16,10 +16,10 @@ class PRCCCalculator:
         self.number_of_samples = number_of_samples
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
 
+        self.p_value = None
         self.p_value_mtx = None
         self.prcc_mtx = None
         self.prcc_list = None
-        self.p_value = None
         self.agg_prcc = None
         self.agg_std = None
 
@@ -27,8 +27,10 @@ class PRCCCalculator:
         sim_data = lhs_table[:, :(self.n_ag * (self.n_ag + 1)) // 2]
         sim_data = 1 - sim_data
         simulation = np.append(sim_data, sim_output[:, -self.n_ag - 1].reshape((-1, 1)), axis=1)
-        prcc_list = get_prcc_values(simulation, number_of_samples=self.number_of_samples)
-        prcc_mtx = get_rectangular_matrix_from_upper_triu(prcc_list[:self.upp_tri_size], self.n_ag)
+        prcc_list = get_prcc_values(lhs_output_table=simulation)
+        prcc_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=prcc_list[:self.upp_tri_size],
+            matrix_size=self.n_ag)
         self.prcc_mtx = prcc_mtx
         self.prcc_list = prcc_list
 
@@ -59,5 +61,6 @@ class PRCCCalculator:
         dof = self.number_of_samples - 2 - self.upp_tri_size
         p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
         self.p_value = p_value
-        self.p_value_mtx = get_rectangular_matrix_from_upper_triu(p_value[:self.upp_tri_size],
-                                                                  self.n_ag)
+        self.p_value_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=p_value[:self.upp_tri_size],
+            matrix_size=self.n_ag)

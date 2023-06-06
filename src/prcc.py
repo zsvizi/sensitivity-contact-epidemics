@@ -10,23 +10,10 @@ def get_rectangular_matrix_from_upper_triu(rvector, matrix_size) -> np.ndarray:
     return np.array(new_2)
 
 
-def get_contact_matrix_from_upper_triu(rvector, age_vector) -> np.ndarray:
-    new_2 = get_rectangular_matrix_from_upper_triu(rvector=rvector,
-                                                   matrix_size=age_vector.shape[0])
-    vector = np.array(new_2 / age_vector)
-    return vector
-
-
-def get_prcc_input(lhs_vector: np.ndarray, cm: np.ndarray):
-    cm_total = cm - lhs_vector.reshape((-1, 1))
-    return np.sum(cm_total, axis=1)
-
-
-def get_prcc_values(lhs_output_table: np.ndarray, number_of_samples: int) -> np.ndarray:
+def get_prcc_values(lhs_output_table: np.ndarray) -> np.ndarray:
     """
     Creates the PRCC values of last column of an ndarray depending on the columns before.
     :param ndarray lhs_output_table: ...
-    :param ndarray number_of_samples: ...
     :return: ndarray
     """
     ranked = (lhs_output_table.argsort(0)).argsort(0)

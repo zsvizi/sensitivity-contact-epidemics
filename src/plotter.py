@@ -32,7 +32,7 @@ class Plotter:
     def plot_contact_matrices_hungary(self, filename):
         os.makedirs("sens_data/contact_matrices", exist_ok=True)
         cols = {"home": "PRGn", "work": "Paired_r", "school": "RdYlGn_r", "other": "PiYG_r",
-                  "total": "gist_earth_r"}
+                "total": "gist_earth_r"}
         cmaps = {"home": "gist_earth_r", "work": "gist_earth_r", "school": "gist_earth_r",
                  "other": "gist_earth_r", "total": "gist_earth_r"}
         contact_full = np.array([self.data.contact_data[i] for i in list(cols.keys())[:-1]]).sum(axis=0)
@@ -45,8 +45,6 @@ class Plotter:
             plot = plt.imshow(contact_matrix, cmap=cmaps[i], origin='lower',
                               alpha=.9, interpolation="nearest", vmin=0, vmax=5)
             number_of_age_groups = 16
-            age_groups = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44",
-                          "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75+"]
             plt.gca().set_xticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
             plt.gca().set_yticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
             plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
@@ -63,17 +61,17 @@ class Plotter:
                 plt.yticks(ticks=param_list, fontsize=15)
             plt.title(i + " contact", y=1.03, fontsize=25)
             plt.savefig('./sens_data/contact_matrices/' + filename + "_" + i + '.pdf',
-                         format="pdf", bbox_inches='tight')
+                        format="pdf", bbox_inches='tight')
             plt.close()
 
     def plot_2d_contact_matrices_total(self, filename):
         os.makedirs("sens_data/contact_total", exist_ok=True)
-        colors = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb",
-                  "other": "#ffbb96", "total": "Set2"}
+        colours = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb",
+                   "other": "#ffbb96", "total": "Set2"}
         cmaps = {"home": "CMRmap_r", "work": "summer", "school": "summer_r", "other": "gist_stern_r",
                  "total": "Dark2"}
-        contact_total = np.array([self.data.contact_data[t] for t in list(colors.keys())[:-1]]).sum(axis=0)
-        for t in colors.keys():
+        contact_total = np.array([self.data.contact_data[t] for t in list(colours.keys())[:-1]]).sum(axis=0)
+        for t in colours.keys():
             contact_small = self.data.contact_data[t] if t != "total" else contact_total
             param_list = range(0, 16, 1)
             corr = pd.DataFrame(contact_small * self.data.age_data, columns=param_list, index=param_list)
@@ -103,10 +101,12 @@ class Plotter:
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
-        PRC_mtx = get_rectangular_matrix_from_upper_triu(prcc[:self.sim_obj.upper_tri_size],
-                                                         self.sim_obj.n_ag)
-        P_values_mtx = get_rectangular_matrix_from_upper_triu(p_values[:self.sim_obj.upper_tri_size],
-                                                              self.sim_obj.n_ag)
+        prcc_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=prcc[:self.sim_obj.upper_tri_size],
+            matrix_size=self.sim_obj.n_ag)
+        p_values_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=p_values[:self.sim_obj.upper_tri_size],
+            matrix_size=self.sim_obj.n_ag)
         # vertices of the little squares
         xv, yv = np.meshgrid(np.arange(-0.5, self.sim_obj.n_ag), np.arange(-0.5, self.sim_obj.n_ag))
         # centers of the little square
@@ -114,29 +114,29 @@ class Plotter:
         x = np.concatenate([xv.ravel(), xc.ravel()])
         y = np.concatenate([yv.ravel(), yc.ravel()])
         start = (self.sim_obj.n_ag + 1) * (self.sim_obj.n_ag + 1)  # indices of the centers
-        trianglesPRCC = [(i + j * (self.sim_obj.n_ag + 1), i + 1 + j * (self.sim_obj.n_ag + 1),
+        triangles_prcc = [(i + j * (self.sim_obj.n_ag + 1), i + 1 + j * (self.sim_obj.n_ag + 1),
                           i + (j + 1) * (self.sim_obj.n_ag + 1))
-                         for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
-        trianglesP = [(i + 1 + j * (self.sim_obj.n_ag + 1), i + 1 + (j + 1) * (self.sim_obj.n_ag + 1),
+                          for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
+        triangles_p = [(i + 1 + j * (self.sim_obj.n_ag + 1), i + 1 + (j + 1) * (self.sim_obj.n_ag + 1),
                        i + (j + 1) * (self.sim_obj.n_ag + 1))
-                      for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
+                       for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
         triang = [Triangulation(x, y, triangles, mask=None)
-                  for triangles in [trianglesPRCC, trianglesP]]
+                  for triangles in [triangles_prcc, triangles_p]]
 
-        values_all = [PRC_mtx, P_values_mtx]
+        values_all = [prcc_mtx, p_values_mtx]
         values = np.triu(values_all, k=0)
         mask = np.where(values[0] == 0, np.nan, values_all)
         p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
 
-        log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)    # used for p_values
+        log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
 
         fig, ax = plt.subplots()
         images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
                   for t, val, cmap in zip(triang, mask, cmaps)]
 
-        cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)   # for the prcc values
+        cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)  # for the prcc values
         cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7)
 
         images[1].set_norm(norm=log_norm)
@@ -154,21 +154,21 @@ class Plotter:
         ax.margins(x=0, y=0)
         ax.set_aspect('equal', 'box')  # square cells
         plt.tight_layout()
-        title_list = filename_without_ext.split("_")
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.savefig('./sens_data/heatmap/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
         plt.close()
 
-    def generate_prcc_p_values_heatmaps(self, prcc_vector, p_values, filename_without_ext, target:
-                                        str = "Final death size"):
+    def generate_prcc_p_values_heatmaps(self, prcc_vector,
+                                        p_values, filename_without_ext,
+                                        target: str = "Final death size"):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
                                            "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
 
     def aggregated_prcc_pvalues_plots(self, param_list, prcc_vector, p_values, filename_without_ext,
-                             filename_to_save, plot_title):
+                                      filename_to_save, plot_title):
         os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
@@ -181,7 +181,7 @@ class Plotter:
         for pos, y, err in zip(xp, list(abs(prcc_vector)), list(abs(p_values))):
             plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
                          markersize=5, capsize=4, ecolor="r", elinewidth=4,
-                        color='b')
+                         color='b')
         plt.xticks(ticks=xp, rotation=90)
         plt.yticks(ticks=np.arange(-1, 1.2, 0.2))
         plt.legend()
@@ -190,10 +190,9 @@ class Plotter:
         plt.ylabel('Aggregated PRCC', labelpad=10, fontsize=20)
         plt.xlabel('Pairs of age groups', labelpad=10, fontsize=20)
         plt.title("PRCC values and their corresponding P values")
-        title_list = filename_without_ext.split("_")
         plt.title(plot_title, y=1.03, fontsize=20)
         plt.savefig('./sens_data/PRCC_PVAL_PLOT/' + filename_to_save + '.pdf',
-        format="pdf", bbox_inches='tight')
+                    format="pdf", bbox_inches='tight')
         plt.close()
 
     def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext,
@@ -201,7 +200,7 @@ class Plotter:
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         self.aggregated_prcc_pvalues_plots(16, prcc_vector, p_values, filename_without_ext,
-                                   "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
+                                           "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
 
     def plot_horizontal_bars(self):
         os.makedirs("./sens_data", exist_ok=True)
@@ -216,10 +215,10 @@ class Plotter:
                 base_r0 = filename.split("_")[4]
 
                 if susc == str(0.5) and base_r0 == str(1.2) in filename_without_ext:
-                    self.f1 = saved_files   # only the file with susc = 0.5 and base_r0 = 1.2
+                    self.f1 = saved_files  # only the file with susc = 0.5 and base_r0 = 1.2
 
                 elif susc == str(1.0) and base_r0 == str(2.5) in filename_without_ext:
-                    self.f6 = saved_files    # only the file with susc = 1.0 and base_r0 = 2.5
+                    self.f6 = saved_files  # only the file with susc = 1.0 and base_r0 = 2.5
 
                 elif susc == str(0.5) and base_r0 == str(2.5) in filename_without_ext:
                     self.f3 = saved_files  # only the file with susc = 0.5 and base_r0 = 1.8
@@ -252,9 +251,9 @@ class Plotter:
                     plt.tick_params(direction="in")
                     color = ['yellow', 'gold', '#ece75f',  # children
                              'plum', 'violet', 'purple',  # young adults
-                              'orange', '#BC5449', '#ff0000', 'darkred',  # middle adults
-                             '#ADD8E6', '#89CFF0', '#6495ED',   # older adults
-                             '#98FB98', '#50C878', 'green']    # elderly adults
+                             'orange', '#BC5449', '#ff0000', 'darkred',  # middle adults
+                             '#ADD8E6', '#89CFF0', '#6495ED',  # older adults
+                             '#98FB98', '#50C878', 'green']  # elderly adults
 
                     results.plot(kind='barh', stacked=True,
                                  color=color)

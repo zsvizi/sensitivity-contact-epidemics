@@ -13,7 +13,7 @@ class RostModelHungary(EpidemicModelBase):
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
-        iv["l1"][2] = 1  # np.array([0, 0, 0, 4, 3, 3, 1, 2, 1, 2, 2, 2, 5, 5, 0, 0])
+        iv["l1"][2] = 1
         iv.update({"c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] +
                    iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
                    })
