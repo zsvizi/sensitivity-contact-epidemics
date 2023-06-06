@@ -64,38 +64,7 @@ class Plotter:
                         format="pdf", bbox_inches='tight')
             plt.close()
 
-    def plot_2d_contact_matrices_total(self, filename):
-        os.makedirs("sens_data/contact_total", exist_ok=True)
-        colours = {"home": "#ff96da", "work": "#96daff", "school": "#96ffbb",
-                   "other": "#ffbb96", "total": "Set2"}
-        cmaps = {"home": "CMRmap_r", "work": "summer", "school": "summer_r", "other": "gist_stern_r",
-                 "total": "Dark2"}
-        contact_total = np.array([self.data.contact_data[t] for t in list(colours.keys())[:-1]]).sum(axis=0)
-        for t in colours.keys():
-            contact_small = self.data.contact_data[t] if t != "total" else contact_total
-            param_list = range(0, 16, 1)
-            corr = pd.DataFrame(contact_small * self.data.age_data, columns=param_list, index=param_list)
-            plt.figure(figsize=(12, 12))
-            plt.rc('text', usetex=True)
-            plt.rc('font', family='serif', size=14)
-            plt.title('Total ' + t + ' contact', y=1.03, fontsize=25)
-            plt.imshow(corr, cmap=cmaps[t], origin='lower')
-            plt.colorbar(pad=0.02, fraction=0.04)
-            # plt.grid(b=None)
-            number_of_age_groups = 16
-            age_groups = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44",
-                          "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75+"]
-
-            plt.gca().set_xticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
-            plt.gca().set_yticks(np.arange(0.5, number_of_age_groups, 1), minor=True)
-            plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
-            plt.xticks(ticks=param_list, labels=age_groups, rotation=90)
-            plt.yticks(ticks=param_list, labels=age_groups)
-            plt.savefig('./sens_data/contact_total/' + filename + "_" + t + '.pdf',
-                        format="pdf", bbox_inches='tight')
-            plt.close()
-
-    def plot_prcc_p_values_as_heatmap(self, prcc, p_values, filename_without_ext,
+    def plot_prcc_p_values_as_heatmap(self, prcc, p_values,
                                       filename_to_save, plot_title):
         os.makedirs("sens_data/heatmap", exist_ok=True)
         plt.rc('text', usetex=True)
@@ -164,10 +133,12 @@ class Plotter:
                                         target: str = "Final death size"):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
-        self.plot_prcc_p_values_as_heatmap(prcc_vector, p_values, filename_without_ext,
-                                           "PRCC_P_VALUES" + filename_without_ext + "_R0", plot_title)
+        self.plot_prcc_p_values_as_heatmap(prcc=prcc_vector, p_values=p_values,
+                                           filename_to_save="PRCC_P_VALUES" + filename_without_ext + "_R0",
+                                           plot_title=plot_title)
 
-    def aggregated_prcc_pvalues_plots(self, param_list, prcc_vector, p_values, filename_without_ext,
+    @staticmethod
+    def aggregated_prcc_pvalues_plots(param_list, prcc_vector, p_values,
                                       filename_to_save, plot_title):
         os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
         plt.rc('text', usetex=True)
@@ -199,8 +170,10 @@ class Plotter:
                                       target: str = "Final death size"):
         title_list = filename_without_ext.split("_")
         plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
-        self.aggregated_prcc_pvalues_plots(16, prcc_vector, p_values, filename_without_ext,
-                                           "PRCC_P_VALUES_" + filename_without_ext + "_R0", plot_title)
+        self.aggregated_prcc_pvalues_plots(param_list=16,
+                                           prcc_vector=prcc_vector, p_values=p_values,
+                                           filename_to_save=filename_without_ext,
+                                           plot_title=plot_title)
 
     def plot_horizontal_bars(self):
         os.makedirs("./sens_data", exist_ok=True)
@@ -231,36 +204,36 @@ class Plotter:
 
                 elif susc == str(0.5) and base_r0 == str(1.8) in filename_without_ext:
                     self.f2 = saved_files  # only the file with susc = 0.5 and base_r0 = 1.8
-                    results = pd.DataFrame({
-                        "susc:0.5, R0:1.2": self.f1,
-                        "susc:0.5, R0:1.8": self.f2,
-                        "susc:0.5, R0:2.5": self.f3,
-                        "susc:1.0, R0:1.2": self.f4,
-                        "susc:1.0, R0:1.8": self.f5,
-                        "susc:1.0, R0:2.5": self.f6
 
-                    }
-                    )
-                    index = ["age 0", "age 1", "age 2", "age 3", "age 4", "age 5", "age 6",
-                             "age 7", "age 8", "age 9", "age 10", "age 11", "age 12",
-                             "age 13", "age 14", "age 15"]
-                    results.index = index
-                    results = results.T
-                    plt.tick_params(direction="in")
-                    fig, ax = plt.subplots(1, 1, figsize=(120, 30))
-                    plt.tick_params(direction="in")
-                    color = ['yellow', 'gold', '#ece75f',  # children
-                             'plum', 'violet', 'purple',  # young adults
-                             'orange', '#BC5449', '#ff0000', 'darkred',  # middle adults
-                             '#ADD8E6', '#89CFF0', '#6495ED',  # older adults
-                             '#98FB98', '#50C878', 'green']  # elderly adults
+        results = pd.DataFrame({
+            "susc:0.5, R0:1.2": self.f1,
+            "susc:0.5, R0:1.8": self.f2,
+            "susc:0.5, R0:2.5": self.f3,
+            "susc:1.0, R0:1.2": self.f4,
+            "susc:1.0, R0:1.8": self.f5,
+            "susc:1.0, R0:2.5": self.f6
 
-                    results.plot(kind='barh', stacked=True,
-                                 color=color)
-                    plt.legend(bbox_to_anchor=(1, 1), loc="upper left", title="age groups")
-                    plt.xlabel("Age groups distribution")
-                    axes = plt.gca()
-                    plt.xticks(ticks=np.arange(0, 1, 0.1))
-                    axes.set_xlim([0, 1])
-                    plt.savefig('./sens_data/horizontal_plot.pdf', format="pdf", bbox_inches='tight')
-                    plt.close()
+        })
+        index = ["age 0", "age 1", "age 2", "age 3", "age 4", "age 5", "age 6",
+                 "age 7", "age 8", "age 9", "age 10", "age 11", "age 12",
+                 "age 13", "age 14", "age 15"]
+        results.index = index
+        results = results.T
+        plt.tick_params(direction="in")
+        fig, ax = plt.subplots(1, 1, figsize=(120, 30))
+        plt.tick_params(direction="in")
+        color = ['yellow', 'gold', '#ece75f',  # children
+                 'plum', 'violet', 'purple',  # young adults
+                 'orange', '#BC5449', '#ff0000', 'darkred',  # middle adults
+                 '#ADD8E6', '#89CFF0', '#6495ED',  # older adults
+                 '#98FB98', '#50C878', 'green']  # elderly adults
+
+        results.plot(kind='barh', stacked=True,
+                     color=color)
+        plt.legend(bbox_to_anchor=(1, 1), loc="upper left", title="age groups")
+        plt.xlabel("Age groups distribution")
+        axes = plt.gca()
+        plt.xticks(ticks=np.arange(0, 1, 0.1))
+        axes.set_xlim([0, 1])
+        plt.savefig('./sens_data/horizontal_plot.pdf', format="pdf", bbox_inches='tight')
+        plt.close()

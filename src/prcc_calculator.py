@@ -34,6 +34,16 @@ class PRCCCalculator:
         self.prcc_mtx = prcc_mtx
         self.prcc_list = prcc_list
 
+    def calculate_p_values(self):
+        t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2))
+        # p-value for 2-sided test
+        dof = self.number_of_samples - 2 - self.upp_tri_size
+        p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
+        self.p_value = p_value
+        self.p_value_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=p_value[:self.upp_tri_size],
+            matrix_size=self.n_ag)
+
     def aggregate_prcc_values(self):
         distribution_p_val = (1 - self.p_value_mtx) / np.sum(1 - self.p_value_mtx, axis=0)
         distribution_prcc_p_val = \
@@ -54,13 +64,3 @@ class PRCCCalculator:
         self.agg_std = agg_std
         self.agg_prcc = agg
         return agg.flatten(), agg_std.flatten()
-
-    def calculate_p_values(self):
-        t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2))
-        # p-value for 2-sided test
-        dof = self.number_of_samples - 2 - self.upp_tri_size
-        p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
-        self.p_value = p_value
-        self.p_value_mtx = get_rectangular_matrix_from_upper_triu(
-            rvector=p_value[:self.upp_tri_size],
-            matrix_size=self.n_ag)
