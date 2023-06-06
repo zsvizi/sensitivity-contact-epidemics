@@ -15,10 +15,6 @@ class SimulationNPI(SimulationBase):
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
 
-        self.lhs_table = None
-        self.sim_output = None
-        self.prcc_values = None
-
         self.n_samples = 120000
 
     def generate_lhs(self):
@@ -49,17 +45,21 @@ class SimulationNPI(SimulationBase):
                     sim_obj=self,
                     n_samples=self.n_samples,
                     target="epidemic_size")
-                self.lhs_table, self.sim_output = sampler_npi.run()
+                sampler_npi.run()
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters
         sim_folder, lhs_folder = "simulations", "lhs"
         for root, dirs, files in os.walk("./sens_data/" + sim_folder):
             for filename in files:
-                saved_simulation = np.loadtxt("./sens_data/" + sim_folder + "/" +
-                                              filename, delimiter=';')
-                saved_lhs_values = np.loadtxt("./sens_data/" + lhs_folder + "/" +
-                                              filename.replace("simulations", "lhs"), delimiter=';')
+                saved_simulation = np.loadtxt(
+                    "./sens_data/" + sim_folder + "/" +
+                    filename,
+                    delimiter=';')
+                saved_lhs_values = np.loadtxt(
+                    "./sens_data/" + lhs_folder + "/" +
+                    filename.replace("simulations", "lhs"),
+                    delimiter=';')
 
                 susc = float(filename.split("_")[2])
                 base_r0 = float(filename.split("_")[3])
@@ -71,17 +71,23 @@ class SimulationNPI(SimulationBase):
                 prcc_calculator.calculate_prcc_values(
                     lhs_table=saved_lhs_values,
                     sim_output=saved_simulation)
+
                 # calculate p-values
                 prcc_calculator.calculate_p_values()
-
-                stack_prcc_pval = np.hstack([prcc_calculator.prcc_list, prcc_calculator.p_value]).reshape(2, 136).T
+                stack_prcc_pval = np.hstack(
+                    [prcc_calculator.prcc_list, prcc_calculator.p_value]
+                ).reshape(2, 136).T
+                # save values
                 os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
                 fname = "_".join([str(susc), str(base_r0)])
                 filename = "sens_data/PRCC_Pvalues" + "/" + fname
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
                 # aggregate PRCC values
-                stack_value = np.hstack([prcc_calculator.agg_prcc, prcc_calculator.agg_std]).reshape(2, 16).T
+                stack_value = np.hstack(
+                    [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
+                ).reshape(2, 16).T
+                # save values
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
                 np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
@@ -89,35 +95,24 @@ class SimulationNPI(SimulationBase):
     def plot_prcc_values(self):
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
-                if self.prcc_values is None:
-                    print(susc, base_r0)
-                    # read files from the generated folder based on the given parameters
-                    agg_values = "agg_prcc"  # for plotting the aggregation methods
-                    for root, dirs, files in os.walk("./sens_data/" + "agg_prcc"):
-                        for filename in files:
-                            filename_without_ext = os.path.splitext(filename)[0]
-                            # load prcc-pvalues
-                            saved_prcc_pval = np.loadtxt("./sens_data/" + agg_values + "/" + filename,
-                                                         delimiter=';')
+                print(susc, base_r0)
+                # read files from the generated folder based on the given parameters
+                agg_values = "agg_prcc"  # for plotting the aggregation methods
+                for root, dirs, files in os.walk("./sens_data/" + "agg_prcc"):
+                    for filename in files:
+                        filename_without_ext = os.path.splitext(filename)[0]
+                        # load prcc-pvalues
+                        saved_prcc_pval = np.loadtxt(
+                            "./sens_data/" + agg_values + "/" + filename,
+                            delimiter=';')
 
-                            # Plot results
-                            plot = src.Plotter(sim_obj=self)
+                        # Plot results
+                        plot = src.Plotter(sim_obj=self)
 
-                            plot.plot_horizontal_bars()
-                            # plot.plot_contact_matrices_hungary(filename="contact_matrix")
-                            #
-                            plot.generate_prcc_p_values_heatmaps(
-                                prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                p_values=saved_prcc_pval[:, 1],
-                                filename_without_ext=filename_without_ext, target="Final death size")
+                        plot.plot_horizontal_bars()
 
-                            # # requires the folder "agg_values_options" to be loaded
-                            # plot.plot_aggregation_prcc_pvalues(
-                            #     prcc_vector=abs(saved_prcc_pval[:, 0]),
-                            #     p_values=abs(saved_prcc_pval[:, 1]),
-                            #     filename_without_ext=filename_without_ext, target="Final death size")
-
-                else:
-                    # use calculated PRCC values from the previous step
-                    plot = src.Plotter(sim_obj=self)
-                    plot.plot_contact_matrices_hungary(filename="contact_matrx")
+                        plot.generate_prcc_p_values_heatmaps(
+                            prcc_vector=abs(saved_prcc_pval[:, 0]),
+                            p_values=saved_prcc_pval[:, 1],
+                            filename_without_ext=filename_without_ext,
+                            target="Final death size")
