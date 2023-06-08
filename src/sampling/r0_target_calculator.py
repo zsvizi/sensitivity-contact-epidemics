@@ -18,6 +18,5 @@ class R0TargetCalculator(TargetCalculator):
             population=self.sim_obj.population)[0]
         r0_lhs = (self.beta / beta_lhs) * self.base_r0
 
-        output = np.array([0, r0_lhs])
-        output = np.append(output, np.zeros(self.sim_obj.n_ag))
+        output = np.array([r0_lhs])
         return output

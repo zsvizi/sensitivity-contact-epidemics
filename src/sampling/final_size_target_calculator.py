@@ -20,6 +20,5 @@ class FinalSizeTargetCalculator(TargetCalculator):
         self.age_deaths = age_deaths.reshape((-1, 1))
         death_final = np.sum(age_group_deaths)
 
-        output = np.array([0, death_final])
-        output = np.append(output, np.zeros(self.sim_obj.n_ag))
+        output = np.array([death_final])
         return output

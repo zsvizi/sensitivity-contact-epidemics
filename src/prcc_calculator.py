@@ -26,7 +26,7 @@ class PRCCCalculator:
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
         sim_data = lhs_table[:, :(self.n_ag * (self.n_ag + 1)) // 2]
         sim_data = 1 - sim_data
-        simulation = np.append(sim_data, sim_output[:, -self.n_ag - 1].reshape((-1, 1)), axis=1)
+        simulation = np.append(sim_data, sim_output[:, - 1].reshape((-1, 1)), axis=1)
         prcc_list = get_prcc_values(lhs_output_table=simulation)
         prcc_mtx = get_rectangular_matrix_from_upper_triu(
             rvector=prcc_list[:self.upp_tri_size],
@@ -35,7 +35,8 @@ class PRCCCalculator:
         self.prcc_list = prcc_list
 
     def calculate_p_values(self):
-        t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2))
+        t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) /
+                                         (1 - self.prcc_list ** 2))
         # p-value for 2-sided test
         dof = self.number_of_samples - 2 - self.upp_tri_size
         p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
