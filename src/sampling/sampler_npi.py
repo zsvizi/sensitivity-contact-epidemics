@@ -71,6 +71,10 @@ class SamplerNPI(SamplerBase):
         self._save_output(output=sim_output, folder_name='simulations')
         if self.target == "epidemic_size":
             self._save_output(output=self.calc.age_deaths, folder_name='age_deaths')
+            self._save_output(output=self.calc.age_hospitalized, folder_name='age_hospitalized')
+            self._save_output(output=self.calc.final_deaths, folder_name='final_deaths')
+            self._save_output(output=self.calc.hospitalized, folder_name='final_hospitalized')
+
         return lhs_table, sim_output
 
     def calculate_kappa(self):
