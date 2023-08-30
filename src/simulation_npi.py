@@ -17,13 +17,13 @@ class SimulationNPI(SimulationBase):
         self.r0_choices = [1.2, 1.8, 2.5]
 
     def generate_lhs(self):
-        # 1. Update params by susceptibility vector
+        # Update params by susceptibility vector
         susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
             self.params.update({"susc": self.susceptibles})
             self.sim_state.update({"susc": susceptibility})
-            # 2. Update params by calculated BASELINE beta
+            # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
                 r0generator = R0Generator(param=self.params)
                 beta = base_r0 / r0generator.get_eig_val(
@@ -38,7 +38,7 @@ class SimulationNPI(SimulationBase):
                      "susc": susc,
                      "r0generator": r0generator})
 
-                # Execute sampling for independent parameters
+                # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
                     target="epidemic_size")
@@ -61,6 +61,7 @@ class SimulationNPI(SimulationBase):
                 susc = float(filename.split("_")[2])
                 base_r0 = float(filename.split("_")[3])
 
+                # CALCULATIONS
                 # Calculate PRCC values
                 prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
                 prcc_calculator.calculate_prcc_values(
@@ -72,18 +73,20 @@ class SimulationNPI(SimulationBase):
                 stack_prcc_pval = np.hstack(
                     [prcc_calculator.prcc_list, prcc_calculator.p_value]
                 ).reshape(-1, self.upper_tri_size).T
-                # save values
-                os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
-                fname = "_".join([str(susc), str(base_r0)])
-                filename = "sens_data/PRCC_Pvalues" + "/" + fname
-                np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
 
                 # aggregate PRCC values
                 prcc_calculator.aggregate_prcc_values()
                 stack_value = np.hstack(
                     [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
                 ).reshape(-1, self.n_ag).T
-                # save values
+                # CALCULATIONS END
+
+                # save PRCC values
+                os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
+                fname = "_".join([str(susc), str(base_r0)])
+                filename = "sens_data/PRCC_Pvalues" + "/" + fname
+                np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
+                # save PRCC p-values
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
                 np.savetxt(fname=filename + ".csv", X=stack_value, delimiter=";")
