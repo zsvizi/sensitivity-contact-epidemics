@@ -13,7 +13,7 @@ class PRCCCalculator:
         self.age_vector = sim_obj.age_vector
         self.params = sim_obj.params
         self.number_of_samples = sim_obj.n_samples
-        self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
+        self.upp_tri_size = self.sim_obj.upper_tri_size
 
         self.p_value = None
         self.p_value_mtx = None

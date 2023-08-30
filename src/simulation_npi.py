@@ -18,7 +18,7 @@ class SimulationNPI(SimulationBase):
 
     def generate_lhs(self):
         # 1. Update params by susceptibility vector
-        susceptibility = np.ones(16)
+        susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
             self.params.update({"susc": self.susceptibles})
@@ -71,7 +71,7 @@ class SimulationNPI(SimulationBase):
                 prcc_calculator.calculate_p_values()
                 stack_prcc_pval = np.hstack(
                     [prcc_calculator.prcc_list, prcc_calculator.p_value]
-                ).reshape(2, 136).T
+                ).reshape(-1, self.upper_tri_size).T
                 # save values
                 os.makedirs("./sens_data/PRCC_Pvalues", exist_ok=True)
                 fname = "_".join([str(susc), str(base_r0)])
@@ -82,7 +82,7 @@ class SimulationNPI(SimulationBase):
                 prcc_calculator.aggregate_prcc_values()
                 stack_value = np.hstack(
                     [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                ).reshape(2, 16).T
+                ).reshape(-1, self.n_ag).T
                 # save values
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])

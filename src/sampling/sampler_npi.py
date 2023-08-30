@@ -34,8 +34,6 @@ class SamplerNPI(SamplerBase):
         self.contact_home = self.sim_obj.contact_home
         self.contact_total = self.sim_obj.contact_matrix
 
-        self.upper_tri_size = int((self.sim_obj.n_ag + 1) * self.sim_obj.n_ag / 2)
-
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
     def run(self):
@@ -53,7 +51,7 @@ class SamplerNPI(SamplerBase):
         results = np.array(results)
 
         # check if all r0s are > 1
-        r0_col_idx = int(self.upper_tri_size)  # r0 position
+        r0_col_idx = int(self.sim_obj.upper_tri_size)  # r0 position
         res_min = results[:, r0_col_idx].min()
         if res_min < 1:
             print("minimal lhs_r0: " + str(res_min))
