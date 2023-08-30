@@ -6,14 +6,13 @@ from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 
 
 class PRCCCalculator:
-    def __init__(self, sim_obj: src.SimulationNPI,
-                 number_of_samples: int):
+    def __init__(self, sim_obj: src.SimulationNPI):
 
         self.sim_obj = sim_obj
         self.n_ag = sim_obj.n_ag
         self.age_vector = sim_obj.age_vector
         self.params = sim_obj.params
-        self.number_of_samples = number_of_samples
+        self.number_of_samples = sim_obj.n_samples
         self.upp_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
 
         self.p_value = None
@@ -35,8 +34,9 @@ class PRCCCalculator:
         self.prcc_list = prcc_list
 
     def calculate_p_values(self):
-        t = self.prcc_list * np.sqrt((self.number_of_samples - 2 - self.upp_tri_size) /
-                                         (1 - self.prcc_list ** 2))
+        t = self.prcc_list * np.sqrt(
+            (self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2)
+        )
         # p-value for 2-sided test
         dof = self.number_of_samples - 2 - self.upp_tri_size
         p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))

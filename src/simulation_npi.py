@@ -40,9 +40,7 @@ class SimulationNPI(SimulationBase):
 
                 # Execute sampling for independent parameters
                 sampler_npi = src.SamplerNPI(
-                    sim_state=self.sim_state,
                     sim_obj=self,
-                    n_samples=self.n_samples,
                     target="epidemic_size")
                 sampler_npi.run()
 
@@ -64,9 +62,7 @@ class SimulationNPI(SimulationBase):
                 base_r0 = float(filename.split("_")[3])
 
                 # Calculate PRCC values
-                prcc_calculator = src.prcc_calculator.PRCCCalculator(
-                    number_of_samples=self.n_samples,
-                    sim_obj=self)
+                prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
                 prcc_calculator.calculate_prcc_values(
                     lhs_table=saved_lhs_values,
                     sim_output=saved_simulation)

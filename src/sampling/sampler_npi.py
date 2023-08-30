@@ -12,14 +12,13 @@ from src.sampling.r0_target_calculator import R0TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI, target: str = "r0",
-                 n_samples: int = 120000) -> None:
-        super().__init__(sim_state=sim_state, sim_obj=sim_obj)
+    def __init__(self, sim_obj: src.SimulationNPI, target: str = "r0") -> None:
+        super().__init__(sim_state=sim_obj.sim_state, sim_obj=sim_obj)
         self.sim_obj = sim_obj
         self.target = target
-        self.n_samples = n_samples
+        self.n_samples = sim_obj.n_samples
 
-        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_state)
+        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_obj.sim_state)
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":
@@ -29,7 +28,7 @@ class SamplerNPI(SamplerBase):
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
             self.final_size = self.calc.get_output(cm=self.sim_obj.contact_matrix)
 
-        self.susc = sim_state["susc"]
+        self.susc = sim_obj.sim_state["susc"]
 
         # Matrices of frequently used contact types
         self.contact_home = self.sim_obj.contact_home
