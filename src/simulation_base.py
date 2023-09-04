@@ -9,10 +9,10 @@ class SimulationBase:
         self.data = data
         self.sim_state = dict()
 
-        self.n_ag = self.data.contact_data["home"].shape[0]
-        self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
-            self.data.contact_data["school"] + self.data.contact_data["other"]
-        self.contact_home = self.data.contact_data["home"]
+        self.n_ag = self.data.contact_data["Home"].shape[0]
+        self.contact_matrix = self.data.contact_data["Home"] + self.data.contact_data["Work"] + \
+            self.data.contact_data["School"] + self.data.contact_data["Other"]
+        self.contact_home = self.data.contact_data["Home"]
         self.model = RostModelHungary(model_data=self.data)
 
         self.population = self.model.population

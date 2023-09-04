@@ -63,7 +63,8 @@ class SimulationNPI(SimulationBase):
 
                 # CALCULATIONS
                 # Calculate PRCC values
-                prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
+                prcc_calculator = src.prcc_calculator.PRCCCalculator(
+                    sim_obj=self)
                 prcc_calculator.calculate_prcc_values(
                     lhs_table=saved_lhs_values,
                     sim_output=saved_simulation)
@@ -86,6 +87,7 @@ class SimulationNPI(SimulationBase):
                 fname = "_".join([str(susc), str(base_r0)])
                 filename = "sens_data/PRCC_Pvalues" + "/" + fname
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
+
                 # save PRCC p-values
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])

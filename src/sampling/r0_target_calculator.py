@@ -6,10 +6,10 @@ from src.sampling.target_calculator import TargetCalculator
 
 
 class R0TargetCalculator(TargetCalculator):
-    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI):
+    def __init__(self, sim_obj: src.SimulationNPI):
         super().__init__(sim_obj=sim_obj)
-        self.base_r0 = sim_state["base_r0"]
-        self.beta = sim_state["beta"]
+        self.base_r0 = sim_obj.sim_state["base_r0"]
+        self.beta = sim_obj.sim_state["beta"]
 
     def get_output(self, cm: np.ndarray):
         r0generator = R0Generator(param=self.sim_obj.params)

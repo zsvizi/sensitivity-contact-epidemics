@@ -13,16 +13,15 @@ from src.sampling.r0_target_calculator import R0TargetCalculator
 
 class SamplerNPI(SamplerBase):
     def __init__(self, sim_obj: src.SimulationNPI, target: str = "r0") -> None:
-        super().__init__(sim_state=sim_obj.sim_state, sim_obj=sim_obj)
+        super().__init__(sim_obj=sim_obj)
         self.sim_obj = sim_obj
         self.target = target
-        self.n_samples = sim_obj.n_samples
 
-        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_obj.sim_state)
+        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj)
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":
-            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+            self.calc = R0TargetCalculator(sim_obj=self.sim_obj)
             self.r0_lhs_home = self.calc.get_output(cm=self.sim_obj.contact_home)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
@@ -37,10 +36,11 @@ class SamplerNPI(SamplerBase):
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
     def run(self):
+
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-        number_of_samples = self.n_samples
+        number_of_samples = self.sim_obj.n_samples
         lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
 
         # Results have shape of (number_of_samples, 136 + 1)
@@ -69,8 +69,6 @@ class SamplerNPI(SamplerBase):
         if self.target == "epidemic_size":
             self._save_output(output=self.calc.age_deaths, folder_name='age_deaths')
             self._save_output(output=self.calc.age_hospitalized, folder_name='age_hospitalized')
-            self._save_output(output=self.calc.final_deaths, folder_name='final_deaths')
-            self._save_output(output=self.calc.hospitalized, folder_name='final_hospitalized')
 
         return lhs_table, sim_output
 
@@ -86,7 +84,7 @@ class SamplerNPI(SamplerBase):
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
-        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj)
         r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
         return r0_lhs_home_k
 
