@@ -38,10 +38,3 @@ class FinalSizeTargetCalculator(TargetCalculator):
 
         output = np.array([death_final])
         return output
-
-
-
-
-
-
-

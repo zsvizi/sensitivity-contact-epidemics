@@ -63,8 +63,7 @@ class SimulationNPI(SimulationBase):
 
                 # CALCULATIONS
                 # Calculate PRCC values
-                prcc_calculator = src.prcc_calculator.PRCCCalculator(
-                    sim_obj=self)
+                prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
                 prcc_calculator.calculate_prcc_values(
                     lhs_table=saved_lhs_values,
                     sim_output=saved_simulation)
