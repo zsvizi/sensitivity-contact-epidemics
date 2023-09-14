@@ -22,16 +22,10 @@ class SamplerNPI(SamplerBase):
 
         if self.target == "r0":
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj)
-            self.r0_lhs_home = self.calc.get_output(cm=self.sim_obj.contact_home)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
-            self.final_size = self.calc.get_output(cm=self.sim_obj.contact_matrix)
 
         self.susc = sim_obj.sim_state["susc"]
-
-        # Matrices of frequently used contact types
-        self.contact_home = self.sim_obj.contact_home
-        self.contact_total = self.sim_obj.contact_matrix
 
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
@@ -66,16 +60,14 @@ class SamplerNPI(SamplerBase):
         # Save outputs
         self._save_output(output=lhs_table, folder_name='lhs')
         self._save_output(output=sim_output, folder_name='simulations')
-        if self.target == "epidemic_size":
-            self._save_output(output=self.calc.age_deaths, folder_name='age_deaths')
-            self._save_output(output=self.calc.age_hospitalized, folder_name='age_hospitalized')
 
         return lhs_table, sim_output
 
     def calculate_kappa(self):
         kappas = np.linspace(0, 1, 1000)
         r0_home_kappas = np.array(list(map(self.kappify, kappas)))
-        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of the maximum values along an axis.
+        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of
+        # the maximum values along an axis.
         kappa = kappas[k]
         print("k", kappa)
         return kappa

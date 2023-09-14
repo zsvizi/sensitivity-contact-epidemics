@@ -42,7 +42,8 @@ class Plotter:
         cmaps = {"Home": "Greens", "Work": "Greens", "School": "Greens",
                  "Other": "Greens", "Full": "Greens"}
         print(self.data.contact_data.keys())
-        contact_full = np.array([self.data.contact_data[i] for i in list(cols.keys())[:-1]]).sum(axis=0)
+        contact_full = np.array([self.data.contact_data[i]
+                                 for i in list(cols.keys())[:-1]]).sum(axis=0)
         for i in cols.keys():
             contacts = self.data.contact_data[i] if i != "Full" else contact_full
             param_list = range(0, 16, 1)
@@ -71,16 +72,16 @@ class Plotter:
                         format="pdf", bbox_inches='tight')
             plt.close()
 
-    def get_plot_hungary_heatmap(self, filename):
+    def get_plot_hungary_heatmap(self):
         os.makedirs("sens_data/contact_matrices", exist_ok=True)
 
         plt.figure(figsize=(30, 20))
         cols = {"Home": 'jet', "Work": 'jet', "School": 'jet', "Other": 'jet',
                 "Full": 'jet'}
-        contact_full = np.array([self.data.contact_data[i] for i in list(cols.keys())[:-1]]).sum(axis=0)
+        contact_full = np.array([self.data.contact_data[i]
+                                 for i in list(cols.keys())[:-1]]).sum(axis=0)
 
         sns.set(font_scale=2.5)
-        cmap = sns.diverging_palette(133, 10, as_cmap=True)
 
         ax = sns.heatmap(contact_full, cmap="Greens", annot=True, square=True,
                          linecolor='white', linewidths=1, cbar=False)
@@ -94,7 +95,6 @@ class Plotter:
 
         # plot mask heatmap
         mask = np.triu(np.ones_like(contact_full), k=1).astype(bool)
-        A = np.ma.array(contact_full, mask=mask)  # mask out the lower triangle
         fig = plt.figure(figsize=(30, 20))
         ax1 = fig.add_subplot(111)
         cmap = plt.cm.get_cmap('Greens', 10)
@@ -127,16 +127,18 @@ class Plotter:
             rvector=p_values[:self.sim_obj.upper_tri_size],
             matrix_size=self.sim_obj.n_ag)
         # vertices of the little squares
-        xv, yv = np.meshgrid(np.arange(-0.5, self.sim_obj.n_ag), np.arange(-0.5, self.sim_obj.n_ag))
+        xv, yv = np.meshgrid(np.arange(-0.5, self.sim_obj.n_ag), np.arange(-0.5,
+                                                                           self.sim_obj.n_ag))
         # centers of the little square
         xc, yc = np.meshgrid(np.arange(0, self.sim_obj.n_ag), np.arange(0, self.sim_obj.n_ag))
         x = np.concatenate([xv.ravel(), xc.ravel()])
         y = np.concatenate([yv.ravel(), yc.ravel()])
-        start = (self.sim_obj.n_ag + 1) * (self.sim_obj.n_ag + 1)  # indices of the centers
+        # start = (self.sim_obj.n_ag + 1) * (self.sim_obj.n_ag + 1)  # indices of the centers
         triangles_prcc = [(i + j * (self.sim_obj.n_ag + 1), i + 1 + j * (self.sim_obj.n_ag + 1),
                            i + (j + 1) * (self.sim_obj.n_ag + 1))
                           for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
-        triangles_p = [(i + 1 + j * (self.sim_obj.n_ag + 1), i + 1 + (j + 1) * (self.sim_obj.n_ag + 1),
+        triangles_p = [(i + 1 + j * (self.sim_obj.n_ag + 1), i + 1 + (j + 1) *
+                        (self.sim_obj.n_ag + 1),
                         i + (j + 1) * (self.sim_obj.n_ag + 1))
                        for j in range(self.sim_obj.n_ag) for i in range(self.sim_obj.n_ag)]
         triang = [Triangulation(x, y, triangles, mask=None)
@@ -157,7 +159,7 @@ class Plotter:
         images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
                   for t, val, cmap in zip(triang, mask, cmaps)]
 
-        cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)  # for the prcc values
+        fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)  # for the prcc values
         cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
 
         images[1].set_norm(norm=log_norm)
@@ -175,8 +177,6 @@ class Plotter:
         ax.yaxis.set_label_position("right")
         ax.yaxis.tick_right()
         ax.set(frame_on=False)
-        # ax.spines['right'].set_visible(True)
-        # ax.spines["bottom"].set_linewidth(2)
 
         plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
         ax.margins(x=0, y=0)
@@ -185,17 +185,17 @@ class Plotter:
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.title(plot_title, y=1.03, fontsize=25)
 
-        plt.savefig('./sens_data/heatmap/' + filename_to_save + '.pdf', format="pdf", bbox_inches='tight')
+        plt.savefig('./sens_data/heatmap/' + filename_to_save + '.pdf', format="pdf",
+                    bbox_inches='tight')
         plt.close()
 
     def generate_prcc_p_values_heatmaps(self, prcc_vector,
-                                        p_values, filename_without_ext,
-                                        target: str = "Final death size"):
+                                        p_values, filename_without_ext):
         title_list = filename_without_ext.split("_")
-        # plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         plot_title = '$\overline{\mathcal{R}}_0=$' + title_list[1]
         self.plot_prcc_p_values_as_heatmap(prcc=prcc_vector, p_values=p_values,
-                                           filename_to_save="PRCC_P_VALUES" + filename_without_ext + "_R0",
+                                           filename_to_save="PRCC_P_VALUES" +
+                                                            filename_without_ext + "_R0",
                                            plot_title=plot_title)
 
     @staticmethod
@@ -208,8 +208,9 @@ class Plotter:
         xp = range(param_list)
         plt.figure(figsize=(15, 12))
         plt.tick_params(direction="in")
-        fig, ax = plt.subplots()
-        plt.bar(xp, list(abs(prcc_vector)), align='center', width=0.8, alpha=0.5, color="g", label="PRCC")
+        # fig, ax = plt.subplots()
+        plt.bar(xp, list(abs(prcc_vector)), align='center', width=0.8, alpha=0.5,
+                color="g", label="PRCC")
         for pos, y, err in zip(xp, list(abs(prcc_vector)), list(abs(p_values))):
             plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
                          markersize=5, capsize=4, ecolor="r", elinewidth=4)
@@ -225,10 +226,9 @@ class Plotter:
                     format="pdf", bbox_inches='tight')
         plt.close()
 
-    def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext,
-                                      target: str = "Final death size"):
+    def plot_aggregation_prcc_pvalues(self, prcc_vector, p_values, filename_without_ext):
+
         title_list = filename_without_ext.split("_")
-        # plot_title = 'Target:' + target + ', Susceptibility=' + title_list[0] + ', R0=' + title_list[1]
         plot_title = '$\overline{\mathcal{R}}_0=$' + title_list[1]
         self.aggregated_prcc_pvalues_plots(param_list=16,
                                            prcc_vector=prcc_vector, p_values=p_values,
@@ -242,7 +242,8 @@ class Plotter:
             for filename in files:
                 filename_without_ext = os.path.splitext(filename)[0]
                 # load the mortality values
-                saved_files = np.loadtxt("./sens_data/" + mortality_values + "/" + filename, delimiter=';')
+                saved_files = np.loadtxt("./sens_data/" + mortality_values + "/" + filename,
+                                         delimiter=';')
 
                 susc = filename.split("_")[3]
                 base_r0 = filename.split("_")[4]
@@ -308,7 +309,8 @@ class Plotter:
             for file in files:
                 filename_without_ext = os.path.splitext(file)[0]
                 # load the mortality values
-                saved_files = np.loadtxt("./sens_data/" + hospitalized_values + "/" + file, delimiter=';')
+                saved_files = np.loadtxt("./sens_data/" + hospitalized_values + "/" + file,
+                                         delimiter=';')
 
                 susc = file.split("_")[3]
                 base_r0 = file.split("_")[4]
@@ -357,7 +359,8 @@ class Plotter:
                     format="pdf", bbox_inches='tight')
         plt.close()
 
-    def triangle_construction_pos(self, pos=(0, 0), rot=0):
+    @staticmethod
+    def triangle_construction_pos(pos=(0, 0), rot=0):
         r = np.array([[-1, -1], [1, -1], [1, 1], [-1, -1]]) * .5
         rm = [[np.cos(np.deg2rad(rot)), -np.sin(np.deg2rad(rot))],
               [np.sin(np.deg2rad(rot)), np.cos(np.deg2rad(rot))]]
@@ -367,11 +370,11 @@ class Plotter:
         return r
 
     def triangle_matrix_to_construct(self, a, ax, rot=0, **kwargs):
-        segs = []
+        seg = []
         for i in range(6):
             for j in range(16):
-                segs.append(self.triangle_construction_pos((j, i), rot=rot))
-        col = collections.PolyCollection(segs, **kwargs)
+                seg.append(self.triangle_construction_pos((j, i), rot=rot))
+        col = collections.PolyCollection(seg, **kwargs)
         col.set_array(a.flatten())
         ax.add_collection(col)
         return col
@@ -384,13 +387,7 @@ class Plotter:
         A *= 4
 
         # fig, ax = plt.subplots()
-        log_norm = colors.LogNorm(vmin=1e0, vmax=1e7)
         norm = plt.Normalize(vmin=0, vmax=1.0)
-        color = ListedColormap(['yellow', 'gold', '#ece75f',  # children
-                                'plum', 'violet', 'purple',  # young adults
-                                'tomato', '#ff0000', 'crimson', 'darkred',  # middle adults
-                                '#ADD8E6', '#89CFF0', '#6495ED',  # older adults
-                                '#98FB98', '#50C878', 'green'])
 
         im1 = self.triangle_matrix_to_construct(self.deaths.values,
                                                 ax, rot=0, norm=norm, cmap="Greens")
@@ -400,11 +397,12 @@ class Plotter:
         ax.set_ylim(-.5, A.shape[0] - .5)
         im1.set_norm(norm=norm)
         im2.set_norm(norm=norm)
-        ax.set_xticks(range(self.sim_obj.n_ag), labels=self.deaths.columns, rotation=90, fontsize=20)
+        ax.set_xticks(range(self.sim_obj.n_ag), labels=self.deaths.columns, rotation=90,
+                      fontsize=20)
         ax.set_yticks(range(6), labels=self.deaths.index, fontsize=20)
 
         fig.colorbar(im1, ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.01)
-        # fig.colorbar(im2, ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.01)
 
-        plt.savefig('./sens_data/hosp_death/' + 'hosp_death.pdf', format="pdf", bbox_inches='tight')
+        plt.savefig('./sens_data/hosp_death/' + 'hosp_death.pdf', format="pdf",
+                    bbox_inches='tight')
         plt.close()

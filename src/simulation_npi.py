@@ -8,7 +8,7 @@ from src.simulation_base import SimulationBase
 
 
 class SimulationNPI(SimulationBase):
-    def __init__(self, data: DataLoader, n_samples: int = 120000) -> None:
+    def __init__(self, data: DataLoader, n_samples: int = 1) -> None:
         super().__init__(data=data)
         self.n_samples = n_samples
 
@@ -115,11 +115,9 @@ class SimulationNPI(SimulationBase):
                                 plot.generate_prcc_p_values_heatmaps(
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=saved_prcc_pval[:, 1],
-                                    filename_without_ext=filename_without_ext,
-                                    target="Final death size")
+                                    filename_without_ext=filename_without_ext)
                             else:
                                 plot.plot_aggregation_prcc_pvalues(
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=abs(saved_prcc_pval[:, 1]),
-                                    filename_without_ext=filename_without_ext,
-                                    target="Final death size")
+                                    filename_without_ext=filename_without_ext)

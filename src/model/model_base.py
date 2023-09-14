@@ -16,7 +16,7 @@ class EpidemicModelBase(ABC):
         return iv
 
     def aggregate_by_age(self, solution, idx) -> np.ndarray:
-        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=1)
+        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=0)
 
     def get_cumulative(self, solution) -> np.ndarray:
         idx = self.c_idx["c"]
