@@ -1,5 +1,4 @@
 import numpy as np
-from collections import Counter
 from src.simulation_npi import SimulationNPI
 from src.sampling.target_calculator import TargetCalculator
 
