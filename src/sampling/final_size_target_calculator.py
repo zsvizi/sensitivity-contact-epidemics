@@ -13,63 +13,50 @@ class FinalSizeTargetCalculator(TargetCalculator):
         self.total_infectious = np.array([])
 
     def get_output(self, cm: np.ndarray):
-        t = 100
-        time = np.arange(0, t, 0.5)
-        # solve the model from 0 to 100 starting from the vector at last time point
-        solution = self.sim_obj.model.get_solution(
-            t=time,
-            init_values=self.sim_obj.model.get_initial_values()[-1],
-            parameters=self.sim_obj.params, cm=cm)
-
-        # solve the model from 100-600 using initial condition from the vector at the last time step
-        t2 = 600
-        time_2 = np.arange(100, t2, 0.5)
-        sol = self.sim_obj.model.get_solution(t=time_2,
-                                              init_values=solution[-1],
-                                              parameters=self.sim_obj.params, cm=cm)
+        t_interval = 100
+        t = np.arange(0, t_interval, 0.5)
+        # solve the model from 0 to 100 using the initial condition
+        sol = None  # TODO
+        # store the state at the last time point - this is referred as current state
+        state = None  # TODO
+        # introduce a variable for tracking how long the ODE was solved
+        t_interval_complete = 0
+        t_interval_complete += t_interval
+        # let's say we want to store the peak size of hospitalized people during the simulation
+        # aggregate age groups for ih, ic and icr from the previously calculated solution
+        # then get maximal value of the time series
+        hospital_peak = None  # TODO
 
         # Loop infinitely
         while True:
-            # consider the total number of hospitalized
-            age_group_hospitalized = self.sim_obj.model.aggregate_by_age(
-                solution=sol, idx=self.sim_obj.model.c_idx["ih"])
+            # let's say we want to store the peak size of hospitalized people during the simulation
+            # aggregate age groups for ih, ic and icr from the previously calculated solution
+            # then get maximal value of the time series
+            hospital_peak_now = None  # TODO
+            # check whether it is higher than it was in the previous turn
+            if None:  # TODO
+                # if yes, then update the variable created outside this loop
+                pass  # TODO
 
-            # hospitalized at the last time step for each age group
-            age_group_hospitalized = age_group_hospitalized[-1]
-            age_hospitalized = age_group_hospitalized / np.sum(age_group_hospitalized)
-            self.age_hospitalized = age_hospitalized
-
-            # consider the total number of deaths
-            age_group_deaths = self.sim_obj.model.aggregate_by_age(
-                solution=sol, idx=self.sim_obj.model.c_idx["d"])
-            # number of deaths at the last time step for each age group
-            age_group_deaths = age_group_deaths[-1]
-            age_deaths = age_group_deaths / np.sum(age_group_deaths)
-            self.age_deaths = age_deaths.reshape((-1, 1))
-            # total deaths
-            death_final = np.sum(age_group_deaths)
-            output = np.array([death_final])
-
-            # sum of infectious persons, that is all the compartments excluding s, r, & d
-            no_infected = self.sim_obj.model.aggregate_by_age(solution=sol,
-                                                              idx=self.sim_obj.model.c_idx["c"] -
-                                                                  (self.sim_obj.model.c_idx["s"] +
-                                                                   self.sim_obj.model.c_idx["d"] +
-                                                                   self.sim_obj.model.c_idx["r"]))
-            # total number of infected at the last time step
-            n_infecteds = np.sum(no_infected[-1])
-
-            # count the number of times the model is solved using counter from collections
-            model_count = Counter(sol[t2])
-            n_model_counts = model_count.values()
-            if n_infecteds < 1:
+            # calculate the number of infected individuals at the current state
+            # sum of aggregation along all age groups in
+            # l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr
+            n_infecteds = None  # TODO
+            # check whether the previously calculated number is less than 1
+            if None:
                 break
+
+            # since the number of infecteds is above 1, we solve the ODE again
+            # from 0 to t_interval using the current state
+            sol = None  # TODO
+            # then store the state at the last time point again and update the current state
+            state = None  # TODO
+            # update variable for tracking interval length on which the ODE is solved
+            t_interval_complete += t_interval
+
+        # for calculating final size value for compartment D
+        # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
+        final_size_dead = None  # TODO
+        # concatenate all output values to get the array of return
+        output = None  # TODO
         return output
-
-
-
-
-
-
-
-
