@@ -6,13 +6,11 @@ from src.sampling.target_calculator import TargetCalculator
 class FinalSizeTargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: SimulationNPI):
         super().__init__(sim_obj=sim_obj)
-        self.age_hospitalized = np.array([])
-        self.sample_params = dict()
-        self.age_deaths = np.array([])
+        self.hospitalized = np.array([])
         self.total_infectious = np.array([])
 
     def get_output(self, cm: np.ndarray):
-        t_interval = 100
+        t_interval = 10
         t = np.arange(0, t_interval, 0.5)
         # solve the model from 0 to 100 using the initial condition
         sol = self.sim_obj.model.get_solution(
@@ -22,6 +20,7 @@ class FinalSizeTargetCalculator(TargetCalculator):
             cm=cm)
 
         state = sol[-1]
+        sol2 = []
 
         # introduce a variable for tracking how long the ODE was solved
         t_interval_complete = 0
@@ -46,6 +45,7 @@ class FinalSizeTargetCalculator(TargetCalculator):
             # check whether it is higher than it was in the previous turn
             if hospital_peak_now > hospital_peak:
                 hospital_peak = hospital_peak_now
+                self.hospitalized = hospital_peak
 
             n_infecteds = self.sim_obj.model.aggregate_by_age(
                 solution=sol, idx=self.sim_obj.model.c_idx["c"])[-1] + \
@@ -62,22 +62,23 @@ class FinalSizeTargetCalculator(TargetCalculator):
                            self.sim_obj.model.aggregate_by_age(
                                solution=sol, idx=self.sim_obj.model.c_idx["d"])[-1]
                            )
+            self.total_infectious = n_infecteds
 
             # check whether the previously calculated number is less than 1
             if n_infecteds < 1:
                 break
             # since the number of infecteds is above 1, we solve the ODE again
             # from 0 to t_interval using the current state
-            sol = self.sim_obj.model.get_solution(
+            sol2 = self.sim_obj.model.get_solution(
                 init_values=state,
                 t=t,
                 parameters=self.sim_obj.params,
                 cm=cm)
-            state = sol[-1]
+            state = sol2[-1]
             t_interval_complete += t_interval
-        sol = sol
+        sol2 = sol2
         final_size_dead = np.sum(self.sim_obj.model.aggregate_by_age(
-            solution=sol,
+            solution=sol2,
             idx=self.sim_obj.model.c_idx["d"])[-1])
         output = np.array([final_size_dead])
         return output
