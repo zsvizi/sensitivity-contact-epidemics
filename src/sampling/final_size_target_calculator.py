@@ -58,11 +58,11 @@ class FinalSizeTargetCalculator(TargetCalculator):
             # l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr
             n_infecteds = (state.sum() -
                            self.sim_obj.model.aggregate_by_age(
-                               solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+                               solution=state, idx=self.sim_obj.model.c_idx["s"]) -
                            self.sim_obj.model.aggregate_by_age(
-                               solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+                               solution=state, idx=self.sim_obj.model.c_idx["r"]) -
                            self.sim_obj.model.aggregate_by_age(
-                               solution=sol, idx=self.sim_obj.model.c_idx["d"]))
+                               solution=state, idx=self.sim_obj.model.c_idx["d"]))
 
             # check whether the previously calculated number is less than 1
             if n_infecteds < 1:
