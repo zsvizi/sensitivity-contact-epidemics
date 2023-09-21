@@ -56,11 +56,13 @@ class FinalSizeTargetCalculator(TargetCalculator):
             # calculate the number of infected individuals at the current state
             # sum of aggregation along all age groups in
             # l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr
-            n_infecteds = 0
-            inf_comps = ["l1", "l2", "ip", "ia1", "ia2", "ia3", "is1", "is2", "is3", "ih", "ic", "icr"]
-            for cmp in inf_comps:
-                n_infecteds += self.sim_obj.model.aggregate_by_age(
-                    solution=state, idx=self.sim_obj.model.c_idx[cmp])
+            n_infecteds = (state.sum() -
+                           self.sim_obj.model.aggregate_by_age(
+                               solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+                           self.sim_obj.model.aggregate_by_age(
+                               solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+                           self.sim_obj.model.aggregate_by_age(
+                               solution=sol, idx=self.sim_obj.model.c_idx["d"]))
 
             # check whether the previously calculated number is less than 1
             if n_infecteds < 1:
