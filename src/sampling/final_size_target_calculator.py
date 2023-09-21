@@ -42,11 +42,11 @@ class FinalSizeTargetCalculator(TargetCalculator):
             # then get maximal value of the time series
             hospital_peak_now = (
                 self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ih"])[-1] +
+                    solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
                 self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ic"])[-1] +
+                    solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
                 self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["icr"])[-1]
+                    solution=sol, idx=self.sim_obj.model.c_idx["icr"])
             ).max()
 
             # check whether it is higher than it was in the previous turn
@@ -60,7 +60,7 @@ class FinalSizeTargetCalculator(TargetCalculator):
             inf_comps = ["l1", "l2", "ip", "ia1", "ia2", "ia3", "is1", "is2", "is3", "ih", "ic", "icr"]
             for cmp in inf_comps:
                 n_infecteds += self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx[cmp])[-1]
+                    solution=state, idx=self.sim_obj.model.c_idx[cmp])
 
             # check whether the previously calculated number is less than 1
             if n_infecteds < 1:
@@ -78,9 +78,9 @@ class FinalSizeTargetCalculator(TargetCalculator):
 
         # for calculating final size value for compartment D
         # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
-        final_size_dead = np.sum(self.sim_obj.model.aggregate_by_age(
-            solution=sol,
-            idx=self.sim_obj.model.c_idx["d"])[-1])
+        final_size_dead = self.sim_obj.model.aggregate_by_age(
+            solution=state,
+            idx=self.sim_obj.model.c_idx["d"])
 
         # concatenate all output values to get the array of return
         output = np.array([final_size_dead])
