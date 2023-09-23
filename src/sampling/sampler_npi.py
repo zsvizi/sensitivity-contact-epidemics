@@ -23,7 +23,8 @@ class SamplerNPI(SamplerBase):
         if self.target == "r0":
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj)
         elif self.target == "epidemic_size":
-            self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
+            self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj,
+                                                  epi_model="rost_model")
 
         self.susc = sim_obj.sim_state["susc"]
 

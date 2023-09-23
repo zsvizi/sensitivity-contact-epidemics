@@ -6,17 +6,24 @@ from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
 
+from src.model.r0_sir import R0SirModel
+
 
 class SimulationNPI(SimulationBase):
-    def __init__(self, data: DataLoader, n_samples: int = 1) -> None:
+    def __init__(self, data: DataLoader, n_samples: int = 1,
+                 epi_model: str = "rost_model") -> None:
         super().__init__(data=data)
         self.n_samples = n_samples
+        self.epi_model = epi_model
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
 
     def generate_lhs(self):
+        beta = None
+        r0generator = None
+
         # Update params by susceptibility vector
         susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
@@ -25,23 +32,34 @@ class SimulationNPI(SimulationBase):
             self.sim_state.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                r0generator = R0Generator(param=self.params)
-                beta = base_r0 / r0generator.get_eig_val(
-                    contact_mtx=self.contact_matrix,
-                    susceptibles=self.susceptibles.reshape(1, -1),
-                    population=self.population
-                )[0]
+                if self.epi_model == "sir_model":
+                    r0generator = R0SirModel(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                    beta = base_r0 / r0
+                    # beta = base_r0 / r0generator.get_eig_value(cm=self.contact_matrix)
+                elif self.epi_model == "rost_model":
+                    r0generator = R0Generator(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                    beta = base_r0 / r0
                 self.params.update({"beta": beta})
                 self.sim_state.update(
                     {"base_r0": base_r0,
-                     "beta": beta,
-                     "susc": susc,
-                     "r0generator": r0generator})
+                    "beta": beta,
+                    "susc": susc,
+                    "r0generator": r0generator})
 
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
-                    sim_obj=self,
-                    target="epidemic_size")
+                        sim_obj=self,
+                        target="r0")
                 sampler_npi.run()
 
     def calculate_prcc_values(self):
@@ -109,7 +127,8 @@ class SimulationNPI(SimulationBase):
 
                             # Plot results
                             plot = src.Plotter(sim_obj=self)
-                            plot.plot_horizontal_bars()
+                            plot.plot_contact_matrices_hungary(filename="contact")
+                            plot.get_plot_hungary_heatmap()
 
                             if agg == "PRCC_Pvalues":
                                 plot.generate_prcc_p_values_heatmaps(

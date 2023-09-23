@@ -2,6 +2,7 @@ import numpy as np
 
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
+from src.model.model_sir import SirModel
 
 
 class SimulationBase:
@@ -24,3 +25,7 @@ class SimulationBase:
         # 0. Get base parameter dictionary
         self.params = self.data.model_parameters_data
         self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
+
+        # sir model
+        self.sir_model = SirModel(model_data=self.data)
+
