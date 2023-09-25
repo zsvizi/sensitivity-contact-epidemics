@@ -12,7 +12,7 @@ from src.model.r0_sir import R0SirModel
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader, n_samples: int = 1,
                  epi_model: str = "rost_model") -> None:
-        super().__init__(data=data)
+        super().__init__(data=data, epi_model=epi_model)
         self.n_samples = n_samples
         self.epi_model = epi_model
 
@@ -21,15 +21,11 @@ class SimulationNPI(SimulationBase):
         self.r0_choices = [1.2, 1.8, 2.5]
 
     def generate_lhs(self):
-        beta = None
-        r0generator = None
-
         # Update params by susceptibility vector
         susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
-            self.params.update({"susc": self.susceptibles})
-            self.sim_state.update({"susc": susceptibility})
+            self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
                 if self.epi_model == "sir_model":
@@ -39,8 +35,6 @@ class SimulationNPI(SimulationBase):
                         susceptibles=self.susceptibles.reshape(1, -1),
                         population=self.population
                     )[0]
-                    beta = base_r0 / r0
-                    # beta = base_r0 / r0generator.get_eig_value(cm=self.contact_matrix)
                 elif self.epi_model == "rost_model":
                     r0generator = R0Generator(param=self.params)
                     r0 = r0generator.get_eig_val(
@@ -48,18 +42,20 @@ class SimulationNPI(SimulationBase):
                         susceptibles=self.susceptibles.reshape(1, -1),
                         population=self.population
                     )[0]
-                    beta = base_r0 / r0
+                else:
+                    raise Exception("No model is given!")
+                beta = base_r0 / r0
                 self.params.update({"beta": beta})
                 self.sim_state.update(
                     {"base_r0": base_r0,
-                    "beta": beta,
-                    "susc": susc,
-                    "r0generator": r0generator})
+                     "beta": beta,
+                     "susc": susc,
+                     "r0generator": r0generator})
 
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
-                        sim_obj=self,
-                        target="r0")
+                    sim_obj=self,
+                    target="r0")
                 sampler_npi.run()
 
     def calculate_prcc_values(self):

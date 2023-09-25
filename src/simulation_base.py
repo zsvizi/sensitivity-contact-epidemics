@@ -6,7 +6,7 @@ from src.model.model_sir import SirModel
 
 
 class SimulationBase:
-    def __init__(self, data: DataLoader):
+    def __init__(self, data: DataLoader, epi_model):
         self.data = data
         self.sim_state = dict()
 
@@ -14,7 +14,12 @@ class SimulationBase:
         self.contact_matrix = self.data.contact_data["Home"] + self.data.contact_data["Work"] + \
             self.data.contact_data["School"] + self.data.contact_data["Other"]
         self.contact_home = self.data.contact_data["Home"]
-        self.model = RostModelHungary(model_data=self.data)
+        if epi_model == "rost_model":
+            self.model = RostModelHungary(model_data=self.data)
+        elif epi_model == "sir_model":
+            self.model = SirModel(model_data=self.data)
+        else:
+            raise Exception("No model was given!")
 
         self.population = self.model.population
         self.age_vector = self.population.reshape((-1, 1))
@@ -25,7 +30,3 @@ class SimulationBase:
         # 0. Get base parameter dictionary
         self.params = self.data.model_parameters_data
         self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
-
-        # sir model
-        self.sir_model = SirModel(model_data=self.data)
-

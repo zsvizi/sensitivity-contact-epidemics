@@ -12,16 +12,6 @@ class FinalSizeTargetCalculator(TargetCalculator):
         t_interval = 10
         t = np.arange(0, t_interval, 0.5)
 
-        # Let's calculate the number of infecteds based on the sir model
-        sir_model_sol = self.sim_obj.sir_model.get_solution(
-            init_values=self.sim_obj.sir_model.get_initial_values,
-            t=t,
-            parameters=self.sim_obj.params,
-            cm=cm)
-        sir_state = sir_model_sol[-1]
-        sir_infecteds = self.sim_obj.sir_model.get_infected(
-            solution=np.array([sir_state]))
-
         # solve the model from 0 to 100 using the initial condition
         sol = self.sim_obj.model.get_solution(
             init_values=self.sim_obj.model.get_initial_values,
@@ -35,35 +25,39 @@ class FinalSizeTargetCalculator(TargetCalculator):
         t_interval_complete = 0
         t_interval_complete += t_interval
 
-        # let's say we want to store the peak size of hospitalized people during the simulation
-        # aggregate age groups for ih, ic and icr from the previously calculated solution
-        # then get maximal value of the time series
-        hospital_peak = (
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["icr"])
-        ).max()
-
-        # Loop infinitely
-        while True:
+        if self.epi_model == "rost_model":
             # let's say we want to store the peak size of hospitalized people during the simulation
             # aggregate age groups for ih, ic and icr from the previously calculated solution
             # then get maximal value of the time series
-            hospital_peak_now = (
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
-                self.sim_obj.model.aggregate_by_age(
-                    solution=sol, idx=self.sim_obj.model.c_idx["icr"])
+            hospital_peak = (
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["icr"])
             ).max()
+        else:
+            hospital_peak = None
 
-            # check whether it is higher than it was in the previous turn
-            if hospital_peak_now > hospital_peak:
-                hospital_peak = hospital_peak_now
+        # Loop infinitely
+        while True:
+            if self.epi_model == "rost_model":
+                # let's say we want to store the peak size of hospitalized people during the simulation
+                # aggregate age groups for ih, ic and icr from the previously calculated solution
+                # then get maximal value of the time series
+                hospital_peak_now = (
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
+                    self.sim_obj.model.aggregate_by_age(
+                        solution=sol, idx=self.sim_obj.model.c_idx["icr"])
+                ).max()
+
+                # check whether it is higher than it was in the previous turn
+                if hospital_peak_now > hospital_peak:
+                    hospital_peak = hospital_peak_now
 
             # calculate the number of infected individuals at the current state
             # sum of aggregation along all age groups in
@@ -97,18 +91,19 @@ class FinalSizeTargetCalculator(TargetCalculator):
             state = sol[-1]
             t_interval_complete += t_interval
 
-        # for calculating final size value for compartment D
-        # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
-        final_size_dead = self.sim_obj.model.aggregate_by_age(
-            solution=state,
-            idx=self.sim_obj.model.c_idx["d"])
-
         if self.epi_model == "rost_model":
+            # for calculating final size value for compartment D
+            # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
+            final_size_dead = self.sim_obj.model.aggregate_by_age(
+                solution=state,
+                idx=self.sim_obj.model.c_idx["d"])
+
             # concatenate all output values to get the array of return
             output = np.array([final_size_dead])
             return output
-
         elif self.epi_model == "sir_model":
-            # return number of infected individuals in sir model
-            output = np.array([np.sum(sir_infecteds)])
+            final_size = self.sim_obj.model.aggregate_by_age(
+                solution=state,
+                idx=self.sim_obj.model.c_idx["r"])
+            output = np.array([final_size])
             return output

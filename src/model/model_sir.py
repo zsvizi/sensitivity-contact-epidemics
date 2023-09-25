@@ -5,20 +5,17 @@ from src.model.model_base import EpidemicModelBase
 
 class SirModel(EpidemicModelBase):
     def __init__(self, model_data) -> None:
-        self.compartments = ["s", "i", "r"]
+        compartments = ["s", "i", "r"]
 
-        super().__init__(model_data=model_data, compartments=self.compartments)
+        super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
-        iv = {key: np.zeros(self.n_age) for key in self.compartments}
         iv["i"][3] = 1
         iv.update({"r": iv["r"]})
 
-        iv.update({"s": self.population - (iv["i"] + iv["r"])
-                   })
+        iv.update({"s": self.population - (iv["i"] + iv["r"])})
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
-        susc = np.array(ps["susc"])
         gamma = ps["gamma_a"]  # gamma_a = 0.333
         beta = ps["beta"]
 
@@ -27,8 +24,8 @@ class SirModel(EpidemicModelBase):
         transmission = beta * np.array(i).dot(cm)
 
         sir_eq_dict = {
-            "s": -susc * (s / self.population) * transmission,  # S'(t)
-            "i": susc * (s / self.population) * transmission - gamma * i,  # I'(t)
+            "s": s / self.population * transmission,  # S'(t)
+            "i": s / self.population * transmission - gamma * i,  # I'(t)
             "r": gamma * i  # R'(t)
         }
 

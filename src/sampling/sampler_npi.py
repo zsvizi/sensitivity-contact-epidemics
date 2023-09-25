@@ -24,14 +24,11 @@ class SamplerNPI(SamplerBase):
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj,
-                                                  epi_model="rost_model")
-
+                                                  epi_model=sim_obj.epi_model)
         self.susc = sim_obj.sim_state["susc"]
-
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
     def run(self):
-
         kappa = self.calculate_kappa()
         # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
