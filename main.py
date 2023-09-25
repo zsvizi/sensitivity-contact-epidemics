@@ -4,8 +4,8 @@ from src.dataloader import DataLoader
 
 def main():
     data = DataLoader()
-    simulation = src.SimulationNPI(data=data, n_samples=100)
-    # simulation.generate_lhs()
+    simulation = src.SimulationNPI(data=data, n_samples=10, epi_model="sir_model")
+    simulation.generate_lhs()
     simulation.calculate_prcc_values()
     simulation.plot_prcc_values()
 

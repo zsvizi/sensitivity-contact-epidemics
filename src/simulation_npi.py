@@ -6,11 +6,15 @@ from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
 
+from src.model.r0_sir import R0SirModel
+
 
 class SimulationNPI(SimulationBase):
-    def __init__(self, data: DataLoader, n_samples: int = 120000) -> None:
-        super().__init__(data=data)
+    def __init__(self, data: DataLoader, n_samples: int = 1,
+                 epi_model: str = "rost_model") -> None:
+        super().__init__(data=data, epi_model=epi_model)
         self.n_samples = n_samples
+        self.epi_model = epi_model
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
@@ -21,16 +25,26 @@ class SimulationNPI(SimulationBase):
         susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
             susceptibility[:4] = susc
-            self.params.update({"susc": self.susceptibles})
-            self.sim_state.update({"susc": susceptibility})
+            self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                r0generator = R0Generator(param=self.params)
-                beta = base_r0 / r0generator.get_eig_val(
-                    contact_mtx=self.contact_matrix,
-                    susceptibles=self.susceptibles.reshape(1, -1),
-                    population=self.population
-                )[0]
+                if self.epi_model == "sir_model":
+                    r0generator = R0SirModel(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                elif self.epi_model == "rost_model":
+                    r0generator = R0Generator(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                else:
+                    raise Exception("No model is given!")
+                beta = base_r0 / r0
                 self.params.update({"beta": beta})
                 self.sim_state.update(
                     {"base_r0": base_r0,
@@ -41,7 +55,7 @@ class SimulationNPI(SimulationBase):
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
-                    target="epidemic_size")
+                    target="r0")
                 sampler_npi.run()
 
     def calculate_prcc_values(self):
@@ -86,6 +100,7 @@ class SimulationNPI(SimulationBase):
                 fname = "_".join([str(susc), str(base_r0)])
                 filename = "sens_data/PRCC_Pvalues" + "/" + fname
                 np.savetxt(fname=filename + ".csv", X=stack_prcc_pval, delimiter=";")
+
                 # save PRCC p-values
                 os.makedirs("./sens_data/agg_prcc", exist_ok=True)
                 filename = "sens_data/agg_prcc" + "/" + "_".join([fname])
@@ -108,17 +123,16 @@ class SimulationNPI(SimulationBase):
 
                             # Plot results
                             plot = src.Plotter(sim_obj=self)
-                            plot.plot_horizontal_bars()
+                            plot.plot_contact_matrices_hungary(filename="contact")
+                            plot.get_plot_hungary_heatmap()
 
                             if agg == "PRCC_Pvalues":
                                 plot.generate_prcc_p_values_heatmaps(
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=saved_prcc_pval[:, 1],
-                                    filename_without_ext=filename_without_ext,
-                                    target="Final death size")
+                                    filename_without_ext=filename_without_ext)
                             else:
                                 plot.plot_aggregation_prcc_pvalues(
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=abs(saved_prcc_pval[:, 1]),
-                                    filename_without_ext=filename_without_ext,
-                                    target="Final death size")
+                                    filename_without_ext=filename_without_ext)

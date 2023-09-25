@@ -2,18 +2,24 @@ import numpy as np
 
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
+from src.model.model_sir import SirModel
 
 
 class SimulationBase:
-    def __init__(self, data: DataLoader):
+    def __init__(self, data: DataLoader, epi_model):
         self.data = data
         self.sim_state = dict()
 
-        self.n_ag = self.data.contact_data["home"].shape[0]
-        self.contact_matrix = self.data.contact_data["home"] + self.data.contact_data["work"] + \
-            self.data.contact_data["school"] + self.data.contact_data["other"]
-        self.contact_home = self.data.contact_data["home"]
-        self.model = RostModelHungary(model_data=self.data)
+        self.n_ag = self.data.contact_data["Home"].shape[0]
+        self.contact_matrix = self.data.contact_data["Home"] + self.data.contact_data["Work"] + \
+            self.data.contact_data["School"] + self.data.contact_data["Other"]
+        self.contact_home = self.data.contact_data["Home"]
+        if epi_model == "rost_model":
+            self.model = RostModelHungary(model_data=self.data)
+        elif epi_model == "sir_model":
+            self.model = SirModel(model_data=self.data)
+        else:
+            raise Exception("No model was given!")
 
         self.population = self.model.population
         self.age_vector = self.population.reshape((-1, 1))

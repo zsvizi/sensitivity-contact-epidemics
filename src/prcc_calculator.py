@@ -7,13 +7,7 @@ from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 
 class PRCCCalculator:
     def __init__(self, sim_obj: src.SimulationNPI):
-
         self.sim_obj = sim_obj
-        self.n_ag = sim_obj.n_ag
-        self.age_vector = sim_obj.age_vector
-        self.params = sim_obj.params
-        self.number_of_samples = sim_obj.n_samples
-        self.upp_tri_size = self.sim_obj.upper_tri_size
 
         self.p_value = None
         self.p_value_mtx = None
@@ -23,27 +17,27 @@ class PRCCCalculator:
         self.agg_std = None
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
-        sim_data = lhs_table[:, :(self.n_ag * (self.n_ag + 1)) // 2]
+        sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
         sim_data = 1 - sim_data
         simulation = np.append(sim_data, sim_output[:, - 1].reshape((-1, 1)), axis=1)
         prcc_list = get_prcc_values(lhs_output_table=simulation)
         prcc_mtx = get_rectangular_matrix_from_upper_triu(
-            rvector=prcc_list[:self.upp_tri_size],
-            matrix_size=self.n_ag)
+            rvector=prcc_list[:self.sim_obj.upper_tri_size],
+            matrix_size=self.sim_obj.n_ag)
         self.prcc_mtx = prcc_mtx
         self.prcc_list = prcc_list
 
     def calculate_p_values(self):
         t = self.prcc_list * np.sqrt(
-            (self.number_of_samples - 2 - self.upp_tri_size) / (1 - self.prcc_list ** 2)
+            (self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size) / (1 - self.prcc_list ** 2)
         )
         # p-value for 2-sided test
-        dof = self.number_of_samples - 2 - self.upp_tri_size
+        dof = self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size
         p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
         self.p_value = p_value
         self.p_value_mtx = get_rectangular_matrix_from_upper_triu(
-            rvector=p_value[:self.upp_tri_size],
-            matrix_size=self.n_ag)
+            rvector=p_value[:self.sim_obj.upper_tri_size],
+            matrix_size=self.sim_obj.n_ag)
 
     def aggregate_prcc_values(self):
         distribution_p_val = (1 - self.p_value_mtx) / np.sum(1 - self.p_value_mtx, axis=0)

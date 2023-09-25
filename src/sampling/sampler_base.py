@@ -8,13 +8,12 @@ import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI) -> None:
+    def __init__(self, sim_obj: src.SimulationNPI) -> None:
         self.sim_obj = sim_obj
-        self.sim_state = sim_state
-        self.base_r0 = sim_state["base_r0"]
-        self.beta = sim_state["beta"]
+        self.base_r0 = sim_obj.sim_state["base_r0"]
+        self.beta = sim_obj.sim_state["beta"]
 
-        self.r0generator = sim_state["r0generator"]
+        self.r0generator = sim_obj.sim_state["r0generator"]
         self.lhs_boundaries = None
 
     @abstractmethod
