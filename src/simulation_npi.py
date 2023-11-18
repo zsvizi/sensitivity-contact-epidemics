@@ -7,6 +7,7 @@ from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
 
 from src.model.r0_sir import R0SirModel
+from src.model.r0_seirsv import R0SeirSVModel
 
 
 class SimulationNPI(SimulationBase):
@@ -35,6 +36,13 @@ class SimulationNPI(SimulationBase):
                         susceptibles=self.susceptibles.reshape(1, -1),
                         population=self.population
                     )[0]
+                elif self.epi_model == "seirSV_model":
+                    r0generator = R0SeirSVModel(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
                 elif self.epi_model == "rost_model":
                     r0generator = R0Generator(param=self.params)
                     r0 = r0generator.get_eig_val(
@@ -55,7 +63,7 @@ class SimulationNPI(SimulationBase):
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
-                    target="r0")
+                    target="epidemic_size")
                 sampler_npi.run()
 
     def calculate_prcc_values(self):

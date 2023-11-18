@@ -3,6 +3,7 @@ import numpy as np
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
 from src.model.model_sir import SirModel
+from src.model.model_seirsv import SeirSVModel
 
 
 class SimulationBase:
@@ -18,6 +19,8 @@ class SimulationBase:
             self.model = RostModelHungary(model_data=self.data)
         elif epi_model == "sir_model":
             self.model = SirModel(model_data=self.data)
+        elif epi_model == "seirSV_model":
+            self.model = SeirSVModel(model_data=self.data)
         else:
             raise Exception("No model was given!")
 

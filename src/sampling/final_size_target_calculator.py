@@ -64,46 +64,57 @@ class FinalSizeTargetCalculator(TargetCalculator):
             # l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr
 
             # convert the current state to a numpy array
-            state = np.array([state])
+            if self.epi_model == "rost_model":
+                state = np.array([state])
+                n_infecteds = (state.sum() -
+                               self.sim_obj.model.aggregate_by_age(
+                                   solution=state, idx=self.sim_obj.model.c_idx["s"]) -
+                               self.sim_obj.model.aggregate_by_age(
+                                   solution=state, idx=self.sim_obj.model.c_idx["r"]) -
+                               self.sim_obj.model.aggregate_by_age(
+                                   solution=state, idx=self.sim_obj.model.c_idx["d"]) -
+                               self.sim_obj.model.aggregate_by_age(
+                                   solution=state, idx=self.sim_obj.model.c_idx["c"])
+                               )
 
-            n_infecteds = (state.sum() -
-                           self.sim_obj.model.aggregate_by_age(
-                               solution=state, idx=self.sim_obj.model.c_idx["s"]) -
-                           self.sim_obj.model.aggregate_by_age(
-                               solution=state, idx=self.sim_obj.model.c_idx["r"]) -
-                           self.sim_obj.model.aggregate_by_age(
-                               solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-                           self.sim_obj.model.aggregate_by_age(
-                               solution=state, idx=self.sim_obj.model.c_idx["c"])
-                           )
+                # check whether the previously calculated number is less than 1
+                if n_infecteds < 1:
+                    break
 
-            # check whether the previously calculated number is less than 1
-            if n_infecteds < 1:
-                break
+                # since the number of infecteds is above 1, we solve the ODE again
+                # from 0 to t_interval using the current state
+                sol = self.sim_obj.model.get_solution(
+                    init_values=state,
+                    t=t,
+                    parameters=self.sim_obj.params,
+                    cm=cm)
+                state = sol[-1]
+                t_interval_complete += t_interval
 
-            # since the number of infecteds is above 1, we solve the ODE again
-            # from 0 to t_interval using the current state
-            sol = self.sim_obj.model.get_solution(
-                init_values=state,
-                t=t,
-                parameters=self.sim_obj.params,
-                cm=cm)
-            state = sol[-1]
-            t_interval_complete += t_interval
+            if self.epi_model == "rost_model":
+                # for calculating final size value for compartment D
+                # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
+                final_size_dead = self.sim_obj.model.aggregate_by_age(
+                    solution=np.array([state]),
+                    idx=self.sim_obj.model.c_idx["d"])
 
-        if self.epi_model == "rost_model":
-            # for calculating final size value for compartment D
-            # aggregate the current state (calculated in the last turn of the loop) for compartment "d"
-            final_size_dead = self.sim_obj.model.aggregate_by_age(
-                solution=state,
-                idx=self.sim_obj.model.c_idx["d"])
+                # concatenate all output values to get the array of return
+                output = np.array([final_size_dead])
+                return output
+            elif self.epi_model == "sir_model":
+                final_size = self.sim_obj.model.aggregate_by_age(
+                    solution=np.array([state]),
+                    idx=self.sim_obj.model.c_idx["r"])
+                output = np.array([final_size])
+                return output
+            elif self.epi_model == "seirSV_model":
+                final_vaccinated = self.sim_obj.model.aggregate_by_age(
+                    solution=np.array([state]),
+                    idx=self.sim_obj.model.c_idx["v"])
+                output = np.array([final_vaccinated])
+                return output
 
-            # concatenate all output values to get the array of return
-            output = np.array([final_size_dead])
-            return output
-        elif self.epi_model == "sir_model":
-            final_size = self.sim_obj.model.aggregate_by_age(
-                solution=state,
-                idx=self.sim_obj.model.c_idx["r"])
-            output = np.array([final_size])
-            return output
+
+
+
+
