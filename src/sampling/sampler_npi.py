@@ -17,7 +17,7 @@ class SamplerNPI(SamplerBase):
         self.sim_obj = sim_obj
         self.target = target
 
-        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj)
+        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, epi_model="rost_model")
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":

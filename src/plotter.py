@@ -6,6 +6,7 @@ from matplotlib.ticker import LogFormatter
 from matplotlib.ticker import LogLocator, LogFormatterSciNotation as LogFormatter
 import matplotlib.colors as colors
 import matplotlib.collections as collections
+from cycler import cycler
 
 from matplotlib.tri import Triangulation
 import numpy as np
@@ -13,14 +14,14 @@ import pandas as pd
 import seaborn as sns
 
 from src.dataloader import DataLoader
-from src.simulation_npi import SimulationNPI
+from src.simulation_base import SimulationBase
 from src.prcc import get_rectangular_matrix_from_upper_triu
 
 plt.style.use('seaborn-whitegrid')
 
 
 class Plotter:
-    def __init__(self, sim_obj: SimulationNPI) -> None:
+    def __init__(self, sim_obj: SimulationBase) -> None:
 
         self.deaths = None
         self.hospitalized = None
@@ -350,3 +351,50 @@ class Plotter:
         plt.savefig('./sens_data/hosp_death/' + 'hosp_death.pdf', format="pdf",
                     bbox_inches='tight')
         plt.close()
+
+    def plot_solution_final_death_size(self, time, params, cm_list, legend_list, title_part):
+        os.makedirs("./sens_data/dynamics", exist_ok=True)
+        plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
+        fig = plt.figure(figsize=(10, 10))
+        for idx, cm in enumerate(cm_list):
+            solution = self.model.get_solution(
+                init_values=self.model.get_initial_values,
+                t=time,
+                parameters=self.params,
+                cm=cm)
+            plt.plot(time, np.sum(solution[:, self.model.c_idx["d"] *
+                                  self.n_ag:(self.model.c_idx["d"] + 1) * self.n_ag], axis=1),
+                     label=legend_list[idx])
+        plt.legend()
+        plt.gca().set_xlabel('days')
+        plt.gca().set_ylabel('age deaths')
+        plt.gca().set_xlim([0, 800])
+        plt.gca().set_ylim([1000, 40000])
+        plt.tight_layout()
+        plt.savefig('./sens_data/dynamics' + "/" + title_part + '.pdf', format="pdf")
+        plt.close()
+
+    def plot_solution_hospitalized_peak_size(self, time, params, cm_list, legend_list, title_part):
+        os.makedirs("./sens_data/dynamics", exist_ok=True)
+        plt.rcParams['axes.prop_cycle'] = cycler('color', plt.get_cmap('tab20').colors)
+        for idx, cm in enumerate(cm_list):
+            solution = self.model.get_solution(
+                init_values=self.model.get_initial_values,
+                t=time,
+                parameters=self.params,
+                cm=cm)
+            plt.plot(time, np.max(solution[:, self.model.c_idx["ih"] *
+                                              self.n_ag:(self.model.c_idx["ih"] + 1) * self.n_ag],
+                                  axis=1), label=legend_list[idx])
+        plt.legend()
+        plt.gca().set_xlabel('days')
+        plt.gca().set_ylabel('age hospitalized')
+        plt.gca().set_xlim([0, 300])
+        plt.gca().set_ylim([100, 20000])
+        plt.gcf().set_size_inches(10, 10)
+        plt.tight_layout()
+        plt.savefig('./sens_data/dynamics' + "/" + title_part + '.pdf', format="pdf")
+        plt.close()
+
+
+

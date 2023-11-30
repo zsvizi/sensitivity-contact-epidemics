@@ -8,6 +8,7 @@ from src.simulation_base import SimulationBase
 
 from src.model.r0_sir import R0SirModel
 from src.model.r0_seirsv import R0SeirSVModel
+from contact_manipulation import ContactManipulation
 
 
 class SimulationNPI(SimulationBase):
@@ -37,11 +38,12 @@ class SimulationNPI(SimulationBase):
                         population=self.population
                     )[0]
                 elif self.epi_model == "seirSV_model":
-                    r0generator = R0SeirSVModel(param=self.params)
+                    r0generator = R0SeirSVModel(uk_param=self.uk_params,
+                                                uk_cm=self.uk_contact_matrix)
                     r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
+                        contact_mtx=self.uk_contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
+                        population=self.uk_population
                     )[0]
                 elif self.epi_model == "rost_model":
                     r0generator = R0Generator(param=self.params)
@@ -131,8 +133,8 @@ class SimulationNPI(SimulationBase):
 
                             # Plot results
                             plot = src.Plotter(sim_obj=self)
-                            plot.plot_contact_matrices_hungary(filename="contact")
-                            plot.get_plot_hungary_heatmap()
+                            # plot.plot_contact_matrices_hungary(filename="contact")
+                            # plot.get_plot_hungary_heatmap()
 
                             if agg == "PRCC_Pvalues":
                                 plot.generate_prcc_p_values_heatmaps(
@@ -144,3 +146,21 @@ class SimulationNPI(SimulationBase):
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=abs(saved_prcc_pval[:, 1]),
                                     filename_without_ext=filename_without_ext)
+
+    def get_analysis_results(self):
+        i = 0
+        for susc in self.susc_choices:
+            for base_r0 in self.r0_choices:
+                print(susc, base_r0)
+                analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
+                                               contact_home=self.contact_home, susc=self.susc_choices,
+                                               base_r0=self.r0_choices, params=self.params)
+                analysis.run_plots()
+                i += 1
+
+
+
+
+
+
+

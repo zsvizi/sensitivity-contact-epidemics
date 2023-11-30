@@ -4,7 +4,7 @@ from src.sampling.target_calculator import TargetCalculator
 
 
 class FinalSizeTargetCalculator(TargetCalculator):
-    def __init__(self, sim_obj: SimulationNPI, epi_model: str = "rost_model"):
+    def __init__(self, sim_obj: SimulationNPI, epi_model: str = "seirSV_model"):
         self.epi_model = epi_model
         super().__init__(sim_obj=sim_obj)
 
@@ -108,6 +108,13 @@ class FinalSizeTargetCalculator(TargetCalculator):
                 output = np.array([final_size])
                 return output
             elif self.epi_model == "seirSV_model":
+                sol = self.sim_obj.model.get_solution(
+                    init_values=self.sim_obj.model.get_initial_values,
+                    t=t,
+                    parameters=self.sim_obj.uk_params,
+                    cm=self.sim_obj.uk_contact_matrix)
+
+                state = sol[-1]
                 final_vaccinated = self.sim_obj.model.aggregate_by_age(
                     solution=np.array([state]),
                     idx=self.sim_obj.model.c_idx["v"])
