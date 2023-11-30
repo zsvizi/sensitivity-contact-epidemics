@@ -9,24 +9,24 @@ PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class DataLoader:
-    def __init__(self):
-        self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "model_parameters.json")
-        self._uk_model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_model_parameters.json")
-
-        self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "contact_matrices.xls")
-        self._uk_contact_data_file = os.path.join(PROJECT_PATH, "../data", "uk_contact_matrices.xls")
-
-        self._age_data_file = os.path.join(PROJECT_PATH, "../data", "age_distribution.xls")
-        self._uk_age_data_file = os.path.join(PROJECT_PATH, "../data", "uk_age_distribution.xls")
+    def __init__(self, country: str = "Hungary"):
+        if country == "Hungary":
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "model_parameters.json")
+            self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "contact_matrices.xls")
+            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "age_distribution.xls")
+        elif country == "UK":
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_model_parameters.json")
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_contact_matrices.xls")
+            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "uk_age_distribution.xls")
+        else:
+            raise Exception("Data loading is not available for the given country!")
 
         self._get_age_data()
         self._get_model_parameters_data()
-        self._get_uk_model_parameters_data()
         self._get_contact_mtx()
-        self._get_uk_contact_mtx()
 
     def _get_age_data(self):
-        files = [self._age_data_file, self._uk_age_data_file]
+        files = [self._age_data_file]
         for file in files:
             wb = xlrd.open_workbook(file)
             sheet = wb.sheet_by_index(0)

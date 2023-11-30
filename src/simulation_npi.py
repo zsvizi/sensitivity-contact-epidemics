@@ -38,12 +38,12 @@ class SimulationNPI(SimulationBase):
                         population=self.population
                     )[0]
                 elif self.epi_model == "seirSV_model":
-                    r0generator = R0SeirSVModel(uk_param=self.uk_params,
-                                                uk_cm=self.uk_contact_matrix)
+                    r0generator = R0SeirSVModel(uk_param=self.data.model_parameters_data,
+                                                uk_cm=self.contact_matrix)
                     r0 = r0generator.get_eig_val(
-                        contact_mtx=self.uk_contact_matrix,
+                        contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.uk_population
+                        population=self.population
                     )[0]
                 elif self.epi_model == "rost_model":
                     r0generator = R0Generator(param=self.params)
@@ -157,10 +157,3 @@ class SimulationNPI(SimulationBase):
                                                base_r0=self.r0_choices, params=self.params)
                 analysis.run_plots()
                 i += 1
-
-
-
-
-
-
-

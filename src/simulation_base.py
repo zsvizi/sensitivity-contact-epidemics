@@ -12,32 +12,23 @@ class SimulationBase:
         self.sim_state = dict()
 
         self.n_ag = self.data.contact_data["Home"].shape[0]
-        self.uk_params = self.data.uk_model_parameters_data
         self.contact_matrix = self.data.contact_data["Home"] + self.data.contact_data["Work"] + \
             self.data.contact_data["School"] + self.data.contact_data["Other"]
         self.contact_home = self.data.contact_data["Home"]
-        self.uk_contact_home = self.data.uk_contact_data["Home"]
-        self.uk_contact_matrix = self.data.uk_contact_data["Home"] + \
-                                 self.data.uk_contact_data["Work"] + \
-                                 self.data.uk_contact_data["School"] + \
-                                 self.data.uk_contact_data["Other"]
         if epi_model == "rost_model":
             self.model = RostModelHungary(model_data=self.data)
         elif epi_model == "sir_model":
             self.model = SirModel(model_data=self.data)
         elif epi_model == "seirSV_model":
-            self.model = SeirSVModel(model_data=self.data, uk_cm=self.uk_contact_matrix,
-                                     uk_ps=self.uk_params)
+            self.model = SeirSVModel(model_data=self.data, uk_cm=self.contact_matrix,
+                                     uk_ps=self.data.model_parameters_data)
         else:
             raise Exception("No model was given!")
 
         self.population = self.model.population
-        self.uk_population = self.model.uk_population
         self.age_vector = self.population.reshape((-1, 1))
-        self.uk_age_vector = self.uk_population.reshape((-1, 1))
         self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
-                                                            self.n_ag:(self.model.c_idx["s"] + 1) *
-                                                                      self.n_ag]
+                                                            self.n_ag:(self.model.c_idx["s"] + 1) * self.n_ag]
 
         self.upper_tri_indexes = np.triu_indices(self.n_ag)
         # 0. Get base parameter dictionary
