@@ -7,14 +7,14 @@ from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
 
 from src.model.r0_sir import R0SirModel
-from src.model.r0_seirsv import R0SeirSVModel
-from contact_manipulation import ContactManipulation
+from src.seirsv.r0_seirsv import R0SeirSVModel
+from src.contact_manipulation import ContactManipulation
 
 
 class SimulationNPI(SimulationBase):
-    def __init__(self, data: DataLoader, n_samples: int = 1,
+    def __init__(self, data: DataLoader, n_samples: int = 1, country: str = "Hungary",
                  epi_model: str = "rost_model") -> None:
-        super().__init__(data=data, epi_model=epi_model)
+        super().__init__(data=data, epi_model=epi_model, country=country)
         self.n_samples = n_samples
         self.epi_model = epi_model
 
@@ -30,23 +30,24 @@ class SimulationNPI(SimulationBase):
             self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                if self.epi_model == "sir_model":
-                    r0generator = R0SirModel(param=self.params)
+                if self.epi_model == "seirSV_model":
+                    r0generator = R0SeirSVModel(param=self.params, country="UK")
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
                         population=self.population
                     )[0]
-                elif self.epi_model == "seirSV_model":
-                    r0generator = R0SeirSVModel(uk_param=self.data.model_parameters_data,
-                                                uk_cm=self.contact_matrix)
+
+                elif self.epi_model == "sir_model":
+                    r0generator = R0SirModel(param=self.params, country="Hungary")
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
                         population=self.population
                     )[0]
+
                 elif self.epi_model == "rost_model":
-                    r0generator = R0Generator(param=self.params)
+                    r0generator = R0Generator(param=self.params) #country="Hungary")
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
@@ -54,6 +55,7 @@ class SimulationNPI(SimulationBase):
                     )[0]
                 else:
                     raise Exception("No model is given!")
+
                 beta = base_r0 / r0
                 self.params.update({"beta": beta})
                 self.sim_state.update(
@@ -65,7 +67,7 @@ class SimulationNPI(SimulationBase):
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
-                    target="epidemic_size")
+                    target="epidemic_size", epi_model=self.epi_model)
                 sampler_npi.run()
 
     def calculate_prcc_values(self):

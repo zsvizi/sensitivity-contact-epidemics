@@ -102,7 +102,7 @@
     },
     "gamma_h": {
         "value": 0.1,
-        "description": "Reciprocal of hospitalisation period"
+        "description": "Reciprocal of hospitalization period"
     },
     "gamma_c": {
         "value": 0.1,
@@ -114,6 +114,6 @@
     },
     "inf_a": {
         "value": 0.5,
-        "description": "Relative infectiousness of Ia vs. Is"
+        "description": "Relative infectousness of Ia vs. Is"
     }
 }

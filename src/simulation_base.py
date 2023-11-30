@@ -3,11 +3,12 @@ import numpy as np
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
 from src.model.model_sir import SirModel
-from src.model.model_seirsv import SeirSVModel
+from src.seirsv.model_seirsv import SeirSVModel
 
 
 class SimulationBase:
-    def __init__(self, data: DataLoader, epi_model):
+    def __init__(self, data: DataLoader, epi_model, country: str):
+        self.country = country
         self.data = data
         self.sim_state = dict()
 
@@ -16,12 +17,11 @@ class SimulationBase:
             self.data.contact_data["School"] + self.data.contact_data["Other"]
         self.contact_home = self.data.contact_data["Home"]
         if epi_model == "rost_model":
-            self.model = RostModelHungary(model_data=self.data)
+            self.model = RostModelHungary(model_data=self.data, country="Hungary")
         elif epi_model == "sir_model":
-            self.model = SirModel(model_data=self.data)
+            self.model = SirModel(model_data=self.data, country="Hungary")
         elif epi_model == "seirSV_model":
-            self.model = SeirSVModel(model_data=self.data, uk_cm=self.contact_matrix,
-                                     uk_ps=self.data.model_parameters_data)
+            self.model = SeirSVModel(model_data=self.data, country="UK")
         else:
             raise Exception("No model was given!")
 
@@ -32,6 +32,7 @@ class SimulationBase:
 
         self.upper_tri_indexes = np.triu_indices(self.n_ag)
         # 0. Get base parameter dictionary
+
         self.params = self.data.model_parameters_data
 
         self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)

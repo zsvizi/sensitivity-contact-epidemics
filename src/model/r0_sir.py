@@ -5,9 +5,9 @@ from src.model.r0 import R0GeneratorBase
 
 
 class R0SirModel(R0GeneratorBase):
-    def __init__(self, param: dict, n_age: int = 16) -> None:
+    def __init__(self, param: dict, country: str = "Hungary", n_age: int = 16) -> None:
         state = ["i"]
-        super().__init__(param=param, states=state, n_age=n_age)
+        super().__init__(param=param, states=state, n_age=n_age, country=country)
 
         self._get_e()
         self._get_v()

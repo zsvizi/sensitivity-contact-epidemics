@@ -5,12 +5,11 @@ from src.model.model_base import EpidemicModelBase
 
 
 class SeirSVModel(EpidemicModelBase):
-    def __init__(self, model_data, uk_ps, uk_cm) -> None:
-        self.uk_ps = uk_ps
-        self.uk_cm = uk_cm
+    def __init__(self, model_data, country: str) -> None:
+        self.country = country
         compartments = ["s", "e", "i", "r", "v"]
 
-        super().__init__(model_data=model_data, compartments=compartments)
+        super().__init__(model_data=model_data, compartments=compartments, country=country)
 
     def update_initial_values(self, iv: dict):
         iv["i"][3] = 1
@@ -31,20 +30,18 @@ class SeirSVModel(EpidemicModelBase):
         s, e, i, r, v = xs.reshape(-1, self.n_age)
 
         # calculate a sine wave function emulating the seasonal  fluctuation in the force of infection:
-        z = 1 + self.uk_ps["q"] * np.sin(2 * math.pi * (t - self.uk_ps["t_offset"]) / 365)
+        z = 1 + ps["q"] * np.sin(2 * math.pi * (t - ps["t_offset"]) / 365)
 
         # calculate the age dependent force of infection
-        lambda_i = z * np.array(i).dot(self.uk_cm)
+        lambda_i = z * np.array(i).dot(cm)
 
         seirSV_eq_dict = {
-            "s": self.uk_ps["omega_v"] * v + self.uk_ps["omega_i"] * r - s / self.uk_population * [self.uk_ps["mu_i"] +
-                                                                                                   self.uk_ps["psi_i"] +
-                                                                                                   lambda_i],  # S'(t)
-            "e": lambda_i * s / self.uk_population - e * [self.uk_ps["mu_i"] + self.uk_ps["gamma"]],  # E'(t)
-            "i": self.uk_ps["gamma"] * e - i * [self.uk_ps["mu_i"] + self.uk_ps["rho"]],  # I'(t)
-            "r": self.uk_ps["rho"] * i - r * [self.uk_ps["mu_i"] - self.uk_ps["omega_i"]],  # R'(t)
-            "v": self.uk_ps["psi_i"] * s / self.uk_population - v * [self.uk_ps["mu_i"] +
-                                                                     self.uk_ps["omega_v"]],  # V'(t)
+            "s": ps["omega_v"] * v + ps["omega_i"] * r - s / self.population * [ps["mu_i"] +
+                                                                                ps["psi_i"] + lambda_i],  # S'(t)
+            "e": lambda_i * s / self.population - e * [ps["mu_i"] + ps["gamma"]],  # E'(t)
+            "i": ps["gamma"] * e - i * [ps["mu_i"] + ps["rho"]],  # I'(t)
+            "r": ps["rho"] * i - r * [ps["mu_i"] - ps["omega_i"]],  # R'(t)
+            "v": ps["psi_i"] * s / self.population - v * [ps["mu_i"] + ps["omega_v"]],  # V'(t)
         }
 
         return self.get_array_from_dict(comp_dict=seirSV_eq_dict)

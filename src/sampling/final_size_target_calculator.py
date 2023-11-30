@@ -111,9 +111,8 @@ class FinalSizeTargetCalculator(TargetCalculator):
                 sol = self.sim_obj.model.get_solution(
                     init_values=self.sim_obj.model.get_initial_values,
                     t=t,
-                    parameters=self.sim_obj.uk_params,
-                    cm=self.sim_obj.uk_contact_matrix)
-
+                    parameters=self.sim_obj.params,
+                    cm=self.sim_obj.contact_matrix)
                 state = sol[-1]
                 final_vaccinated = self.sim_obj.model.aggregate_by_age(
                     solution=np.array([state]),

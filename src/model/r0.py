@@ -4,7 +4,8 @@ import numpy as np
 
 
 class R0GeneratorBase(ABC):
-    def __init__(self, param: dict, states: list, n_age: int) -> None:
+    def __init__(self, param: dict, states: list, n_age: int, country: str) -> None:
+        self.country = country
         self.states = states
         self.n_age = n_age
         self.parameters = param

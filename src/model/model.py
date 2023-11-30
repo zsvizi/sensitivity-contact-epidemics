@@ -4,13 +4,13 @@ from src.model.model_base import EpidemicModelBase
 
 
 class RostModelHungary(EpidemicModelBase):
-    def __init__(self, model_data) -> None:
+    def __init__(self, model_data, country: str) -> None:
         compartments = ["s", "l1", "l2",
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
                         "ih", "ic", "icr",
                         "r", "d", "c"]
-        super().__init__(model_data=model_data, compartments=compartments)
+        super().__init__(model_data=model_data, compartments=compartments, country=country)
 
     def update_initial_values(self, iv: dict):
         iv["l1"][2] = 1
@@ -41,7 +41,6 @@ class RostModelHungary(EpidemicModelBase):
             "is1": (1 - ps["p"]) * ps["alpha_p"] * ip - 3 * ps["gamma_s"] * is1,  # Is1'(t)
             "is2": 3 * ps["gamma_s"] * is1 - 3 * ps["gamma_s"] * is2,  # Is2'(t)
             "is3": 3 * ps["gamma_s"] * is2 - 3 * ps["gamma_s"] * is3,  # Is3'(t)
-
             "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3 - ps["gamma_h"] * ih,  # Ih'(t)
             "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3 - ps["gamma_c"] * ic,  # Ic'(t)
             "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,  # Icr'(t)

@@ -4,6 +4,7 @@ from src.dataloader import DataLoader
 
 def main():
     data = DataLoader(country="UK")
+
     simulation = src.SimulationNPI(data=data, n_samples=10,
                                    epi_model="seirSV_model")
     simulation.generate_lhs()

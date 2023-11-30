@@ -5,9 +5,9 @@ from scipy.integrate import odeint
 
 
 class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments: list) -> None:
+    def __init__(self, model_data, compartments: list, country: str) -> None:
+        self.country = country
         self.population = model_data.age_data.flatten()
-        self.uk_population = model_data.uk_age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]
