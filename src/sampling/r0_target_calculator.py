@@ -15,7 +15,7 @@ class R0TargetCalculator(TargetCalculator):
 
     def get_output(self, cm: np.ndarray):
         if self.epi_model == "seirSV_model":
-            r0generator = R0SeirSVModel(param=self.sim_obj.params, country="UK")
+            r0generator = R0SeirSVModel(param=self.sim_obj.params)
             beta_lhs = self.base_r0 / r0generator.get_eig_val(
                 contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
                 population=self.sim_obj.population)[0]
@@ -30,6 +30,8 @@ class R0TargetCalculator(TargetCalculator):
             r0_lhs = (self.beta / beta_lhs) * self.base_r0
             output = np.array([r0_lhs])
             return output
+
+
 
 
 

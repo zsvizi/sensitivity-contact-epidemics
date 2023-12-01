@@ -4,11 +4,11 @@ from src.model.model_base import EpidemicModelBase
 
 
 class SirModel(EpidemicModelBase):
-    def __init__(self, model_data, country: str) -> None:
+    def __init__(self, model_data, country: str = "Hungary") -> None:
         self.country = country
         compartments = ["s", "i", "r"]
 
-        super().__init__(model_data=model_data, compartments=compartments, country=country)
+        super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["i"][3] = 1

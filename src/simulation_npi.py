@@ -31,7 +31,7 @@ class SimulationNPI(SimulationBase):
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
                 if self.epi_model == "seirSV_model":
-                    r0generator = R0SeirSVModel(param=self.params, country="UK")
+                    r0generator = R0SeirSVModel(param=self.params)
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
@@ -39,7 +39,7 @@ class SimulationNPI(SimulationBase):
                     )[0]
 
                 elif self.epi_model == "sir_model":
-                    r0generator = R0SirModel(param=self.params, country="Hungary")
+                    r0generator = R0SirModel(param=self.params)
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
@@ -47,7 +47,7 @@ class SimulationNPI(SimulationBase):
                     )[0]
 
                 elif self.epi_model == "rost_model":
-                    r0generator = R0Generator(param=self.params) #country="Hungary")
+                    r0generator = R0Generator(param=self.params)
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
@@ -67,7 +67,7 @@ class SimulationNPI(SimulationBase):
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
-                    target="epidemic_size", epi_model=self.epi_model)
+                    target="r0", epi_model=self.epi_model)
                 sampler_npi.run()
 
     def calculate_prcc_values(self):

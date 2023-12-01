@@ -5,10 +5,11 @@ from src.model.r0 import R0GeneratorBase
 
 
 class R0SeirSVModel(R0GeneratorBase):
-    def __init__(self, param: dict, country: str, n_age: int = 16) -> None:
+    def __init__(self, param: dict, country: str = "UK", n_age: int = 16) -> None:
+        self.country = country
 
         state = ["e", "i"]
-        super().__init__(param=param, states=state, n_age=n_age, country=country)
+        super().__init__(param=param, states=state, n_age=n_age)
 
         self._get_e()
         self._get_v()

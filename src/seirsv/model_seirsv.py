@@ -5,11 +5,11 @@ from src.model.model_base import EpidemicModelBase
 
 
 class SeirSVModel(EpidemicModelBase):
-    def __init__(self, model_data, country: str) -> None:
+    def __init__(self, model_data, country: str = "UK") -> None:
         self.country = country
         compartments = ["s", "e", "i", "r", "v"]
 
-        super().__init__(model_data=model_data, compartments=compartments, country=country)
+        super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["i"][3] = 1

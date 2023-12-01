@@ -4,13 +4,14 @@ from src.model.model_base import EpidemicModelBase
 
 
 class RostModelHungary(EpidemicModelBase):
-    def __init__(self, model_data, country: str) -> None:
+    def __init__(self, model_data, country: str = "Hungary") -> None:
+        self.country = country
         compartments = ["s", "l1", "l2",
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
                         "ih", "ic", "icr",
                         "r", "d", "c"]
-        super().__init__(model_data=model_data, compartments=compartments, country=country)
+        super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["l1"][2] = 1
