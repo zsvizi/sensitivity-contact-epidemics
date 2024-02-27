@@ -3,10 +3,10 @@ from src.dataloader import DataLoader
 
 
 def main():
-    data = DataLoader(country="UK")
+    data = DataLoader(country="Hungary")
 
-    simulation = src.SimulationNPI(data=data, n_samples=10,
-                                   epi_model="seirSV_model")
+    simulation = src.SimulationNPI(data=data, n_samples=1,
+                                       epi_model="rost_model", country="Hungary")
     simulation.generate_lhs()
     simulation.get_analysis_results()
     # simulation.calculate_prcc_values()

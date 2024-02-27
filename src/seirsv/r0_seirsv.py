@@ -5,7 +5,7 @@ from src.model.r0 import R0GeneratorBase
 
 
 class R0SeirSVModel(R0GeneratorBase):
-    def __init__(self, param: dict, country: str = "UK", n_age: int = 16) -> None:
+    def __init__(self, param: dict, country: str = "UK", n_age: int = 15) -> None:
         self.country = country
 
         state = ["e", "i"]
@@ -17,7 +17,11 @@ class R0SeirSVModel(R0GeneratorBase):
     def _get_v(self) -> np.array:
         idx = self._idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
+        # e -> e
         v[idx("e"), idx("e")] = self.parameters["gamma"]
+        # e -> i
+        v[idx("i"), idx("e")] = -self.parameters["gamma"]
+        # i -> i
         v[idx("i"), idx("i")] = self.parameters["rho"]
         self.v_inv = np.linalg.inv(v)
 
@@ -25,9 +29,10 @@ class R0SeirSVModel(R0GeneratorBase):
         i = self.i
         s_mtx = self.s_mtx
         n_state = self.n_states
+        susc_vec = self.parameters["susc"].reshape((-1, 1))
         f = np.zeros((self.n_age * n_state, self.n_age * n_state))
-        f[i["e"]:s_mtx:n_state, i["e"]:s_mtx:n_state] = cm.T
-        f[i["i"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T
+        f[i["e"]:s_mtx:n_state, i["e"]:s_mtx:n_state] = cm.T * susc_vec
+        f[i["i"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T * susc_vec
         return f
 
     def _get_e(self):

@@ -1,19 +1,21 @@
 import os
 import numpy as np
-
 import src
+
 from src.dataloader import DataLoader
 from src.model.r0_generator import R0Generator
 from src.simulation_base import SimulationBase
 
-from src.model.r0_sir import R0SirModel
+from src.model.r0_chikina import R0SirModel
+from src.model.r0_moghadas import R0SeyedModel
 from src.seirsv.r0_seirsv import R0SeirSVModel
 from src.contact_manipulation import ContactManipulation
 
 
 class SimulationNPI(SimulationBase):
-    def __init__(self, data: DataLoader, n_samples: int = 1, country: str = "Hungary",
+    def __init__(self, data: DataLoader, n_samples: int = 1, country: str = "usa",
                  epi_model: str = "rost_model") -> None:
+        self.country = country
         super().__init__(data=data, epi_model=epi_model, country=country)
         self.n_samples = n_samples
         self.epi_model = epi_model
@@ -30,15 +32,7 @@ class SimulationNPI(SimulationBase):
             self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                if self.epi_model == "seirSV_model":
-                    r0generator = R0SeirSVModel(param=self.params)
-                    r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
-                        susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
-                    )[0]
-
-                elif self.epi_model == "sir_model":
+                if self.epi_model == "chikina_model":
                     r0generator = R0SirModel(param=self.params)
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
@@ -48,6 +42,20 @@ class SimulationNPI(SimulationBase):
 
                 elif self.epi_model == "rost_model":
                     r0generator = R0Generator(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                elif self.epi_model == "seir_model":
+                    r0generator = R0SeirSVModel(param=self.params)
+                    r0 = r0generator.get_eig_val(
+                        contact_mtx=self.contact_matrix,
+                        susceptibles=self.susceptibles.reshape(1, -1),
+                        population=self.population
+                    )[0]
+                elif self.epi_model == "moghadas_model":
+                    r0generator = R0SeyedModel(param=self.params)
                     r0 = r0generator.get_eig_val(
                         contact_mtx=self.contact_matrix,
                         susceptibles=self.susceptibles.reshape(1, -1),
@@ -67,8 +75,10 @@ class SimulationNPI(SimulationBase):
                 # SAMPLING
                 sampler_npi = src.SamplerNPI(
                     sim_obj=self,
-                    target="r0", epi_model=self.epi_model)
+                    target="r0", epi_model=self.epi_model,
+                    country=self.country)
                 sampler_npi.run()
+                # self.get_analysis_results()
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters
@@ -134,28 +144,45 @@ class SimulationNPI(SimulationBase):
                                 delimiter=';')
 
                             # Plot results
-                            plot = src.Plotter(sim_obj=self)
-                            # plot.plot_contact_matrices_hungary(filename="contact")
+                            plot = src.Plotter(sim_obj=self, data=self.data)
+                            # plot.plot_disease_simulations()
+                            # plot.plot_contact_matrices_hungary(filename="contact",
+                            #                                             model="chikina")
+                            #
                             # plot.get_plot_hungary_heatmap()
 
                             if agg == "PRCC_Pvalues":
                                 plot.generate_prcc_p_values_heatmaps(
-                                    prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                    prcc_vector=saved_prcc_pval[:, 0],
                                     p_values=saved_prcc_pval[:, 1],
                                     filename_without_ext=filename_without_ext)
                             else:
+                                plot.generate_tornado_plot(std_values=saved_prcc_pval[:, 1],
+                                                  prcc_vector=saved_prcc_pval[:, 0],
+                                                           filename_without_ext=filename_without_ext,
+                                                           if_plot_error_bars="Yes"
+                                                           )
                                 plot.plot_aggregation_prcc_pvalues(
-                                    prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                    p_values=abs(saved_prcc_pval[:, 1]),
+                                    prcc_vector=saved_prcc_pval[:, 0],
+                                    std_values=saved_prcc_pval[:, 1],
                                     filename_without_ext=filename_without_ext)
 
     def get_analysis_results(self):
-        i = 0
-        for susc in self.susc_choices:
-            for base_r0 in self.r0_choices:
-                print(susc, base_r0)
-                analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
-                                               contact_home=self.contact_home, susc=self.susc_choices,
-                                               base_r0=self.r0_choices, params=self.params)
-                analysis.run_plots()
-                i += 1
+        analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
+                                       contact_home=self.contact_home,
+                                       susc=self.susc_choices,
+                                       base_r0=self.r0_choices, params=self.params,
+                                       model="rost")
+        plot = src.Plotter(sim_obj=self, data=self.data)
+        # plot.plot_disease_simulations(model="rost")
+
+        analysis.run_plots(model="rost")
+
+
+
+
+
+
+
+
+

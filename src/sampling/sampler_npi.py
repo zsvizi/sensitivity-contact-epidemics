@@ -12,8 +12,9 @@ from src.sampling.r0_target_calculator import R0TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_obj: src.SimulationNPI, epi_model: str,
-                 target: str = "r0") -> None:
+    def __init__(self, sim_obj: src.SimulationNPI, country: str,
+                 epi_model: str, target: str = "r0") -> None:
+        self.country = country
         self.epi_model = epi_model
         super().__init__(sim_obj=sim_obj)
         self.sim_obj = sim_obj
@@ -23,7 +24,7 @@ class SamplerNPI(SamplerBase):
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":
-            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, epi_model=self.epi_model)
+            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, country=self.country)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj,
                                                   epi_model=sim_obj.epi_model)
@@ -76,7 +77,7 @@ class SamplerNPI(SamplerBase):
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
-        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, epi_model=self.epi_model)
+        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, country=self.country)
         r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
         return r0_lhs_home_k
 

@@ -10,20 +10,38 @@ PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class DataLoader:
     def __init__(self, country: str):
-        if country == "Hungary":
+        self.country = country
+
+        if country == "Hungary":   # our model of analysis
             self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "model_parameters.json")
             self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "contact_matrices.xls")
             self._age_data_file = os.path.join(PROJECT_PATH, "../data", "age_distribution.xls")
-        elif country == "UK":
-            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_model_parameters.json")
-            self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "uk_contact_matrices.xls")
-            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "uk_age_distribution.xls")
-        else:
-            raise Exception("Data loading is not available for the given country!")
+        if country == "usa":  # Modeling strict age-targeted mitigation strategies for COVID-19
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "usa_model_parameters.json")
+            self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "usa_matrices.xls")
+            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "usa_age_pop.xls")
+            self._epidemic_data_file = os.path.join(PROJECT_PATH, "../data", "Epidemic_size_file.xls")
+        elif country == "united_states":  # Projecting hospital utilization during the COVID-19 outbreaks in the US
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "US_model_parameters.json")
+            self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "US_model_contact.xls")
+            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "US_age_pop.xls")
 
+        elif country == "UK":  # Influenza seir model in the UK
+            self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_model_parameters.json")
+            self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "uk_contact.xls")
+            self._age_data_file = os.path.join(PROJECT_PATH, "../data", "uk_age_distribution.xls")
+
+        # self._get_epidemic_data()
         self._get_age_data()
         self._get_model_parameters_data()
         self._get_contact_mtx()
+
+    def _get_epidemic_data(self):
+        wb = xlrd.open_workbook(self._epidemic_data_file)
+        sheet = wb.sheet_by_index(0)
+        datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
+        wb.unload_sheet(0)
+        self.epidemic_data = datalist
 
     def _get_age_data(self):
         wb = xlrd.open_workbook(self._age_data_file)
@@ -54,7 +72,8 @@ class DataLoader:
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = dict()
-        for idx in range(4):
+        num_sheets = 2 if self.country in ["united_states", "UK"] else 4
+        for idx in range(num_sheets):
             sheet = wb.sheet_by_index(idx)
             datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
             cm_type = wb.sheet_names()[idx]

@@ -5,7 +5,8 @@ from src.model.r0 import R0GeneratorBase
 
 
 class R0SirModel(R0GeneratorBase):
-    def __init__(self, param: dict, country: str = "Hungary", n_age: int = 16) -> None:
+    def __init__(self, param: dict, n_age: int = 17,
+                 country: str = "usa") -> None:
         self.country = country
         state = ["i"]
         super().__init__(param=param, states=state, n_age=n_age)
@@ -16,15 +17,17 @@ class R0SirModel(R0GeneratorBase):
     def _get_v(self) -> np.array:
         idx = self._idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
-        v[idx("i"), idx("i")] = self.parameters["gamma_a"]
+        v[idx("i"), idx("i")] = self.parameters["alpha_i"]
         self.v_inv = np.linalg.inv(v)
 
     def _get_f(self, cm: np.array) -> np.array:
         i = self.i
         s_mtx = self.s_mtx
         n_state = self.n_states
+
         f = np.zeros((self.n_age * n_state, self.n_age * n_state))
-        f[i["i"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T
+        susc_vec = self.parameters["susc"].reshape((-1, 1))
+        f[i["i"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T * susc_vec
         return f
 
     def _get_e(self):

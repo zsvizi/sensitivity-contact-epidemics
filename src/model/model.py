@@ -4,8 +4,7 @@ from src.model.model_base import EpidemicModelBase
 
 
 class RostModelHungary(EpidemicModelBase):
-    def __init__(self, model_data, country: str = "Hungary") -> None:
-        self.country = country
+    def __init__(self, model_data) -> None:
         compartments = ["s", "l1", "l2",
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
@@ -51,7 +50,9 @@ class RostModelHungary(EpidemicModelBase):
             "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
 
             "c": 2 * ps["alpha_l"] * l2  # C'(t)
+
         }
+
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
     def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:

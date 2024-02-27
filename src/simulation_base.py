@@ -2,26 +2,40 @@ import numpy as np
 
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
-from src.model.model_sir import SirModel
-from src.seirsv.model_seirsv import SeirSVModel
+from src.model.chikina_model import SirModel
+from src.model.moghadas_model import MoghadasModelUsa
+from src.seirsv.model import SEIR_UK
 
 
 class SimulationBase:
-    def __init__(self, data: DataLoader, epi_model, country: str):
-        self.country = country
+    def __init__(self, data: DataLoader, epi_model, country):
         self.data = data
         self.sim_state = dict()
 
-        self.n_ag = self.data.contact_data["Home"].shape[0]
-        self.contact_matrix = self.data.contact_data["Home"] + self.data.contact_data["Work"] + \
-            self.data.contact_data["School"] + self.data.contact_data["Other"]
-        self.contact_home = self.data.contact_data["Home"]
+        if country == "united_states":
+            self.contact_matrix = self.data.contact_data["All"]
+            self.contact_home = self.data.contact_data["Home"]
+            self.n_ag = self.data.contact_data["Home"].shape[0]
+        elif country == "UK":
+            self.contact_matrix = self.data.contact_data["all_contact"]
+            self.contact_home = self.data.contact_data["physical_contact"]
+            self.n_ag = self.data.contact_data["all_contact"].shape[0]
+        else:
+            self.contact_matrix = self.data.contact_data["Home"] + \
+                                  self.data.contact_data["School"] + \
+                                  self.data.contact_data["Work"] + \
+                                  self.data.contact_data["Other"]
+            self.contact_home = self.data.contact_data["Home"]
+            self.n_ag = self.data.contact_data["Home"].shape[0]
+
         if epi_model == "rost_model":
-            self.model = RostModelHungary(model_data=self.data, country="Hungary")
-        elif epi_model == "sir_model":
-            self.model = SirModel(model_data=self.data, country="Hungary")
-        elif epi_model == "seirSV_model":
-            self.model = SeirSVModel(model_data=self.data, country="UK")
+            self.model = RostModelHungary(model_data=self.data)
+        elif epi_model == "chikina_model":
+            self.model = SirModel(model_data=self.data)
+        elif epi_model == "seir_model":
+            self.model = SEIR_UK(model_data=self.data)
+        elif epi_model == "moghadas_model":
+            self.model = MoghadasModelUsa(model_data=self.data)
         else:
             raise Exception("No model was given!")
 
@@ -32,7 +46,6 @@ class SimulationBase:
 
         self.upper_tri_indexes = np.triu_indices(self.n_ag)
         # 0. Get base parameter dictionary
-
         self.params = self.data.model_parameters_data
 
         self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
