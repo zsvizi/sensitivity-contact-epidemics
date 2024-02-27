@@ -17,10 +17,11 @@ class ContactManipulation:
 
     def run_plots(self, model: str):
 
-        cm_list = []
-        legend_list = []
+        cm_list_orig = []
+        legend_list_orig = []
 
-        self.get_full_cm(cm_list, legend_list)
+        self.get_full_cm(cm_list_orig, legend_list_orig)
+
         if model == "rost":
             t = np.arange(0, 1200, 0.5)
         elif model == "chikina":
@@ -29,6 +30,8 @@ class ContactManipulation:
             t = np.arange(0, 400, 0.5)
         ratios = [0.5, 0.75]
         for ratio in ratios:
+            cm_list = cm_list_orig.copy()
+            legend_list = legend_list_orig.copy()
             for i in range(self.sim_obj.n_ag):
                 self.generate_contact_matrix(cm_list, legend_list, i, ratio)
                 # epidemic size
