@@ -81,17 +81,6 @@ class FinalSizeTargetCalculator(TargetCalculator):
         else:
             return n_infecteds
 
-    # def calculate_additional_metrics(self, sol):
-    #     state = np.array([sol[-1]])
-    #     hospital_peak = None
-    #     icu = None
-    #     final_size_dead = None
-    #     if self.epi_model in ["rost_model", "chikina_model", "moghadas_model"]:
-    #         hospital_peak = self.calculate_hospital_peak(sol)
-    #         icu = self.calculate_icu(sol)
-    #         final_size_dead = self.calculate_final_size_dead(state)
-    #     return hospital_peak, icu, final_size_dead
-
     def calculate_epidemic_peaks(self, state):
         state = np.array([state])
         if self.epi_model == "rost":
