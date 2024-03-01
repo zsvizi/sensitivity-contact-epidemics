@@ -5,7 +5,7 @@ from src.model.model_base import EpidemicModelBase
 
 class SEIR_UK(EpidemicModelBase):
     def __init__(self, model_data) -> None:
-        compartments = ["s", "e", "i", "r"]
+        compartments = ["s", "e", "i", "r", "c"]
 
         super().__init__(model_data=model_data, compartments=compartments)
 
@@ -17,7 +17,7 @@ class SEIR_UK(EpidemicModelBase):
 
     def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
-        s, e, i, r = xs.reshape(-1, self.n_age)
+        s, e, i, r, c = xs.reshape(-1, self.n_age)
         transmission = ps["beta"] * np.array(i).dot(cm)
         # add seasonality
         z = 1 + ps["q"] * np.sin(2 * math.pi * (t - ps["t_offset"]) / 365)
@@ -26,7 +26,10 @@ class SEIR_UK(EpidemicModelBase):
             "s": -transmission * s / self.population,  # S'(t)
             "e": s / self.population * transmission - e * ps["gamma"],  # E'(t)
             "i": ps["gamma"] * e - ps["rho"] * i,  # I'(t)
-            "r": ps["rho"] * i  # R'(t)
+            "r": ps["rho"] * i,  # R'(t)
+
+            # add compartment to store total infecteds
+            "c": s / self.population * transmission + ps["gamma"] * e  # C'(t)
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 

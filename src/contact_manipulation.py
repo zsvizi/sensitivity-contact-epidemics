@@ -4,7 +4,8 @@ from src.plotter import Plotter
 
 
 class ContactManipulation:
-    def __init__(self, sim_obj, contact_matrix: np.ndarray, contact_home: np.ndarray,
+    def __init__(self, sim_obj, contact_matrix: np.ndarray,
+                 contact_home: np.ndarray,
                  susc: float, base_r0: float, params: str, model: str):
         self.sim_obj = sim_obj
 
@@ -16,7 +17,6 @@ class ContactManipulation:
         self.model = model
 
     def run_plots(self, model: str):
-
         cm_list_orig = []
         legend_list_orig = []
 
@@ -25,7 +25,7 @@ class ContactManipulation:
         if model == "rost":
             t = np.arange(0, 1200, 0.5)
         elif model == "chikina":
-            t = np.arange(0, 400, 0.5)
+            t = np.arange(0, 2500, 0.5)
         else:
             t = np.arange(0, 400, 0.5)
         ratios = [0.5, 0.75]
@@ -34,14 +34,23 @@ class ContactManipulation:
             legend_list = legend_list_orig.copy()
             for i in range(self.sim_obj.n_ag):
                 self.generate_contact_matrix(cm_list, legend_list, i, ratio)
-                # epidemic size
-            # Plotter.plot_peak_size_epidemic(self.sim_obj,
-            #          time=t,
-            #         params=self.params, cm_list=cm_list,
-            #         legend_list=legend_list,
-            #         title_part="_epidemic_size_".join([str(self.susc),
-            #                                            str(self.base_r0)]),
-            #         model=self.model, ratio=ratio)
+            # epidemic size
+            Plotter.plot_epidemic_size(self.sim_obj,
+                     time=t,
+                    params=self.params, cm_list=cm_list,
+                    legend_list=legend_list,
+                    title_part="_epidemic_size_".join([str(self.susc),
+                                                       str(self.base_r0)]),
+                    model=self.model, ratio=ratio)
+            # epidemic peak
+            Plotter.plot_peak_size_epidemic(self.sim_obj,
+                                            time=t,
+                                            params=self.params, cm_list=cm_list,
+                                            legend_list=legend_list,
+                                            title_part="_epidemic_size_".join([str(self.susc),
+                                                                               str(self.base_r0)]),
+                                            model=self.model, ratio=ratio)
+            # plot icu size
             Plotter.plot_icu_size(self.sim_obj, time=t, params=self.params,
                               cm_list=cm_list, susc=self.susc, base_r0=self.base_r0,
                               legend_list=legend_list,
@@ -50,20 +59,18 @@ class ContactManipulation:
                               model=self.model, ratio=ratio)
 
         # number of hospitalized
-        # Plotter.plot_solution_hospitalized_peak_size(
-        #     self.sim_obj, time=t,
-        #     params=self.params, cm_list=cm_list,
-        #     legend_list=legend_list,
-        #     title_part="_hospitalized_peak_".join([str(self.susc),
-        #                                          str(self.base_r0)]),
-        #                                          model=self.model, ratio=ratio)
-
-        # Plotter.plot_solution_final_death_size(self.sim_obj, time=t,
-        #                                        params=self.params, cm_list=cm_list,
-        #                                        legend_list=legend_list,
-        #                                        title_part="_final_deaths_".join([str(self.susc),
-        #                                                                            str(self.base_r0)]),
-        #                                        model=self.model, ratio=ratio)
+            Plotter.plot_solution_hospitalized_size(self.sim_obj, time=t,
+            params=self.params, cm_list=cm_list,
+            legend_list=legend_list,
+            title_part="_hospitalized_peak_".join([str(self.susc),
+                                                 str(self.base_r0)]),
+                                                 model=self.model, ratio=ratio)
+            Plotter.plot_solution_final_death_size(self.sim_obj, time=t,
+                                               params=self.params, cm_list=cm_list,
+                                               legend_list=legend_list,
+                                               title_part="_final_deaths_".join([str(self.susc),
+                                                                                   str(self.base_r0)]),
+                                               model=self.model, ratio=ratio)
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.contact_matrix

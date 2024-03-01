@@ -2,9 +2,9 @@ import numpy as np
 
 from src.dataloader import DataLoader
 from src.model.model import RostModelHungary
-from src.model.chikina_model import SirModel
-from src.model.moghadas_model import MoghadasModelUsa
-from src.seirsv.model import SEIR_UK
+from src.chikina.model import SirModel
+from src.moghadas.model import MoghadasModelUsa
+from src.seir.model import SEIR_UK
 
 
 class SimulationBase:
@@ -17,9 +17,9 @@ class SimulationBase:
             self.contact_home = self.data.contact_data["Home"]
             self.n_ag = self.data.contact_data["Home"].shape[0]
         elif country == "UK":
-            self.contact_matrix = self.data.contact_data["all_contact"]
-            self.contact_home = self.data.contact_data["physical_contact"]
-            self.n_ag = self.data.contact_data["all_contact"].shape[0]
+            self.contact_matrix = self.data.contact_data["All"]
+            self.contact_home = self.data.contact_data["Physical"]
+            self.n_ag = self.data.contact_data["All"].shape[0]
         else:
             self.contact_matrix = self.data.contact_data["Home"] + \
                                   self.data.contact_data["School"] + \
@@ -28,13 +28,13 @@ class SimulationBase:
             self.contact_home = self.data.contact_data["Home"]
             self.n_ag = self.data.contact_data["Home"].shape[0]
 
-        if epi_model == "rost_model":
+        if epi_model == "rost":
             self.model = RostModelHungary(model_data=self.data)
-        elif epi_model == "chikina_model":
+        elif epi_model == "chikina":
             self.model = SirModel(model_data=self.data)
-        elif epi_model == "seir_model":
+        elif epi_model == "seir":
             self.model = SEIR_UK(model_data=self.data)
-        elif epi_model == "moghadas_model":
+        elif epi_model == "moghadas":
             self.model = MoghadasModelUsa(model_data=self.data)
         else:
             raise Exception("No model was given!")

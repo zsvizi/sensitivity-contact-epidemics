@@ -3,9 +3,9 @@ import numpy as np
 import src
 from src.model.r0_generator import R0Generator
 from src.sampling.target_calculator import TargetCalculator
-from src.seirsv.r0_seirsv import R0SeirSVModel
-from src.model.r0_chikina import R0SirModel
-from src.model.r0_moghadas import R0SeyedModel
+from src.seir.r0 import R0SeirSVModel
+from src.chikina.r0 import R0SirModel
+from src.moghadas.r0 import R0SeyedModel
 
 
 class R0TargetCalculator(TargetCalculator):
