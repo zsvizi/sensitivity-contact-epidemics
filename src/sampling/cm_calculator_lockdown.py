@@ -28,6 +28,3 @@ class CMCalculatorLockdown:
         cm_total_sim = (cm_sim * self.sim_obj.age_vector)[self.sim_obj.upper_tri_indexes]
         output = np.append(cm_total_sim, output)  # 136 + 18
         return list(output)
-
-
-

@@ -26,9 +26,8 @@ class EpidemicModelBase(ABC):
         idx = self.c_idx["d"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_solution(self, t: int, parameters: dict, cm: np.ndarray):
-        initial_values = self.get_initial_values()
-        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
+    def get_solution(self, init_values, t: int, parameters: dict, cm: np.ndarray):
+        return np.array(odeint(self.get_model, init_values, t, args=(parameters, cm)))
 
     def get_array_from_dict(self, comp_dict) -> np.ndarray:
         return np.array([comp_dict[comp] for comp in self.compartments]).flatten()

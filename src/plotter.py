@@ -514,7 +514,7 @@ class Plotter:
         for cm, legend in zip(cm_list, legend_list):
             # Get solution for the current combination
             solution = self.sim_obj.model.get_solution(
-                init_values=self.sim_obj.model.get_initial_values,
+                init_values=self.sim_obj.model.get_initial_values(),
                 t=time,
                 parameters=self.sim_obj.params,
                 cm=cm
