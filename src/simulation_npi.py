@@ -33,21 +33,7 @@ class SimulationNPI(SimulationBase):
             self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
-                # self.get_analysis_results2(susc, base_r0)
-                r0generator = self.choose_r0_generator()
-                r0 = r0generator.get_eig_val(
-                    contact_mtx=self.contact_matrix,
-                    susceptibles=self.susceptibles.reshape(1, -1),
-                    population=self.population
-                )[0]
-                beta = base_r0 / r0
-                self.params.update({"beta": beta})
-                self.sim_state.update(
-                    {"base_r0": base_r0,
-                     "beta": beta,
-                     "susc": susc,
-                     "r0generator": r0generator})
-
+                self.prepare_simulations(base_r0=base_r0, susc=susc)
                 # SAMPLING
                 if generate_lhs:
                     sampler_npi = src.SamplerNPI(
@@ -55,21 +41,22 @@ class SimulationNPI(SimulationBase):
                         target="epidemic_size", epi_model=self.epi_model,
                         country=self.country)
                     sampler_npi.run()
-                else:
-                    self.get_analysis_results(susc=susc, base_r0=base_r0)
 
-    def choose_r0_generator(self):
-        if self.epi_model == "chikina":
-            r0generator = R0SirModel(param=self.params)
-        elif self.epi_model == "rost":
-            r0generator = R0Generator(param=self.params)
-        elif self.epi_model == "seir":
-            r0generator = R0SeirSVModel(param=self.params)
-        elif self.epi_model == "moghadas":
-            r0generator = R0SeyedModel(param=self.params)
-        else:
-            raise Exception("No model is given!")
-        return r0generator
+    def generate_analysis_results(self):
+        # Update params by susceptibility vector
+        susceptibility = np.ones(self.n_ag)
+        for susc in self.susc_choices:
+            susceptibility[:4] = susc
+            self.params.update({"susc": susceptibility})
+            # Update params by calculated BASELINE beta
+            for base_r0 in self.r0_choices:
+                self.prepare_simulations(base_r0=base_r0, susc=susc)
+                analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
+                                               contact_home=self.contact_home,
+                                               susc=susc,
+                                               base_r0=base_r0, params=self.params,
+                                               model="rost", data=self.data)
+                return analysis.run_plots(model="rost")
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters
@@ -156,14 +143,6 @@ class SimulationNPI(SimulationBase):
                                     std_values=saved_prcc_pval[:, 1],
                                     filename_without_ext=filename_without_ext)
 
-    def get_analysis_results(self, susc, base_r0):
-        analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
-                                       contact_home=self.contact_home,
-                                       susc=susc,
-                                       base_r0=base_r0, params=self.params,
-                                       model="rost", data=self.data)
-        return analysis.run_plots(model="rost")
-
     def plot_max_values_contact_manipulation(self):
         """
         Loads and plots the maximum values for contact manipulation scenarios saved from running
@@ -204,3 +183,31 @@ class SimulationNPI(SimulationBase):
                             dfs[f"{base_dir}/{column_name}"] = df
                 plot = src.Plotter(sim_obj=self, data=self.data)
                 plot.plot_model_max_values(max_values=dfs, model="rost")
+
+    def prepare_simulations(self, base_r0, susc):
+        r0generator = self.choose_r0_generator()
+        r0 = r0generator.get_eig_val(
+            contact_mtx=self.contact_matrix,
+            susceptibles=self.susceptibles.reshape(1, -1),
+            population=self.population
+        )[0]
+        beta = base_r0 / r0
+        self.params.update({"beta": beta})
+        self.sim_state.update(
+            {"base_r0": base_r0,
+             "beta": beta,
+             "susc": susc,
+             "r0generator": r0generator})
+
+    def choose_r0_generator(self):
+        if self.epi_model == "chikina":
+            r0generator = R0SirModel(param=self.params)
+        elif self.epi_model == "rost":
+            r0generator = R0Generator(param=self.params)
+        elif self.epi_model == "seir":
+            r0generator = R0SeirSVModel(param=self.params)
+        elif self.epi_model == "moghadas":
+            r0generator = R0SeyedModel(param=self.params)
+        else:
+            raise Exception("No model is given!")
+        return r0generator
