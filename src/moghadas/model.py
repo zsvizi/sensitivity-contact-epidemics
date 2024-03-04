@@ -23,14 +23,14 @@ class MoghadasModelUsa(EpidemicModelBase):
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
         s, e, i_n, q_n, i_h, q_h, a_n, a_q, h, c, r, d, \
-        i, hosp, icu = xs.reshape(-1, self.n_age)
+            i, hosp, icu = xs.reshape(-1, self.n_age)
         transmission = ps["beta"] * np.array(i_n / self.population).dot(cm) + \
-                       np.array(i_h / self.population).dot(cm) + \
-                       np.array(ps["k"] * a_n / self.population).dot(cm)
+            np.array(i_h / self.population).dot(cm) + \
+            np.array(ps["k"] * a_n / self.population).dot(cm)
 
         transmission_2 = ps["beta"] * np.array(q_n / self.population).dot(self.model_data.contact_data["Home"]) + \
-                         np.array(q_h / self.population).dot(self.model_data.contact_data["Home"]) + \
-                         np.array(ps["k"] * a_q / self.population).dot(self.model_data.contact_data["Home"])
+            np.array(q_h / self.population).dot(self.model_data.contact_data["Home"]) + \
+            np.array(ps["k"] * a_q / self.population).dot(self.model_data.contact_data["Home"])
 
         model_eq_dict = {
             "s": -ps["susc"] * s * transmission - ps["susc"] * s * transmission_2,  # S'(t)
@@ -70,7 +70,7 @@ class MoghadasModelUsa(EpidemicModelBase):
         idx_2 = self.c_idx["q_h"]
         idx_3 = self.c_idx["h"]
         return self.aggregate_by_age(solution, idx) + \
-               self.aggregate_by_age(solution, idx_2) + self.aggregate_by_age(solution, idx_3)
+            self.aggregate_by_age(solution, idx_2) + self.aggregate_by_age(solution, idx_3)
 
     def get_icu_cases(self, solution: np.ndarray) -> np.ndarray:
         idx = self.c_idx["c"]

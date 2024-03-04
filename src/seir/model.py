@@ -3,7 +3,7 @@ import math
 from src.model.model_base import EpidemicModelBase
 
 
-class SEIR_UK(EpidemicModelBase):
+class SeirUK(EpidemicModelBase):
     def __init__(self, model_data) -> None:
         compartments = ["s", "e", "i", "r", "c"]
 

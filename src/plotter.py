@@ -361,7 +361,8 @@ class Plotter:
                           filename_to_save=filename_without_ext,
                           plot_title=plot_title)
 
-    def plot_model_max_values(self, max_values, model: str,
+    @staticmethod
+    def plot_model_max_values(max_values, model: str,
                               plot_title: str = "Y"):
         """
         This method Loads the max values from different targets and iterates over
@@ -371,6 +372,7 @@ class Plotter:
         Then, it saves the heatmap under each directory as a pdf file.
         :param max_values: dataframe of max values for each age group
         :param model: rost, moghadas, chikina, seir
+        :param plot_title:
         :return: Heatmaps
         """
 

@@ -5,7 +5,7 @@ from src.model.model_base import EpidemicModelBase
 from src.model.model import RostModelHungary
 from src.chikina.model import SirModel
 from src.moghadas.model import MoghadasModelUsa
-from src.seir.model import SEIR_UK
+from src.seir.model import SeirUK
 
 
 class SimulationBase:
@@ -53,7 +53,7 @@ class SimulationBase:
         elif epi_model == "chikina":
             self.model = SirModel(model_data=self.data)
         elif epi_model == "seir":
-            self.model = SEIR_UK(model_data=self.data)
+            self.model = SeirUK(model_data=self.data)
         elif epi_model == "moghadas":
             self.model = MoghadasModelUsa(model_data=self.data)
         else:
