@@ -18,41 +18,18 @@ class R0TargetCalculator(TargetCalculator):
     def get_output(self, cm: np.ndarray):
         if self.country == "Hungary":
             r0generator = R0Generator(param=self.sim_obj.params)
-            beta_lhs = self.base_r0 / r0generator.get_eig_val(
-                contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                population=self.sim_obj.population)[0]
-            r0_lhs = (self.beta / beta_lhs) * self.base_r0
-            output = np.array([r0_lhs])
-            return output
         elif self.country == "UK":
             r0generator = R0SeirSVModel(param=self.sim_obj.params)
-            beta_lhs = self.base_r0 / r0generator.get_eig_val(
-                contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                population=self.sim_obj.population)[0]
-            r0_lhs = (self.beta / beta_lhs) * self.base_r0
-            output = np.array([r0_lhs])
-            return output
         elif self.country == "usa":
             r0generator = R0SirModel(param=self.sim_obj.params)
-            beta_lhs = self.base_r0 / r0generator.get_eig_val(
-                contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                population=self.sim_obj.population)[0]
-            r0_lhs = (self.beta / beta_lhs) * self.base_r0
-            output = np.array([r0_lhs])
-            return output
         elif self.country == "united_states":
             r0generator = R0SeyedModel(param=self.sim_obj.params)
-            beta_lhs = self.base_r0 / r0generator.get_eig_val(
-                contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-                population=self.sim_obj.population)[0]
-            r0_lhs = (self.beta / beta_lhs) * self.base_r0
-            output = np.array([r0_lhs])
-            return output
+        else:
+            raise Exception("Invalid country!")
 
-
-
-
-
-
-
-
+        beta_lhs = self.base_r0 / r0generator.get_eig_val(
+            contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+            population=self.sim_obj.population)[0]
+        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        output = np.array([r0_lhs])
+        return output
