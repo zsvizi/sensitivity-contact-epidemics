@@ -22,8 +22,8 @@ class RostModelHungary(EpidemicModelBase):
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
-        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, r, d, c, hosp, \
-        icu = xs.reshape(-1, self.n_age)
+        s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, \
+            r, d, c, hosp, icu = xs.reshape(-1, self.n_age)
 
         transmission = ps["beta"] * np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
@@ -55,7 +55,6 @@ class RostModelHungary(EpidemicModelBase):
                      ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3,  # Hosp'(t)
             "icu": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3  # Icu'(t)
         }
-
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
     def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:

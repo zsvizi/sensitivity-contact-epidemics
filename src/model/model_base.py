@@ -5,7 +5,7 @@ from scipy.integrate import odeint
 
 
 class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments) -> None:
+    def __init__(self, model_data, compartments: list) -> None:
         self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
@@ -26,7 +26,7 @@ class EpidemicModelBase(ABC):
         idx = self.c_idx["d"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_solution(self, init_values, t: int, parameters: dict, cm: np.ndarray):
+    def get_solution(self, t: int, parameters: dict, cm: np.ndarray):
         initial_values = self.get_initial_values()
         return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
 
