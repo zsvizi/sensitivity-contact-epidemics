@@ -57,10 +57,10 @@ class FinalSizeTargetCalculator(TargetCalculator):
             state = sol[-1]
             complete_sol = np.append(complete_sol, sol[1:])
 
-        infecteds = self.state_calc.calculate_infecteds(state=complete_sol)
-        infecteds_peak = self.state_calc.calculate_epidemic_peaks(state=complete_sol)
+        infecteds = self.state_calc.calculate_infecteds(sol=complete_sol)
+        infecteds_peak = self.state_calc.calculate_epidemic_peaks(sol=complete_sol)
         final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
-        icu = self.state_calc.calculate_icu(state=np.array([complete_sol]))
+        icu = self.state_calc.calculate_icu(sol=np.array([complete_sol]))
 
         # return the targets
         if self.config["include_final_size_dead"]:
