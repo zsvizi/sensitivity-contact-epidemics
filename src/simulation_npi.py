@@ -51,12 +51,8 @@ class SimulationNPI(SimulationBase):
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
                 self.prepare_simulations(base_r0=base_r0, susc=susc)
-                analysis = ContactManipulation(sim_obj=self, contact_matrix=self.contact_matrix,
-                                               contact_home=self.contact_home,
-                                               susc=susc,
-                                               base_r0=base_r0, params=self.params,
-                                               model="rost", data=self.data)
-                return analysis.run_plots(model="rost")
+                analysis = ContactManipulation(sim_obj=self, susc=susc, base_r0=base_r0, model="rost")
+                return analysis.run_plots()
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters

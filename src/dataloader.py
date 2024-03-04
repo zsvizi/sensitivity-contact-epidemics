@@ -25,7 +25,6 @@ class DataLoader:
             self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "US_model_parameters.json")
             self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "US_model_contact.xls")
             self._age_data_file = os.path.join(PROJECT_PATH, "../data", "US_age_pop.xls")
-
         elif country == "UK":  # Influenza seir model in the UK
             self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "uk_model_parameters.json")
             self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "uk_contact.xls")
