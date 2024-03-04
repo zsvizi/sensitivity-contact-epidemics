@@ -6,7 +6,6 @@ from src.model.model_base import EpidemicModelBase
 class SirModel(EpidemicModelBase):
     def __init__(self, model_data) -> None:
         compartments = ["s", "i", "cp", "c", "r", "d", "inf", "hosp", "icu"]
-
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):

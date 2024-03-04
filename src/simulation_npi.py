@@ -1,16 +1,16 @@
 import os
+
 import numpy as np
 import pandas as pd
+
 import src
-
+from src.contact_manipulation import ContactManipulation
 from src.dataloader import DataLoader
-from src.model.r0_generator import R0Generator
-from src.simulation_base import SimulationBase
-
 from src.chikina.r0 import R0SirModel
+from src.model.r0_generator import R0Generator
 from src.moghadas.r0 import R0SeyedModel
 from src.seir.r0 import R0SeirSVModel
-from src.contact_manipulation import ContactManipulation
+from src.simulation_base import SimulationBase
 
 
 class SimulationNPI(SimulationBase):
@@ -34,38 +34,12 @@ class SimulationNPI(SimulationBase):
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
                 # self.get_analysis_results2(susc, base_r0)
-                if self.epi_model == "chikina":
-                    r0generator = R0SirModel(param=self.params)
-                    r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
-                        susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
-                    )[0]
-
-                elif self.epi_model == "rost":
-                    r0generator = R0Generator(param=self.params)
-                    r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
-                        susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
-                    )[0]
-                elif self.epi_model == "seir":
-                    r0generator = R0SeirSVModel(param=self.params)
-                    r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
-                        susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
-                    )[0]
-                elif self.epi_model == "moghadas":
-                    r0generator = R0SeyedModel(param=self.params)
-                    r0 = r0generator.get_eig_val(
-                        contact_mtx=self.contact_matrix,
-                        susceptibles=self.susceptibles.reshape(1, -1),
-                        population=self.population
-                    )[0]
-                else:
-                    raise Exception("No model is given!")
-
+                r0generator = self.choose_r0_generator()
+                r0 = r0generator.get_eig_val(
+                    contact_mtx=self.contact_matrix,
+                    susceptibles=self.susceptibles.reshape(1, -1),
+                    population=self.population
+                )[0]
                 beta = base_r0 / r0
                 self.params.update({"beta": beta})
                 self.sim_state.update(
@@ -83,6 +57,19 @@ class SimulationNPI(SimulationBase):
                     sampler_npi.run()
                 else:
                     self.get_analysis_results(susc=susc, base_r0=base_r0)
+
+    def choose_r0_generator(self):
+        if self.epi_model == "chikina":
+            r0generator = R0SirModel(param=self.params)
+        elif self.epi_model == "rost":
+            r0generator = R0Generator(param=self.params)
+        elif self.epi_model == "seir":
+            r0generator = R0SeirSVModel(param=self.params)
+        elif self.epi_model == "moghadas":
+            r0generator = R0SeyedModel(param=self.params)
+        else:
+            raise Exception("No model is given!")
+        return r0generator
 
     def calculate_prcc_values(self):
         # read files from the generated folder based on the given parameters
@@ -148,22 +135,23 @@ class SimulationNPI(SimulationBase):
                                 delimiter=';')
 
                             # Plot results
-                            plot = src.Plotter(sim_obj=self, data=self.data)
+                            plotter = src.Plotter(sim_obj=self, data=self.data)
                             # plot contact matrices for different models
-                            plot.plot_contact_matrices_models(filename="contact",
-                                                                   model="rost",
-                                                                   contact_data=self.data.contact_data,
-                                                                   n_ag=self.n_ag)
+                            plotter.plot_contact_matrices_models(
+                                filename="contact",
+                                model="rost",
+                                contact_data=self.data.contact_data,
+                                n_ag=self.n_ag)
 
                             if agg == "PRCC_Pvalues":
                                 # plot prcc values
-                                plot.generate_prcc_p_values_heatmaps(
+                                plotter.generate_prcc_p_values_heatmaps(
                                     prcc_vector=saved_prcc_pval[:, 0],
                                     p_values=saved_prcc_pval[:, 1],
                                     filename_without_ext=filename_without_ext)
                             else:
                                 # plot aggregation values
-                                plot.plot_aggregation_prcc_pvalues(
+                                plotter.plot_aggregation_prcc_pvalues(
                                     prcc_vector=saved_prcc_pval[:, 0],
                                     std_values=saved_prcc_pval[:, 1],
                                     filename_without_ext=filename_without_ext)
@@ -173,17 +161,17 @@ class SimulationNPI(SimulationBase):
                                        contact_home=self.contact_home,
                                        susc=susc,
                                        base_r0=base_r0, params=self.params,
-                                       model="rost")
+                                       model="rost", data=self.data)
         return analysis.run_plots(model="rost")
 
-    def plot_max_values_contact_manipulation(self, model):
+    def plot_max_values_contact_manipulation(self):
         """
-            Loads and plots the maximum values for contact manipulation scenarios saved from running
-            get analysis results method above.
-            This method iterates over susceptibility (susc) and base R0 (base_r0) choices
-            and load the CSV files saved in different directories representing scenarios of
-            contact manipulation.
-            """
+        Loads and plots the maximum values for contact manipulation scenarios saved from running
+        get analysis results method above.
+        This method iterates over susceptibility (susc) and base R0 (base_r0) choices
+        and load the CSV files saved in different directories representing scenarios of
+        contact manipulation.
+        """
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
                 print(susc, base_r0)
@@ -205,8 +193,7 @@ class SimulationNPI(SimulationBase):
                     for filename in os.listdir(directory):
                         if filename.endswith(".csv"):  # Assuming CSV files
                             # Load data from file into NumPy array
-                            saved_max_values = np.loadtxt(os.path.join(directory, filename),
-                                                    delimiter=';')
+                            saved_max_values = np.loadtxt(os.path.join(directory, filename), delimiter=';')
 
                             # Convert NumPy arrays into Pandas DataFrame
                             df = pd.DataFrame(saved_max_values)
@@ -217,18 +204,3 @@ class SimulationNPI(SimulationBase):
                             dfs[f"{base_dir}/{column_name}"] = df
                 plot = src.Plotter(sim_obj=self, data=self.data)
                 plot.plot_model_max_values(max_values=dfs, model="rost")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

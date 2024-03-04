@@ -1,12 +1,11 @@
 import numpy as np
-import os
 from src.plotter import Plotter
 
 
 class ContactManipulation:
     def __init__(self, sim_obj, contact_matrix: np.ndarray,
                  contact_home: np.ndarray,
-                 susc: float, base_r0: float, params: str, model: str):
+                 susc: float, base_r0: float, params: str, model: str, data):
         self.sim_obj = sim_obj
 
         self.contact_matrix = contact_matrix
@@ -15,6 +14,7 @@ class ContactManipulation:
         self.susc = susc
         self.params = params
         self.model = model
+        self.plotter = Plotter(sim_obj=sim_obj, data=data)
 
     def run_plots(self, model: str):
         cm_list_orig = []
@@ -35,42 +35,33 @@ class ContactManipulation:
             for i in range(self.sim_obj.n_ag):
                 self.generate_contact_matrix(cm_list, legend_list, i, ratio)
             # epidemic size
-            Plotter.plot_epidemic_size(self.sim_obj,
-                     time=t,
-                    params=self.params, cm_list=cm_list,
-                    legend_list=legend_list,
-                    title_part="_epidemic_size_".join([str(self.susc),
-                                                       str(self.base_r0)]),
-                    model=self.model, ratio=ratio)
+            self.plotter.plot_epidemic_size(
+                time=t, cm_list=cm_list, legend_list=legend_list,
+                model=self.model, ratio=ratio)
             # epidemic peak
-            Plotter.plot_peak_size_epidemic(self.sim_obj,
-                                            time=t,
-                                            params=self.params, cm_list=cm_list,
-                                            legend_list=legend_list,
-                                            title_part="_epidemic_size_".join([str(self.susc),
-                                                                               str(self.base_r0)]),
-                                            model=self.model, ratio=ratio)
+            self.plotter.plot_peak_size_epidemic(
+                time=t, params=self.params, cm_list=cm_list, legend_list=legend_list,
+                title_part="_epidemic_size_".join([str(self.susc), str(self.base_r0)]),
+                model=self.model, ratio=ratio)
             # plot icu size
-            Plotter.plot_icu_size(self.sim_obj, time=t, params=self.params,
-                              cm_list=cm_list, susc=self.susc, base_r0=self.base_r0,
-                              legend_list=legend_list,
-                              title_part="_icu_".join([str(self.susc),
-                                                       str(self.base_r0), str(ratio)]),
-                              model=self.model, ratio=ratio)
-
-        # number of hospitalized
-            Plotter.plot_solution_hospitalized_size(self.sim_obj, time=t,
-            params=self.params, cm_list=cm_list,
-            legend_list=legend_list,
-            title_part="_hospitalized_peak_".join([str(self.susc),
-                                                 str(self.base_r0)]),
-                                                 model=self.model, ratio=ratio)
-            Plotter.plot_solution_final_death_size(self.sim_obj, time=t,
-                                               params=self.params, cm_list=cm_list,
-                                               legend_list=legend_list,
-                                               title_part="_final_deaths_".join([str(self.susc),
-                                                                                   str(self.base_r0)]),
-                                               model=self.model, ratio=ratio)
+            self.plotter.plot_icu_size(
+                time=t, params=self.params,
+                cm_list=cm_list, susc=self.susc, base_r0=self.base_r0,
+                legend_list=legend_list,
+                title_part="_icu_".join([str(self.susc), str(self.base_r0), str(ratio)]),
+                model=self.model, ratio=ratio)
+            # number of hospitalized
+            self.plotter.plot_solution_hospitalized_size(
+                time=t, params=self.params, cm_list=cm_list,
+                legend_list=legend_list,
+                title_part="_hospitalized_peak_".join([str(self.susc), str(self.base_r0)]),
+                model=self.model, ratio=ratio)
+            # final death size
+            self.plotter.plot_solution_final_death_size(
+                time=t, params=self.params, cm_list=cm_list,
+                legend_list=legend_list,
+                title_part="_final_deaths_".join([str(self.susc), str(self.base_r0)]),
+                model=self.model, ratio=ratio)
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.contact_matrix
@@ -97,10 +88,8 @@ class ContactManipulation:
     def _update_contact_matrix_spec(self, contact_matrix_spec, age_group, ratio):
         return self._apply_ratio_to_contact_matrix(contact_matrix_spec, age_group, ratio)
 
-    def _apply_ratio_to_contact_matrix(self, contact_matrix_spec, age_group, ratio):
+    @staticmethod
+    def _apply_ratio_to_contact_matrix(contact_matrix_spec, age_group, ratio):
         contact_matrix_spec[age_group, :] *= ratio
         contact_matrix_spec[:, age_group] *= ratio
         contact_matrix_spec[age_group, age_group] *= (1 / ratio if ratio > 0.0 else 0.0)
-
-
-

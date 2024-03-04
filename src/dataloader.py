@@ -61,13 +61,6 @@ class DataLoader:
                 self.model_parameters_data.update({param: np.array(param_value)})
             else:
                 self.model_parameters_data.update({param: param_value})
-            self.model_parameters_data = dict()
-            for param in parameters.keys():
-                param_value = parameters[param]["value"]
-                if isinstance(param_value, list):
-                    self.model_parameters_data.update({param: np.array(param_value)})
-                else:
-                    self.model_parameters_data.update({param: param_value})
 
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
@@ -85,13 +78,10 @@ class DataLoader:
     def transform_matrix(self, matrix: np.ndarray):
         # Get age vector as a column vector
         age_distribution = self.age_data.reshape((-1, 1))   # (16, 1)
-
         # Get matrix of total number of contacts
         matrix_1 = matrix * age_distribution        # (16, 16)
-
         # Get symmetrized matrix
         output = (matrix_1 + matrix_1.T) / 2
         # Get contact matrix
         output /= age_distribution   # divides and assign the result to output    (16, 16)
         return output
-

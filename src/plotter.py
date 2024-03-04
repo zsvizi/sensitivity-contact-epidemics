@@ -3,18 +3,12 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.lines import Line2D
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
 from matplotlib.colors import ListedColormap
 from matplotlib.cm import get_cmap
 from matplotlib.ticker import LogFormatter
 from matplotlib.ticker import LogLocator, LogFormatterSciNotation as LogFormatter
 import matplotlib.colors as colors
-import matplotlib.collections as collections
-from cycler import cycler
-from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.tri import Triangulation
 import numpy as np
 import pandas as pd
@@ -37,7 +31,8 @@ class Plotter:
         self.sim_obj = sim_obj
         self.contact_full = np.array([])
 
-    def plot_contact_matrices_models(self, filename, model, contact_data, n_ag):
+    @staticmethod
+    def plot_contact_matrices_models(filename, model, contact_data, n_ag):
         """
         Plot contact matrices for different models and save it in sub-directory
         :param filename: The filename prefix for the saved PDF files.
@@ -311,17 +306,9 @@ class Plotter:
                                            filename_to_save=filename_without_ext,
                                            plot_title=plot_title)
 
-    def tornado_plot(self, prcc_vector, std_values,
-                                      filename_to_save, plot_title,
-                     if_plot_error_bars = "Yes"):
-        """
-        Creates a tornado plot for sensitivity analysis.
-
-        Parameters:
-            labels (list): List of labels for each range.
-            base_values (list): List of sensitivity values corresponding to each range.
-            p_values (list): List of p-values corresponding to each range.
-        """
+    @staticmethod
+    def tornado_plot(prcc_vector, std_values, filename_to_save, plot_title,
+                     if_plot_error_bars="Yes"):
         os.makedirs("sens_data/PRCC_tornado", exist_ok=True)
         labels = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                   "55-59", "60-64", "65-69", "70-74", "75+"]
@@ -446,6 +433,8 @@ class Plotter:
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                      "55-59", "60-64", "65-69", "70+"]
+        else:
+            raise Exception("Invalid model!")
         for directory, column_order in directory_column_orders:
             # Concatenate the DataFrames horizontally and reorder columns
             stacked_df = pd.concat([max_values[col] for col in column_order], axis=1).T
@@ -489,18 +478,14 @@ class Plotter:
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
 
-
-    def plot_epidemic_size(self, time, params, cm_list, legend_list,
-                           title_part, ratio, model: str):
+    def plot_epidemic_size(self, time, cm_list, legend_list, ratio, model: str):
         """
         Calculates and saves the max values after running an epidemic size simulation by varying
         age group contacts, then plots the epidemic size for different combinations
         of susc, base_ratio, and ratios.
         :param time: time points.
-        :param params: (dict): The parameters.
         :param cm_list: (list): List of legends corresponding to each combination.
         :param legend_list:
-        :param title_part:  (str): A part of the title to distinguish the plots.
         :param ratio: The ratio value, [0.25, 0.5]
         :param model: The different models
         :return: plots and age group max epidemic size as csv files.
@@ -512,19 +497,6 @@ class Plotter:
         output_dir = f"./sens_data/Epidemic_size/Epidemic_values"
         os.makedirs(output_dir, exist_ok=True)
 
-        if model == "rost":
-            compartments = ["l1", "l2", "ip", "ia1", "ia2", "ia3",
-                            "is1", "is2", "is3", "ia1", "ia2", "ia3",
-                            "ih", "ic", "icr"]
-        elif model == "moghadas":
-            compartments = ["e", "i_n",
-                            "q_n", "i_h", "q_h", "a_n",
-                            "a_q", "h", "c"]
-        elif model == "chikina":
-            compartments = ["i", "cp", "c"]
-        elif model == "seir":
-            compartments = ["e", "i"]
-
         # Create a ScalarMappable for the color bar
         cmap = get_cmap('viridis_r')
 
@@ -534,38 +506,41 @@ class Plotter:
         fig, axs = plt.subplots(17, 1, figsize=(10, 30), sharex=True)
         # Initialize an empty list to store results
         results_list = []
-        susc = self.sim_state["susc"]
-        base_r0 = self.sim_state["base_r0"]
+        susc = self.sim_obj.sim_state["susc"]
+        base_r0 = self.sim_obj.sim_state["base_r0"]
+        df = pd.DataFrame()
         for cm, legend in zip(cm_list, legend_list):
             # Get solution for the current combination
-            solution = self.model.get_solution(
-                init_values=self.model.get_initial_values,
+            solution = self.sim_obj.model.get_solution(
+                init_values=self.sim_obj.model.get_initial_values,
                 t=time,
-                parameters=self.params,
+                parameters=self.sim_obj.params,
                 cm=cm
             )
             # Initialize an array to store the summed values for each compartment
             summed_values = np.zeros(len(solution))
             # Iterate over compartments and sum values
-            for comp in compartments:
+            for comp in self.sim_obj.model.compartments:
                 comp_values = np.sum(
-                    solution[:, self.model.c_idx[comp] *
-                                self.n_ag:(self.model.c_idx[comp] + 1) * self.n_ag],
+                    solution[:, self.sim_obj.model.c_idx[comp] *
+                                self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag],
                     axis=1
                 )
                 summed_values += comp_values
             if model in ["rost", "seir"]:
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["c"])
+                    idx=self.sim_obj.model.c_idx["c"])
             elif model == "moghadas":
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["i"])
+                    idx=self.sim_obj.model.c_idx["i"])
             elif model == "chikina":
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["inf"])
+                    idx=self.sim_obj.model.c_idx["inf"])
+            else:
+                raise Exception("Invalid model")
 
             # Save the results in a dictionary with metadata
             result_entry = {
@@ -583,7 +558,6 @@ class Plotter:
 
             # Plot the epidemic size for the current combination
             fig, ax = plt.subplots(figsize=(10, 6))
-            color = cmap(0.3)
 
             # Get the Blues colormap
             blues_cmap = get_cmap('Blues')
@@ -619,8 +593,11 @@ class Plotter:
             elif model == "seir":  # t = 200
                 x_start = 400
                 adj = 50
-                text_adj =10
-            rect = patches.Rectangle((x_start, y_min), adj, patch_height,
+                text_adj = 10
+            else:
+                raise Exception("Invalid model")
+
+            rect = patches.Rectangle(xy=(x_start, y_min), width=adj, height=patch_height,
                                      color=color,
                                      linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
                                      linestyle='solid')
@@ -659,7 +636,7 @@ class Plotter:
         # Extract only necessary columns
         summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_infected']].drop_duplicates()
         # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.contact_matrix.shape[0] + 1)
+        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
         # Pivot the DataFrame
         pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
                                   values='max_n_infected',
@@ -1319,4 +1296,3 @@ class TriangleHandler(Line2D):
         # Call the parent constructor
         super().__init__([], [], label=label, color=color, marker='^',
                          markersize=15, **line_props)
-
