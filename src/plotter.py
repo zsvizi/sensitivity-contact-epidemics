@@ -1,6 +1,5 @@
 import os
 import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
 from matplotlib.lines import Line2D
@@ -13,12 +12,12 @@ from matplotlib.tri import Triangulation
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
 from src.dataloader import DataLoader
 from src.simulation_base import SimulationBase
 from src.prcc import get_rectangular_matrix_from_upper_triu
 
 plt.style.use('seaborn-whitegrid')
+matplotlib.use('agg')
 
 
 class Plotter:
@@ -31,15 +30,13 @@ class Plotter:
         self.sim_obj = sim_obj
         self.contact_full = np.array([])
 
-    @staticmethod
-    def plot_contact_matrices_models(filename, model, contact_data, n_ag):
+    def plot_contact_matrices_models(self, filename, model, contact_data):
         """
         Plot contact matrices for different models and save it in sub-directory
         :param filename: The filename prefix for the saved PDF files.
         :param model: The model name representing the type of contact matrices.
         :param contact_data: A dictionary containing contact matrices for different
         categories. Keys represent contact categories and values represent the contact matrices.
-        :param n_ag: The number of age groups.
         :return: Heatmaps for different models
         """
         output_dir = f"sens_data/contact_matrices/{model}"  # Subdirectory for each model
@@ -71,10 +68,9 @@ class Plotter:
 
         for contact_type, cmap in cmaps[model].items():
             contacts = contact_data[contact_type] if contact_type != "Full" else contact_full
-            contact_matrix = pd.DataFrame(contacts, columns=range(n_ag), index=range(n_ag))
+            contact_matrix = pd.DataFrame(contacts, columns=range(self.sim_obj.n_ag),
+                                          index=range(self.sim_obj.n_ag))
 
-            # Turn off axis
-            ax = plt.gca()
             # Turn off axis
             ax = plt.gca()
             ax.spines['top'].set_visible(False)
@@ -101,9 +97,6 @@ class Plotter:
     def get_plot_hungary_heatmap(self):
         os.makedirs("sens_data/contact_matrices", exist_ok=True)
         plt.figure(figsize=(30, 20))
-        cols = {"Home": 'jet', "Work": 'jet', "School": 'jet', "Other": 'jet',
-                "Full": 'jet'}
-
         sns.set(font_scale=2.5)
         ax = sns.heatmap(self.contact_full, cmap="Greens", annot=True, square=True,
                          linecolor='white', linewidths=1, cbar=False)
@@ -136,11 +129,9 @@ class Plotter:
 
         plt.close()
 
-    def construct_triangle_grids_prcc_p_value(self, prcc_vector, p_values):
+    def construct_triangle_grids_prcc_p_value(self):
         """
         construct_triangle_grids_prcc_p_value(prcc_vector, p_values)
-        :param prcc_vector:  The PRCC vector.
-        :param p_values: The p-values vector.
         :return: A list containing triangulation objects for PRCC and p-values.
         """
         # vertices of the little squares
@@ -196,8 +187,7 @@ class Plotter:
         # norm = colors.Normalize(vmin=-1, vmax=1e0)  # used for p_values
 
         fig, ax = plt.subplots()
-        triang = self.construct_triangle_grids_prcc_p_value(prcc_vector=prcc_vector,
-                                                            p_values=p_values)
+        triang = self.construct_triangle_grids_prcc_p_value()
         mask = self.get_mask_and_values(prcc_vector=prcc_vector, p_values=p_values)
         images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
                   for t, val, cmap in zip(triang,
@@ -248,7 +238,7 @@ class Plotter:
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
         title_list = filename_without_ext.split("_")
-        plot_title = '$\overline{\mathcal{R}}_0=$' + title_list[1]
+        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
         self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector, p_values=p_values,
                                            filename_to_save="PRCC_P_VALUES" +
                                                             filename_without_ext + "_R0",
@@ -259,6 +249,7 @@ class Plotter:
                                       filename_to_save, plot_title):
         """
               Prepares for plotting aggregated PRCC and standard values as error bars.
+              :param param_list: list of the parameters
               :param prcc_vector: (numpy.ndarray): The aggregated PRCC vector.
               :param std_values: (numpy.ndarray): The std values from calculating
                aggregated PRCC vector.
@@ -300,7 +291,7 @@ class Plotter:
         :return: bar plots with error bars
         """
         title_list = filename_without_ext.split("_")
-        plot_title = '$\overline{\mathcal{R}}_0=$' + title_list[1]
+        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
         self.aggregated_prcc_pvalues_plots(param_list=self.sim_obj.n_ag,
                                            prcc_vector=prcc_vector, std_values=std_values,
                                            filename_to_save=filename_without_ext,
@@ -309,6 +300,15 @@ class Plotter:
     @staticmethod
     def tornado_plot(prcc_vector, std_values, filename_to_save, plot_title,
                      if_plot_error_bars="Yes"):
+        """
+         Creates a tornado plot for sensitivity analysis.
+        :param prcc_vector: List of sensitivity values corresponding to each age.
+        :param std_values: List of standard deviations corresponding to each prcc.
+        :param filename_to_save: name of the file
+        :param plot_title: title of the curve
+        :param if_plot_error_bars:
+        :return: condition whether to use error bars or not
+        """
         os.makedirs("sens_data/PRCC_tornado", exist_ok=True)
         labels = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                   "55-59", "60-64", "65-69", "70-74", "75+"]
@@ -330,7 +330,7 @@ class Plotter:
             ax.barh(y_pos - bar_width / 2, prcc_vector, height=bar_width, align='center',
                     color='green',
                     label='aggregated PRCC')
-            ax.barh(y_pos + bar_width / 2, p_values, height=bar_width, align='center',
+            ax.barh(y_pos + bar_width / 2, std_values, height=bar_width, align='center',
                     color='red', label='std_dev')
 
         ax.set_yticks(y_pos)
@@ -345,18 +345,16 @@ class Plotter:
                     format="pdf", bbox_inches='tight')
         plt.close()
 
-    def generate_tornado_plot(self, prcc_vector, std_values, filename_without_ext,
-                              if_plot_error_bars="Yes"):
+    def generate_tornado_plot(self, prcc_vector, std_values, filename_without_ext):
         """
         plots actual tornado plots
         :param prcc_vector:
         :param std_values:
         :param filename_without_ext:
-        :param if_plot_error_bars:
         :return:
         """
         title_list = filename_without_ext.split("_")
-        plot_title = '$\overline{\mathcal{R}}_0=$' + title_list[1]
+        plot_title = f'$\\overline{{\\mathcal{{R}}}}_0={title_list[1]}$' + title_list[1]
         self.tornado_plot(prcc_vector=prcc_vector, std_values=std_values,
                           filename_to_save=filename_without_ext,
                           plot_title=plot_title)
@@ -372,7 +370,7 @@ class Plotter:
         Then, it saves the heatmap under each directory as a pdf file.
         :param max_values: dataframe of max values for each age group
         :param model: rost, moghadas, chikina, seir
-        :param plot_title:
+        :param plot_title: title of the heatmap
         :return: Heatmaps
         """
 
@@ -418,7 +416,6 @@ class Plotter:
                 "hosp_values/1.0_2.5_ratio_0.25", "hosp_values/1.0_2.5_ratio_0.5"
             ])
         ]
-
         # Define index
         if model == "rost":
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
@@ -426,7 +423,7 @@ class Plotter:
                      "55-59", "60-64", "65-69", "70-74", "75+"]
 
         elif model == "moghadas":
-            index = ["All", "0-19", "20-49","50-65",  "65+"]
+            index = ["All", "0-19", "20-49", "50-65", "65+"]
         elif model == "chikina":
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
@@ -436,24 +433,25 @@ class Plotter:
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                      "55-59", "60-64", "65-69", "70+"]
         else:
-            raise Exception("Invalid model!")
+            raise Exception("Invalid model")
+
         for directory, column_order in directory_column_orders:
             # Concatenate the DataFrames horizontally and reorder columns
             stacked_df = pd.concat([max_values[col] for col in column_order], axis=1).T
 
             # Add labels to the y-axis
-            labels = ["$\sigma=0.5$, $\overline{\mathcal{R}}_0=1.2$, $\mathcal{R}=0.25$",
-                      "$\sigma=0.5$, $\overline{\mathcal{R}}_0=1.2$, $\mathcal{R}=0.5$",
-                      "$\sigma=0.5$, $\overline{\mathcal{R}}_0=1.8$, $\mathcal{R}=0.25$",
-                      "$\sigma=0.5$, $\overline{\mathcal{R}}_0=1.8$, $\mathcal{R}=0.5$",
-                      "$\sigma=0.5$, $\overline{\mathcal{R}}_0=2.5$, $\mathcal{R}=0.25$",
-                      "$\sigma=0.5$, $\overline{\mathcal{R}}_0=2.5$, $\mathcal{R}=0.5$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=1.2$, $\mathcal{R}=0.25$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=1.2$, $\mathcal{R}=0.5$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=1.8$, $\mathcal{R}=0.25$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=1.8$, $\mathcal{R}=0.5$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=2.5$, $\mathcal{R}=0.25$",
-                      "$\sigma=1.0$, $\overline{\mathcal{R}}_0=2.5$, $\mathcal{R}=0.5$"]
+            labels = [fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.5$",
+                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.5$",
+                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.5$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.5$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.25$",
+                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$"]
 
             plt.figure(figsize=(22, 8))
             heatmap = sns.heatmap(stacked_df, cmap='inferno', annot=True, fmt=".1f")
@@ -469,6 +467,7 @@ class Plotter:
             plt.yticks(ticks=np.arange(len(labels)) + 0.5, labels=labels,
                        rotation=0, horizontalalignment='right', fontsize=12,
                        fontweight='bold')
+
             plt.xticks(ticks=np.arange(len(index)) + 0.5, labels=index,
                        rotation=90, horizontalalignment='right', fontsize=12,
                        fontweight='bold')
@@ -498,23 +497,30 @@ class Plotter:
         # Define the output directory for death max values
         output_dir = f"./sens_data/Epidemic_size/Epidemic_values"
         os.makedirs(output_dir, exist_ok=True)
-
-        # Create a ScalarMappable for the color bar
-        cmap = get_cmap('viridis_r')
-
-        plt.style.use('seaborn-darkgrid')
-        colors = plt.cm.viridis(np.linspace(0, 1, len(cm_list)))
-        plt.gca().set_prop_cycle('color', colors)
-        fig, axs = plt.subplots(17, 1, figsize=(10, 30), sharex=True)
         # Initialize an empty list to store results
         results_list = []
+
+        if model == "rost":
+            compartments = ["l1", "l2", "ip", "ia1", "ia2", "ia3",
+                            "is1", "is2", "is3", "ih", "ic", "icr"]
+        elif model == "moghadas":
+            compartments = ["e", "i_n",
+                            "q_n", "i_h", "q_h", "a_n",
+                            "a_q", "h", "c"]
+        elif model == "chikina":
+            compartments = ["i", "cp", "c"]
+        elif model == "seir":
+            compartments = ["e", "i"]
+        else:
+            raise Exception("Invalid model")
+
         susc = self.sim_obj.sim_state["susc"]
         base_r0 = self.sim_obj.sim_state["base_r0"]
-        df = pd.DataFrame()
+        init_values = self.sim_obj.model.get_initial_values()
         for cm, legend in zip(cm_list, legend_list):
             # Get solution for the current combination
             solution = self.sim_obj.model.get_solution(
-                init_values=self.sim_obj.model.get_initial_values(),
+                init_values=init_values,
                 t=time,
                 parameters=self.sim_obj.params,
                 cm=cm
@@ -522,14 +528,16 @@ class Plotter:
             # Initialize an array to store the summed values for each compartment
             summed_values = np.zeros(len(solution))
             # Iterate over compartments and sum values
-            for comp in self.sim_obj.model.compartments:
+            for comp in compartments:
                 comp_values = np.sum(
                     solution[:, self.sim_obj.model.c_idx[comp] *
-                                self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag],
-                    axis=1
+                                self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) *
+                                                  self.sim_obj.n_ag], axis=1
                 )
                 summed_values += comp_values
-            if model in ["rost", "seir"]:
+
+            aggregate_models = ["rost", "seir"]
+            if model in aggregate_models:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
                     idx=self.sim_obj.model.c_idx["c"])
@@ -552,15 +560,12 @@ class Plotter:
                 'n_infecteds_max': total_infecteds,
                 'n_infecteds_curve': summed_values
             }
-
             # Append the result_entry to the results_list
             results_list.append(result_entry)
             # Convert the list of dictionaries to a DataFrame
             df = pd.DataFrame(results_list)
-
             # Plot the epidemic size for the current combination
             fig, ax = plt.subplots(figsize=(10, 6))
-
             # Get the Blues colormap
             blues_cmap = get_cmap('Blues')
             color = blues_cmap(0.3)
@@ -570,16 +575,12 @@ class Plotter:
                     label=f'susc={susc}, 'f'r0={base_r0}, ratio={1-ratio}', color=color2)
             ax.fill_between(time, 0, result_entry['n_infecteds_curve'],
                             color=color2, alpha=0.8)
-            legend_text = f'$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, ' \
-                          f'$\mathcal{{R}}={1 - ratio}$'
-            # Plot the legend
-            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
             # Get y-axis limits
             y_min, y_max = ax.get_ylim()
             # Calculate patch height based on the axis limits
             patch_height = y_max - y_min
-            # Create a rectangular box for the y-axis label on the right side
+
+            # Define x_start, adj, and text_adj based on the model
             if model == "rost":  # t = 1200
                 x_start = 1200
                 adj = 200
@@ -599,14 +600,14 @@ class Plotter:
             else:
                 raise Exception("Invalid model")
 
-            rect = patches.Rectangle(xy=(x_start, y_min), width=adj, height=patch_height,
+            # Create a rectangular box for the y-axis label on the right side
+            rect = patches.Rectangle((x_start, y_min), width=adj, height=patch_height,
                                      color=color,
                                      linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
                                      linestyle='solid')
             # Add vertical line at the start of the rectangle
             line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
                                 linewidth=1.2)
-
             ax.add_patch(rect)
             ax.add_line(line)
             ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Epidemic size population',
@@ -614,8 +615,13 @@ class Plotter:
                     horizontalalignment='center', fontsize=12, color='navy',
                     weight='bold'
                     )
-            # Save the figure in the specified directory
-            # Set the border width of the plot to match the linewidth of the rectangle
+            # Construct legend text
+            legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
+                          f'${{\\mathcal{{R}}={1 - ratio}}}$'
+            # Plot the legend
+            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
+                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+            # Set spine properties
             ax.spines['top'].set_linewidth(0.8)
             ax.spines['top'].set_color("grey")
             ax.spines['bottom'].set_linewidth(0.8)
@@ -625,44 +631,38 @@ class Plotter:
             ax.spines['right'].set_linewidth(1.2)
             ax.spines['right'].set_color("black")
             ax.set_xlabel("day", fontsize=18)
+            output_path = os.path.join(plot_dir,
+                                       f"epidemic_size_plot_{susc}_{base_r0}_{1 - ratio}.pdf")
+            plt.savefig(output_path, format="pdf",
+                        bbox_inches='tight', pad_inches=0.5)
+            plt.close()
 
-        output_path = os.path.join(plot_dir,
-                                   f"epidemic_size_plot_{susc}_{base_r0}_{1-ratio}.pdf")
-        plt.savefig(output_path, format="pdf",
-                    bbox_inches='tight', pad_inches=0.5)
-        plt.close()
-        # Find the maximum value in each row
-        max_infected_values = np.array([max(row) for row in df['n_infecteds_max']])
-        # Add a new column 'max_n_icu' to df containing the maximum values
-        df['max_n_infected'] = max_infected_values
-        # Extract only necessary columns
-        summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_infected']].drop_duplicates()
-        # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
-        # Pivot the DataFrame
-        pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
-                                  values='max_n_infected',
-                                  aggfunc='first')
-        # Reset the index
-        pivot_df = pivot_df.reset_index()
-        # Save the entire DataFrame to a CSV file
-        fname = "_".join([str(susc), str(base_r0), f"ratio_{1-ratio}"])
-        filename = "sens_data/Epidemic_size/Epidemic_values" + "/" + fname
+            # Find the maximum value in each row
+            max_infected_values = np.array([max(row) for row in df['n_infecteds_max']])
+            # Add a new column 'max_n_icu' to df containing the maximum values
+            df['max_n_infected'] = max_infected_values
+            # Add an 'age_group' column to your DataFrame based on the index
+            df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
+            # Pivot the DataFrame
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+                                      values='max_n_infected',
+                                      aggfunc='first')
+            # Reset the index
+            pivot_df = pivot_df.reset_index()
+            # Save the entire DataFrame to a CSV file
+            fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
+            filename = "sens_data/Epidemic_size/Epidemic_values" + "/" + fname
+            np.savetxt(fname=filename + ".csv", X=np.sum(pivot_df)[3:],
+                       delimiter=";")
 
-        np.savetxt(fname=filename + ".csv", X=np.sum(pivot_df)[3:],
-                   delimiter=";")
-
-    def plot_peak_size_epidemic(self, time, params, cm_list, legend_list,
-                                title_part, ratio, model: str):
+    def plot_peak_size_epidemic(self, time, cm_list, legend_list, ratio, model: str):
         """
         Calculates and saves the max values after running an epidemic peak simulation by varying
         age group contacts, then plots the epidemic peak size for different combinations
         of susc, base_ratio, and ratios.
         :param time: time points.
-        :param params: (dict): The parameters.
         :param cm_list: (list): List of legends corresponding to each combination.
         :param legend_list:
-        :param title_part:  (str): A part of the title to distinguish the plots.
         :param ratio: The ratio value, [0.25, 0.5]
         :param model: The different models
         :return: plots and age group max epidemic peak size as csv files.
@@ -673,13 +673,15 @@ class Plotter:
         # Define the output directory for death max values
         output_dir = f"./sens_data/Epidemic_peak/Peak_values"
         os.makedirs(output_dir, exist_ok=True)
-
-        cmap = get_cmap('viridis_r')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        # Get the Blues colormap
+        blues_cmap = get_cmap('Blues')
+        color = blues_cmap(0.3)
+        color2 = blues_cmap(0.5)
 
         if model == "rost":
             compartments = ["l1", "l2", "ip", "ia1", "ia2", "ia3",
-                            "is1", "is2", "is3", "ia1", "ia2", "ia3",
-                            "ih", "ic", "icr"]
+                            "is1", "is2", "is3", "ih", "ic", "icr"]
         elif model == "moghadas":
             compartments = ["e", "i_n",
                             "q_n", "i_h", "q_h", "a_n",
@@ -688,54 +690,61 @@ class Plotter:
             compartments = ["i", "cp", "c"]
         elif model == "seir":
             compartments = ["e", "i"]
+        else:
+            raise Exception("Invalid model")
 
         # Initialize an empty list to store results
         results_list = []
-        susc = self.sim_state["susc"]
-        base_r0 = self.sim_state["base_r0"]
+
+        susc = self.sim_obj.sim_state["susc"]
+        base_r0 = self.sim_obj.sim_state["base_r0"]
         max_peak_size_per_compartment = []
+        # Initialize combined_curve outside the loop
+        combined_curve = np.zeros_like(time)
+        init_values = self.sim_obj.model.get_initial_values()
         for cm, legend in zip(cm_list, legend_list):
             # Get solution for the current combination
-            solution = self.model.get_solution(
-                init_values=self.model.get_initial_values,
+            solution = self.sim_obj.model.get_solution(
+                init_values=init_values,
                 t=time,
-                parameters=self.params,
+                parameters=self.sim_obj.params,
                 cm=cm
             )
             # Iterate over compartments and sum values
             for compartment in compartments:
                 max_peak_size = 0
                 for t_idx in range(len(solution)):
-                    compartment_values = self.model.aggregate_by_age(
+                    compartment_values = self.sim_obj.model.aggregate_by_age(
                         solution=solution,
-                        idx=self.model.c_idx[compartment])
+                        idx=self.sim_obj.model.c_idx[compartment])
                     peak_size_at_t = compartment_values.sum()
                     max_peak_size = max(max_peak_size, peak_size_at_t)
                 max_peak_size_per_compartment.append(max_peak_size)
 
                 # Calculate the combined epidemic curve
-                combined_curve = np.sum(
-                    [solution[:,
-                     self.model.c_idx[comp] * self.n_ag:(self.model.c_idx[comp] + 1) *
-                                                        self.n_ag].sum(
-                        axis=1)
-                        for comp in compartments], axis=0)
+                combined_curve += np.sum([solution[:,
+                     self.sim_obj.model.c_idx[comp] *
+                     self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag].sum(
+                        axis=1) for comp in self.sim_obj.model.compartments], axis=0)
             if model in ["rost", "seir"]:
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["c"])
+                    idx=self.sim_obj.model.c_idx["c"])
             elif model == "moghadas":
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["i"])
+                    idx=self.sim_obj.model.c_idx["i"])
             elif model == "chikina":
-                total_infecteds = self.model.aggregate_by_age(
+                total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
-                    idx=self.model.c_idx["inf"])
+                    idx=self.sim_obj.model.c_idx["inf"])
+            else:
+                raise Exception("Invalid model")
+
             # Save the results in a dictionary with metadata
             result_entry = {
-                'susc': self.sim_state['susc'],
-                'base_r0': self.sim_state['base_r0'],
+                'susc': susc,
+                'base_r0': base_r0,
                 'ratio': ratio,
                 'n_infected_max': total_infecteds,
                 'n_infecteds_peak': combined_curve
@@ -746,34 +755,22 @@ class Plotter:
             df = pd.DataFrame(results_list)
 
             # Plot the epidemic size for the current combination
-            # Get the Blues colormap
-            blues_cmap = get_cmap('Blues')
-            color = blues_cmap(0.3)
-            color2 = blues_cmap(0.5)
-
-            fig, ax = plt.subplots(figsize=(10, 6))
-            # color = cmap(0.3)
             ax.plot(time, result_entry['n_infecteds_peak'],
                     label=f'susc={susc}, 'f'r0={base_r0}, ratio={1-ratio}', color=color2)
             ax.fill_between(time, 0, result_entry['n_infecteds_peak'],
                             color=color2, alpha=0.8)
-            ax.legend([TriangleHandler()], [f'susc={susc}, r0={base_r0}, ratio={1-ratio}'],
-                      fontsize=25, labelcolor="navy")
-            # Find the peak value and its corresponding day
+        # Find the peak value and its corresponding day
         peak_day = np.argmax(combined_curve)
         peak_value = combined_curve[peak_day]
-        legend_text = (f"$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, "
-                       f"$\mathcal{{R}}={1 - ratio}$,\nPeak Size: {peak_value:.2f}")
-        # Plot the legend
-        ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                  labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+        legend_text = (fr"$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, "
+                        fr"$\mathcal{{R}}={1 - ratio}$,\nPeak Size: {peak_value:.2f}")
+
         # Get y-axis limits
         y_min, y_max = ax.get_ylim()
-
         # Calculate patch height based on the axis limits
         patch_height = y_max - y_min
 
-        # Create a rectangular box for the y-axis label on the right side
+        # Define x_start, adj, and text_adj based on the model
         if model == "rost":  # t = 1200
             x_start = 1200
             adj = 200
@@ -784,29 +781,34 @@ class Plotter:
             text_adj = 10
         elif model == "chikina":  # t = 2500
             x_start = 2500
-            adj = 100
+            adj = 150
             text_adj = 60
-        elif model == "seir":
+        elif model == "seir":  # t = 200
             x_start = 400
             adj = 50
             text_adj = 10
-        rect = patches.Rectangle((x_start, y_min), adj, patch_height,
+        else:
+            raise Exception("Invalid model")
+
+        # Create a rectangular box for the y-axis label on the right side
+        rect = patches.Rectangle((x_start, y_min), width=adj, height=patch_height,
                                  color=color,
                                  linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
                                  linestyle='solid')
         # Add vertical line at the start of the rectangle
         line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
                             linewidth=1.2)
-
         ax.add_patch(rect)
         ax.add_line(line)
-        ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Epidemic peak size population',
+        ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Peak size population',
                 rotation=90, verticalalignment='center',
                 horizontalalignment='center', fontsize=12, color='navy',
                 weight='bold'
                 )
-        # Save the figure in the specified directory
-        # Set the border width of the plot to match the linewidth of the rectangle
+        # Plot the legend
+        ax.legend([TriangleHandler()], [legend_text], fontsize=10,
+                  labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+        # Set spine properties
         ax.spines['top'].set_linewidth(0.8)
         ax.spines['top'].set_color("grey")
         ax.spines['bottom'].set_linewidth(0.8)
@@ -815,23 +817,20 @@ class Plotter:
         ax.spines['left'].set_color("grey")
         ax.spines['right'].set_linewidth(1.2)
         ax.spines['right'].set_color("black")
-
         ax.set_xlabel("day", fontsize=18)
-
         output_path = os.path.join(plot_dir,
-                                   f"peak_size_plot_{susc}_{base_r0}_{ratio}.pdf")
+                                   f"death_size_plot_{susc}_{base_r0}_{ratio}.pdf")
         plt.savefig(output_path, format="pdf",
                     bbox_inches='tight', pad_inches=0.5)
+        plt.savefig(output_path, format="pdf")
         plt.close()
 
         # Find the maximum value in each row
         max_infected_values = np.array([max(row) for row in df['n_infected_max']])
         # Add a new column 'max_n_icu' to df containing the maximum values
         df['max_n_infected'] = max_infected_values
-        # Extract only necessary columns
-        summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_infected']].drop_duplicates()
         # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.contact_matrix.shape[0] + 1)
+        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
         # Pivot the DataFrame
         pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
                                   values='max_n_infected',
@@ -841,47 +840,41 @@ class Plotter:
         # Save the entire DataFrame to a CSV file
         fname = "_".join([str(susc), str(base_r0), f"ratio_{1-ratio}"])
         filename = "sens_data/Epidemic_peak/Peak_values" + "/" + fname
-
         np.savetxt(fname=filename + ".csv", X=np.sum(pivot_df)[3:],
                    delimiter=";")
 
-    def plot_solution_final_death_size(self, time, params, cm_list, legend_list,
-                                       title_part, ratio, model):
+    def plot_solution_final_death_size(self, time, cm_list, legend_list, ratio, model):
         """
         Calculates and saves the max values after simulating the final deaths
         by varying age group contacts, then plots the final death size for different combinations
         of susc, base_ratio, and ratios.
         :param time: time points.
-        :param params: (dict): The parameters.
         :param cm_list: (list): List of legends corresponding to each combination.
         :param legend_list:
-        :param title_part:  (str): A part of the title to distinguish the plots.
         :param ratio: The ratio value, [0.25, 0.5]
         :param model: The different models
         :return: plots and age group max final death size as csv files.
         """
-
         # Define the output directory for plot
         plot_dir = f"./sens_data/death_size/plot"
         os.makedirs(plot_dir, exist_ok=True)
         # Define the output directory for death max values
         output_dir = f"./sens_data/death_size/death_values"
         os.makedirs(output_dir, exist_ok=True)
-
-        cmap = get_cmap('viridis_r')
-
         results_list = []
-        susc = self.sim_state["susc"]
-        base_r0 = self.sim_state["base_r0"]
+
+        susc = self.sim_obj.sim_state["susc"]
+        base_r0 = self.sim_obj.sim_state["base_r0"]
+        init_values = self.sim_obj.model.get_initial_values()
         for cm, legend in zip(cm_list, legend_list):
-            solution = self.model.get_solution(
-                init_values=self.model.get_initial_values,
+            solution = self.sim_obj.model.get_solution(
+                init_values=init_values,
                 t=time,
-                parameters=self.params,
+                parameters=self.sim_obj.params,
                 cm=cm)
-            deaths = self.model.aggregate_by_age(
+            deaths = self.sim_obj.model.aggregate_by_age(
                 solution=solution,
-                idx=self.model.c_idx["d"])
+                idx=self.sim_obj.model.c_idx["d"])
 
             # Save the results in a dictionary with metadata
             result_entry = {
@@ -894,10 +887,8 @@ class Plotter:
 
             # Append the result_entry to the results_list
             results_list.append(result_entry)
-
             # Convert the list of dictionaries to a DataFrame
             df = pd.DataFrame(results_list)
-
             # Plot the epidemic size for the current combination
             fig, ax = plt.subplots(figsize=(10, 6))
             blues_cmap = get_cmap('Blues')
@@ -907,173 +898,12 @@ class Plotter:
                     label=f'susc={susc}, 'f'r0={base_r0}, ratio={1 - ratio}', color=color2)
             ax.fill_between(time, result_entry['n_deaths_curve'],
                             color=color2, alpha=0.8)
-
-            # Plot the legend
-            legend_text = f'$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, ' \
-                          f'$\mathcal{{R}}={1 - ratio}$'
-            # Plot the legend
-            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                      labelcolor="navy", loc='upper left', bbox_to_anchor=(0.1, 1.0))
             # Get y-axis limits
             y_min, y_max = ax.get_ylim()
-
             # Calculate patch height based on the axis limits
             patch_height = y_max - y_min
 
-            # Create a rectangular box for the y-axis label on the right side
-            if model == "rost":  # t = 1200
-                x_start = 1200
-                adj = 200
-                text_adj = 35
-            elif model == "moghadas":  # t = 400
-                x_start = 400
-                adj = 50
-                text_adj = 10
-            rect = patches.Rectangle((x_start, y_min), adj, patch_height,
-                                     color=color,
-                                     linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
-                                     linestyle='solid')
-            # Add vertical line at the start of the rectangle
-            line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
-                                linewidth=1.2)
-
-            ax.add_patch(rect)
-            ax.add_line(line)
-            ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Death size population',
-                    rotation=90, verticalalignment='center',
-                    horizontalalignment='center', fontsize=12, color='navy',
-                    weight='bold'
-                    )
-            # Save the figure in the specified directory
-            # Set the border width of the plot to match the linewidth of the rectangle
-            ax.spines['top'].set_linewidth(0.8)
-            ax.spines['top'].set_color("grey")
-            ax.spines['bottom'].set_linewidth(0.8)
-            ax.spines['bottom'].set_color("grey")
-            ax.spines['left'].set_linewidth(0.8)
-            ax.spines['left'].set_color("grey")
-            ax.spines['right'].set_linewidth(1.2)
-            ax.spines['right'].set_color("black")
-            ax.set_xlabel("day", fontsize=18)
-
-        output_path = os.path.join(plot_dir,
-                                   f"death_size_plot_{susc}_{base_r0}_{ratio}.pdf")
-        plt.savefig(output_path, format="pdf",
-                    bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(output_path, format="pdf")
-        plt.close()
-
-        # Find the maximum value in each row
-        max_death_values = np.array([max(row) for row in df['n_deaths_max']])
-        # Add a new column 'max_n_icu' to df containing the maximum values
-        df['max_n_deaths'] = max_death_values
-        # Extract only necessary columns
-        summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_deaths']].drop_duplicates()
-        # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.contact_matrix.shape[0] + 1)
-        # Pivot the DataFrame
-        pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
-                                  values='max_n_deaths',
-                                  aggfunc='first')
-
-        pivot_df = pivot_df.reset_index()
-        # Save the entire DataFrame to a CSV file
-        fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
-        filename = os.path.join("sens_data/death_size/death_values", fname + ".csv")
-        np.savetxt(fname=filename, X=np.sum(pivot_df)[3:], delimiter=";")
-
-    def plot_solution_hospitalized_size(self, time, params, cm_list,
-                                             legend_list, title_part, ratio, model):
-        """
-        Calculates and saves the max values after simulating the hospitalized individuals
-        by varying age group contacts, then plots the hospitalized size for different combinations
-        of susc, base_ratio, and ratios.
-        :param time: time points.
-        :param params: (dict): The parameters.
-        :param cm_list: (list): List of legends corresponding to each combination.
-        :param legend_list:
-        :param title_part:  (str): A part of the title to distinguish the plots.
-        :param ratio: The ratio value, [0.25, 0.5]
-        :param model: The different models
-        :return: plots and age group max hospitalized size as csv files.
-        """
-        # Define the output directory for plot
-        plot_dir = f"./sens_data/hospital/plot"
-        os.makedirs(plot_dir, exist_ok=True)
-        # Define the output directory for death max values
-        output_dir = f"./sens_data/hospital/hosp_values"
-        os.makedirs(output_dir, exist_ok=True)
-
-        cmap = get_cmap('viridis_r')
-
-        results_list = []
-        susc = self.sim_state["susc"]
-        base_r0 = self.sim_state["base_r0"]
-        for cm, legend in zip(cm_list, legend_list):
-            solution = self.model.get_solution(
-                init_values=self.model.get_initial_values,
-                t=time,
-                parameters=self.params,
-                cm=cm)
-
-            if model == "chikina":
-                total_hospitals_curve = self.model.aggregate_by_age(solution=solution,
-                                                               idx=self.model.c_idx["cp"]) + \
-                                  self.model.aggregate_by_age(solution=solution,
-                                                              idx=self.model.c_idx["c"])
-            elif model == "moghadas":
-                total_hospitals_curve = self.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.model.c_idx["i_h"]) + self.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.model.c_idx["q_h"]) + self.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.model.c_idx["h"])
-            elif model == "rost":
-                total_hospitals_curve = self.model.aggregate_by_age(
-                    solution=solution, idx=self.model.c_idx["ih"]) + \
-                                  self.model.aggregate_by_age(solution=solution,
-                                                              idx=self.model.c_idx["ic"])
-            # hospital collector
-
-            total_hospitals = self.model.aggregate_by_age(solution=solution,
-                                                              idx=self.model.c_idx["hosp"])
-            # Save the results in a dictionary with metadata
-            result_entry = {
-                'susc': susc,
-                'base_r0': base_r0,
-                'ratio': ratio,
-                'n_hospitals_curve': total_hospitals_curve,
-                'n_hospitals_max': total_hospitals,
-            }
-            # Append the result_entry to the results_list
-            results_list.append(result_entry)
-            # Convert the list of dictionaries to a DataFrame
-            df = pd.DataFrame(results_list)
-
-            # Plot the epidemic size for the current combination
-            fig, ax = plt.subplots(figsize=(10, 6))
-            blues_cmap = get_cmap('Blues')
-            color = blues_cmap(0.3)
-            color2 = blues_cmap(0.5)
-
-            ax.plot(time, result_entry['n_hospitals_curve'], color=color2)
-            ax.fill_between(time, result_entry['n_hospitals_curve'],
-                            color=color2, alpha=0.8)
-
-            # Plot the legend
-            legend_text = f'$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, ' \
-                          f'$\mathcal{{R}}={1 - ratio}$'
-            # Plot the legend
-            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
-            # Get y-axis limits
-            y_min, y_max = ax.get_ylim()
-
-            # Calculate patch height based on the axis limits
-            patch_height = y_max - y_min
-
-            # Create a rectangular box for the y-axis label on the right side
+            # Define x_start, adj, and text_adj based on the model
             if model == "rost":  # t = 1200
                 x_start = 1200
                 adj = 200
@@ -1086,25 +916,35 @@ class Plotter:
                 x_start = 2500
                 adj = 150
                 text_adj = 60
+            elif model == "seir":  # t = 200
+                x_start = 400
+                adj = 50
+                text_adj = 10
+            else:
+                raise Exception("Invalid model")
 
-            rect = patches.Rectangle((x_start, y_min), adj, patch_height,
+            # Create a rectangular box for the y-axis label on the right side
+            rect = patches.Rectangle((x_start, y_min), width=adj, height=patch_height,
                                      color=color,
                                      linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
                                      linestyle='solid')
             # Add vertical line at the start of the rectangle
             line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
                                 linewidth=1.2)
-
             ax.add_patch(rect)
             ax.add_line(line)
-            ax.text(x_start + text_adj, y_min + 0.5 * patch_height,
-                    'Hospitalized size population',
+            ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Death size population',
                     rotation=90, verticalalignment='center',
                     horizontalalignment='center', fontsize=12, color='navy',
                     weight='bold'
                     )
-            # Save the figure in the specified directory
-            # Set the border width of the plot to match the linewidth of the rectangle
+            # Construct legend text
+            legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
+                          f'${{\\mathcal{{R}}={1 - ratio}}}$'
+            # Plot the legend
+            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
+                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+            # Set spine properties
             ax.spines['top'].set_linewidth(0.8)
             ax.spines['top'].set_color("grey")
             ax.spines['bottom'].set_linewidth(0.8)
@@ -1114,22 +954,164 @@ class Plotter:
             ax.spines['right'].set_linewidth(1.2)
             ax.spines['right'].set_color("black")
             ax.set_xlabel("day", fontsize=18)
+            output_path = os.path.join(plot_dir,
+                                       f"death_size_plot_{susc}_{base_r0}_{ratio}.pdf")
+            plt.savefig(output_path, format="pdf",
+                        bbox_inches='tight', pad_inches=0.5)
+            plt.savefig(output_path, format="pdf")
+            plt.close()
+
+            # Find the maximum value in each row
+            max_death_values = np.array([max(row) for row in df['n_deaths_max']])
+            # Add a new column 'max_n_icu' to df containing the maximum values
+            df['max_n_deaths'] = max_death_values
+            # Add an 'age_group' column to your DataFrame based on the index
+            df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
+            # Pivot the DataFrame
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+                                      values='max_n_deaths',
+                                      aggfunc='first')
+
+            pivot_df = pivot_df.reset_index()
+            # Save the entire DataFrame to a CSV file
+            fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
+            filename = os.path.join("sens_data/death_size/death_values", fname + ".csv")
+            np.savetxt(fname=filename, X=np.sum(pivot_df)[3:], delimiter=";")
+
+    def plot_solution_hospitalized_size(self, time, cm_list, legend_list, ratio, model):
+        # Define the output directory for plot
+        plot_dir = f"./sens_data/hospital/plot"
+        os.makedirs(plot_dir, exist_ok=True)
+        # Define the output directory for death max values
+        output_dir = f"./sens_data/hospital/hosp_values"
+        os.makedirs(output_dir, exist_ok=True)
+
+        results_list = []
+        susc = self.sim_obj.sim_state["susc"]
+        base_r0 = self.sim_obj.sim_state["base_r0"]
+
+        init_values = self.sim_obj.model.get_initial_values()
+        for cm, legend in zip(cm_list, legend_list):
+            solution = self.sim_obj.model.get_solution(
+                init_values=init_values,
+                t=time,
+                parameters=self.sim_obj.params,
+                cm=cm)
+
+            if model == "chikina":
+                total_hospitals_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                                            idx=self.sim_obj.model.c_idx["cp"]) + \
+                                        self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                                            idx=self.sim_obj.model.c_idx["c"])
+            elif model == "moghadas":
+                total_hospitals_curve = self.sim_obj.model.aggregate_by_age(
+                    solution=solution,
+                    idx=self.sim_obj.model.c_idx["i_h"]) + self.sim_obj.model.aggregate_by_age(
+                    solution=solution,
+                    idx=self.sim_obj.model.c_idx["q_h"]) + self.sim_obj.model.aggregate_by_age(
+                    solution=solution,
+                    idx=self.sim_obj.model.c_idx["h"])
+            elif model == "rost":
+                total_hospitals_curve = self.sim_obj.model.aggregate_by_age(
+                    solution=solution, idx=self.sim_obj.model.c_idx["ih"]) + \
+                                        self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                                            idx=self.sim_obj.model.c_idx["ic"])
+            else:
+                raise Exception("Invalid model")
+
+            # hospital collector
+            total_hospitals = self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                                  idx=self.sim_obj.model.c_idx["hosp"])
+
+            # Save the results in a dictionary with metadata
+            result_entry = {
+                'susc': susc,
+                'base_r0': base_r0,
+                'ratio': ratio,
+                'n_hospitals_curve': total_hospitals_curve,
+                'n_hospitals_max': total_hospitals,
+            }
+            # Append the result_entry to the results_list
+            results_list.append(result_entry)
+
+        # Convert the list of dictionaries to a DataFrame
+        df = pd.DataFrame(results_list)
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        blues_cmap = get_cmap('Blues')
+        color = blues_cmap(0.3)
+        color2 = blues_cmap(0.5)
+        ax.plot(time, df['n_hospitals_curve'].iloc[0], color=color2)
+        ax.fill_between(time, df['n_hospitals_curve'].iloc[0],
+                        color=color2, alpha=0.8)
+        # Get y-axis limits
+        y_min, y_max = ax.get_ylim()
+        # Calculate patch height based on the axis limits
+        patch_height = y_max - y_min
+
+        # Define x_start, adj, and text_adj based on the model
+        if model == "rost":  # t = 1200
+            x_start = 1200
+            adj = 200
+            text_adj = 35
+        elif model == "moghadas":  # t = 400
+            x_start = 400
+            adj = 50
+            text_adj = 10
+        elif model == "chikina":  # t = 2500
+            x_start = 2500
+            adj = 150
+            text_adj = 60
+        elif model == "seir":  # t = 200
+            x_start = 400
+            adj = 50
+            text_adj = 10
+        else:
+            raise Exception("Invalid model")
+
+        # Create a rectangular box for the y-axis label on the right side
+        rect = patches.Rectangle((x_start, y_min), width=adj, height=patch_height,
+                                 color=color,
+                                 linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
+                                 linestyle='solid')
+        # Add vertical line at the start of the rectangle
+        line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
+                            linewidth=1.2)
+        ax.add_patch(rect)
+        ax.add_line(line)
+        ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'Epidemic size population',
+                rotation=90, verticalalignment='center',
+                horizontalalignment='center', fontsize=12, color='navy',
+                weight='bold'
+                )
+        # Construct legend text
+        legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
+                      f'${{\\mathcal{{R}}={1 - ratio}}}$'
+        # Plot the legend
+        ax.legend([TriangleHandler()], [legend_text], fontsize=10,
+                  labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+        # Set spine properties
+        ax.spines['top'].set_linewidth(0.8)
+        ax.spines['top'].set_color("grey")
+        ax.spines['bottom'].set_linewidth(0.8)
+        ax.spines['bottom'].set_color("grey")
+        ax.spines['left'].set_linewidth(0.8)
+        ax.spines['left'].set_color("grey")
+        ax.spines['right'].set_linewidth(1.2)
+        ax.spines['right'].set_color("black")
+        ax.set_xlabel("day", fontsize=18)
 
         output_path = os.path.join(plot_dir,
                                    f"hosp_size_plot_{susc}_{base_r0}_{1 - ratio}.pdf")
-        plt.savefig(output_path, format="pdf",
-                    bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(output_path, format="pdf")
+        plt.savefig(output_path, format="pdf", bbox_inches='tight', pad_inches=0.5)
         plt.close()
 
         # Find the maximum value in each row
         max_hosp_values = np.array([max(row) for row in df['n_hospitals_max']])
         # Add a new column 'max_n_icu' to df containing the maximum values
         df['max_n_hosp'] = max_hosp_values
-        # Extract only necessary columns
-        summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_hosp']].drop_duplicates()
         # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.contact_matrix.shape[0] + 1)
+        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
         # Pivot the DataFrame
         pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
                                   values='max_n_hosp',
@@ -1138,20 +1120,17 @@ class Plotter:
         pivot_df = pivot_df.reset_index()
         # Save the entire DataFrame to a CSV file
         fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
-        filename = os.path.join("sens_data/hospital/hosp_values", fname + ".csv")
+        filename = os.path.join(output_dir, fname + ".csv")
         np.savetxt(fname=filename, X=np.sum(pivot_df)[3:], delimiter=";")
 
-    def plot_icu_size(self, time, params, susc, base_r0, cm_list,
-                      legend_list, title_part, ratio, model):
+    def plot_icu_size(self, time, cm_list, legend_list, ratio, model: str):
         """
         Calculates and saves the max values after simulating the icu individuals
         by varying age group contacts, then plots the icu size for different combinations
         of susc, base_ratio, and ratios.
         :param time: time points.
-        :param params: (dict): The parameters.
         :param cm_list: (list): List of legends corresponding to each combination.
         :param legend_list:
-        :param title_part:  (str): A part of the title to distinguish the plots.
         :param ratio: The ratio value, [0.25, 0.5]
         :param model: The different models
         :return: plots and age group max icu size as csv files.
@@ -1162,31 +1141,30 @@ class Plotter:
         # Define the output directory for death max values
         output_dir = f"./sens_data/icu/icu_values"
         os.makedirs(output_dir, exist_ok=True)
-
-        cmap = get_cmap('viridis_r')
-        # print(self.params)
-        # susc = self.params["susc"]
-        # base_r0 = self.params["base_r0"]
+        susc = self.sim_obj.sim_state["susc"]
+        base_r0 = self.sim_obj.sim_state["base_r0"]
         results_list = []
-        # Initialize icu_values_curve
+        initial_values = self.sim_obj.model.get_initial_values()
         for cm, legend in zip(cm_list, legend_list):
-            solution = self.model.get_solution(
-                init_values=self.model.get_initial_values,
+            solution = self.sim_obj.model.get_solution(
+                init_values=initial_values,
                 t=time,
-                parameters=self.params,
+                parameters=self.sim_obj.params,
                 cm=cm)
             if model == "chikina":
-                icu_values_curve = self.model.aggregate_by_age(solution=solution,
-                                                               idx=self.model.c_idx["c"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                               idx=self.sim_obj.model.c_idx["c"])
             elif model == "rost":
-                icu_values_curve = self.model.aggregate_by_age(solution=solution,
-                                                         idx=self.model.c_idx["ic"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                         idx=self.sim_obj.model.c_idx["ic"])
             elif model == "moghadas":
-                icu_values_curve = self.model.aggregate_by_age(solution=solution,
-                                                               idx=self.model.c_idx["c"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
+                                                               idx=self.sim_obj.model.c_idx["c"])
+            else:
+                raise Exception("Invalid model")
             # icu collector
-            icu_values = self.model.aggregate_by_age(
-                    solution=solution, idx=self.model.c_idx["icu"])
+            icu_values = self.sim_obj.model.aggregate_by_age(
+                    solution=solution, idx=self.sim_obj.model.c_idx["icu"])
             # Save the results in a dictionary with metadata
             result_entry = {
                     'susc': susc,
@@ -1198,7 +1176,6 @@ class Plotter:
             results_list.append(result_entry)
             # Convert the list of dictionaries to a DataFrame
             df = pd.DataFrame(results_list)
-
             # Plot the epidemic size for the current combination
             fig, ax = plt.subplots(figsize=(8, 6))
             blues_cmap = get_cmap('Blues')
@@ -1207,19 +1184,12 @@ class Plotter:
             ax.plot(time, result_entry['n_icu_values'], color=color2)
             ax.fill_between(time, result_entry['n_icu_values'],
                             color=color2, alpha=0.8)
-
-            # Plot the legend
-            legend_text = f'$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, ' \
-                          f'$\mathcal{{R}}={1 - ratio}$'
-            # Plot the legend
-            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
             # Get y-axis limits
             y_min, y_max = ax.get_ylim()
-
             # Calculate patch height based on the axis limits
             patch_height = y_max - y_min
-            # Create a rectangular box for the y-axis label on the right side
+
+            # Define x_start, adj, and text_adj based on the model
             if model == "rost":  # t = 1200
                 x_start = 1200
                 adj = 200
@@ -1232,24 +1202,35 @@ class Plotter:
                 x_start = 2500
                 adj = 150
                 text_adj = 60
-            rect = patches.Rectangle((x_start, y_min), adj, patch_height,
+            elif model == "seir":  # t = 200
+                x_start = 400
+                adj = 50
+                text_adj = 10
+            else:
+                raise Exception("Invalid model")
+
+            # Create a rectangular box for the y-axis label on the right side
+            rect = patches.Rectangle((x_start, y_min), width=adj, height=patch_height,
                                      color=color,
                                      linewidth=1, alpha=0.8, edgecolor=color,  # Set the edge color for the border
                                      linestyle='solid')
             # Add vertical line at the start of the rectangle
             line = lines.Line2D([x_start, x_start], [y_min, y_max], color='black',
                                 linewidth=1.2)
-
             ax.add_patch(rect)
             ax.add_line(line)
-            ax.text(x_start + text_adj, y_min + 0.5 * patch_height,
-                    'ICU size population',
+            ax.text(x_start + text_adj, y_min + 0.5 * patch_height, 'ICU size population',
                     rotation=90, verticalalignment='center',
                     horizontalalignment='center', fontsize=12, color='navy',
                     weight='bold'
                     )
-            # Save the figure in the specified directory
-            # Set the border width of the plot to match the linewidth of the rectangle
+            # Construct legend text
+            legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
+                          f'${{\\mathcal{{R}}={1 - ratio}}}$'
+            # Plot the legend
+            ax.legend([TriangleHandler()], [legend_text], fontsize=10,
+                      labelcolor="navy", loc='upper center', bbox_to_anchor=(0.7, 1.0))
+            # Set spine properties
             ax.spines['top'].set_linewidth(0.8)
             ax.spines['top'].set_color("grey")
             ax.spines['bottom'].set_linewidth(0.8)
@@ -1259,35 +1240,34 @@ class Plotter:
             ax.spines['right'].set_linewidth(1.2)
             ax.spines['right'].set_color("black")
             ax.set_xlabel("day", fontsize=18)
-        output_path = os.path.join(plot_dir,
+
+            output_path = os.path.join(plot_dir,
                                        f"ICU_size_plot_{susc}_{base_r0}_{1 - ratio}.pdf")
-        plt.savefig(output_path, format="pdf",
+            plt.savefig(output_path, format="pdf",
                         bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(output_path, format="pdf")
-        plt.close()
-        plt.show()
-        # Find the maximum value in each row
-        max_icu_values = np.array([max(row) for row in df['n_icu_max']])
-        # Add a new column 'max_n_icu' to df containing the maximum values
-        df['max_n_icu'] = max_icu_values
-        # Extract only necessary columns
-        summed_df = df[['susc', 'base_r0', 'ratio', 'max_n_icu']].drop_duplicates()
-        # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.contact_matrix.shape[0] + 1)
-        # Pivot the DataFrame
-        pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
-                                  values='max_n_icu',
-                                  aggfunc='first')
-        # Reset the index
-        pivot_df = pivot_df.reset_index()
-        # Save the entire DataFrame to a CSV file
-        fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
-        filename = os.path.join("sens_data/icu/icu_values", fname + ".csv")
-        np.savetxt(fname=filename, X=np.sum(pivot_df)[3:], delimiter=";")
+            plt.savefig(output_path, format="pdf")
+            plt.close()
+            plt.show()
+            # Find the maximum value in each row
+            max_icu_values = np.array([max(row) for row in df['n_icu_max']])
+            # Add a new column 'max_n_icu' to df containing the maximum values
+            df['max_n_icu'] = max_icu_values
+            # Add an 'age_group' column to your DataFrame based on the index
+            df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
+            # Pivot the DataFrame
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+                                      values='max_n_icu',
+                                      aggfunc='first')
+            # Reset the index
+            pivot_df = pivot_df.reset_index()
+            # Save the entire DataFrame to a CSV file
+            fname = "_".join([str(susc), str(base_r0), f"ratio_{1 - ratio}"])
+            filename = os.path.join("sens_data/icu/icu_values", fname + ".csv")
+            np.savetxt(fname=filename, X=np.sum(pivot_df)[3:], delimiter=";")
 
 
 class TriangleHandler(Line2D):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         # Default line properties
         line_props = {'linewidth': 0, 'linestyle': '-'}
 
