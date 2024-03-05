@@ -24,10 +24,7 @@ class StateCalculator:
             self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["e"]) +
             self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["i"])
         )
-        if n_infecteds < 1:
-            return None  # Return None if infected count is less than 1
-        else:
-            return n_infecteds
+        return n_infecteds
 
     def _calculate_infecteds_rost(self, sol):
         # Calculate the number of infected individuals in the Rost model
@@ -37,12 +34,11 @@ class StateCalculator:
             self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["s"]) -
             self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
             self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["c"])
+            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["c"]) -
+            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["hosp"]) -
+            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["icu"])
         )
-        if n_infecteds < 1:
-            return None  # Return None if infected count is less than 1
-        else:
-            return n_infecteds
+        return n_infecteds
 
     def _calculate_infecteds_moghadas(self, sol):
         # Calculate the number of infected individuals in the Moghadas model
@@ -53,10 +49,7 @@ class StateCalculator:
             self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
             self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"])
         )
-        if n_infecteds < 1:
-            return None  # Return None if infected count is less than 1
-        else:
-            return n_infecteds
+        return n_infecteds
 
     def _calculate_infecteds_chikina(self, sol):
         # Calculate the number of infected individuals in the Chikina model
@@ -65,10 +58,7 @@ class StateCalculator:
             self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["cp"]) +
             self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["c"])
         )
-        if n_infecteds < 1:
-            return None  # Return None if infected count is less than 1
-        else:
-            return n_infecteds
+        return n_infecteds[0]
 
     def calculate_epidemic_peaks(self, sol):
         state = np.array([sol])

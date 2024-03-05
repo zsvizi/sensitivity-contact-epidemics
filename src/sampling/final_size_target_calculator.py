@@ -55,7 +55,7 @@ class FinalSizeTargetCalculator(TargetCalculator):
                 cm=cm)
             t_interval_complete += t_interval
             state = sol[-1]
-            complete_sol = np.append(complete_sol, sol[1:], axis=0)
+            complete_sol = np.append(complete_sol, sol[1:, :], axis=0)
 
         infecteds = self.state_calc.calculate_infecteds(sol=complete_sol)
         infecteds_peak = self.state_calc.calculate_epidemic_peaks(sol=complete_sol)
