@@ -286,10 +286,11 @@ class Plotter:
         :param plot_title: title of the heatmap
         :return: Heatmaps
         """
-
         directory_column_orders = [
-            (f"./sens_data/Epidemic_size/Epidemic_values", [
+            (f"./sens_data/Epidemic/Epidemic_values", [
                 "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
+                "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
+                "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                 "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                 "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
                 "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
@@ -302,9 +303,9 @@ class Plotter:
                 "icu_values/0.5_2.5_ratio_0.25", "icu_values/0.5_2.5_ratio_0.5",
                 "icu_values/1.0_1.2_ratio_0.25", "icu_values/1.0_1.2_ratio_0.5",
                 "icu_values/1.0_1.8_ratio_0.25", "icu_values/1.0_1.8_ratio_0.5",
-                "icu_values/1.0_2.5_ratio_0.25", "icu_values/1.0_2.5_ratio_0.5"
+                "icu_values/1.0_2.5_ratio_0.25", "icu_values/1.0_2.5_ratio_0.5",
             ]),
-            (f"./sens_data/death_size/death_values", [
+            (f"./sens_data/death/death_values", [
                 "death_values/0.5_1.2_ratio_0.25", "death_values/0.5_1.2_ratio_0.5",
                 "death_values/0.5_1.8_ratio_0.25", "death_values/0.5_1.8_ratio_0.5",
                 "death_values/0.5_2.5_ratio_0.25", "death_values/0.5_2.5_ratio_0.5",
@@ -312,21 +313,14 @@ class Plotter:
                 "death_values/1.0_1.8_ratio_0.25", "death_values/1.0_1.8_ratio_0.5",
                 "death_values/1.0_2.5_ratio_0.25", "death_values/1.0_2.5_ratio_0.5"
             ]),
-            (f"./sens_data/Epidemic_peak/Peak_values", [
-                "Peak_values/0.5_1.2_ratio_0.25", "Peak_values/0.5_1.2_ratio_0.5",
-                "Peak_values/0.5_1.8_ratio_0.25", "Peak_values/0.5_1.8_ratio_0.5",
-                "Peak_values/0.5_2.5_ratio_0.25", "Peak_values/0.5_2.5_ratio_0.5",
-                "Peak_values/1.0_1.2_ratio_0.25", "Peak_values/1.0_1.2_ratio_0.5",
-                "Peak_values/1.0_1.8_ratio_0.25", "Peak_values/1.0_1.8_ratio_0.5",
-                "Peak_values/1.0_2.5_ratio_0.25", "Peak_values/1.0_2.5_ratio_0.5"
-            ]),
-            (f"./sens_data/hospital/hosp_values", [
-                "hosp_values/0.5_1.2_ratio_0.25", "hosp_values/0.5_1.2_ratio_0.5",
-                "hosp_values/0.5_1.8_ratio_0.25", "hosp_values/0.5_1.8_ratio_0.5",
-                "hosp_values/0.5_2.5_ratio_0.25", "hosp_values/0.5_2.5_ratio_0.5",
-                "hosp_values/1.0_1.2_ratio_0.25", "hosp_values/1.0_1.2_ratio_0.5",
-                "hosp_values/1.0_1.8_ratio_0.25", "hosp_values/1.0_1.8_ratio_0.5",
-                "hosp_values/1.0_2.5_ratio_0.25", "hosp_values/1.0_2.5_ratio_0.5"
+
+            (f"./sens_data/hospital/hospital_values", [
+                "hospital_values/0.5_1.2_ratio_0.25", "hospital_values/0.5_1.2_ratio_0.5",
+                "hospital_values/0.5_1.8_ratio_0.25", "hospital_values/0.5_1.8_ratio_0.5",
+                "hospital_values/0.5_2.5_ratio_0.25", "hospital_values/0.5_2.5_ratio_0.5",
+                "hospital_values/1.0_1.2_ratio_0.25", "hospital_values/1.0_1.2_ratio_0.5",
+                "hospital_values/1.0_1.8_ratio_0.25", "hospital_values/1.0_1.8_ratio_0.5",
+                "hospital_values/1.0_2.5_ratio_0.25", "hospital_values/1.0_2.5_ratio_0.5"
             ])
         ]
         # Define index
