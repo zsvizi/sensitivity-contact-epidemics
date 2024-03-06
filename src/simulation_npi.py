@@ -151,8 +151,7 @@ class SimulationNPI(SimulationBase):
                 print(susc, base_r0)
                 # Define directories and aggregation values
                 directories = [
-                    f"./sens_data/Epidemic_size/Epidemic_values",
-                    f"./sens_data/Epidemic_peak/Peak_values",
+                    f"./sens_data/Epidemic/Epidemic_values",
                     f"./sens_data/icu/icu_values",
                     f"./sens_data/death_size/death_values",
                     f"./sens_data/hospital/hosp_values"
