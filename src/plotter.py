@@ -94,41 +94,6 @@ class Plotter:
             plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"), format="pdf", bbox_inches='tight')
             plt.close()
 
-    def get_plot_hungary_heatmap(self):
-        os.makedirs("sens_data/contact_matrices", exist_ok=True)
-        plt.figure(figsize=(30, 20))
-        sns.set(font_scale=2.5)
-        ax = sns.heatmap(self.contact_full, cmap="Greens", annot=True, square=True,
-                         linecolor='white', linewidths=1, cbar=False)
-
-        ax.invert_yaxis()
-        # ax.yaxis.set_label_position("right")
-        plt.xlabel("Age of the participant", fontsize=70)
-        plt.ylabel("Age of the contact", fontsize=70)
-        plt.savefig('./sens_data/contact_matrices/' + 'hungary.pdf',
-                    format="pdf", bbox_inches='tight')
-
-        # plot mask heatmap
-        mask = np.triu(np.ones_like(self.contact_full), k=1).astype(bool)
-        fig = plt.figure(figsize=(30, 20))
-        ax1 = fig.add_subplot(111)
-        cmap = plt.cm.get_cmap('Greens', 10)
-
-        cmap.set_bad('w')  # default value is 'k'
-        sns.set(font_scale=2.5)
-        sns.heatmap(self.contact_full, mask=mask, annot=True,
-                    cmap=cmap, cbar=False, square=True,
-                    linecolor='white', linewidths=1)
-        ax1.xaxis.set_label_position("top")
-        ax1.xaxis.tick_top()
-        ax1.invert_yaxis()
-        plt.xlabel("Age of the participant", fontsize=70)
-        plt.ylabel("Age of the contact", fontsize=70)
-        plt.savefig('./sens_data/contact_matrices/' + 'hungary_mask.pdf',
-                    format="pdf", bbox_inches='tight')
-
-        plt.close()
-
     def construct_triangle_grids_prcc_p_value(self):
         """
         construct_triangle_grids_prcc_p_value(prcc_vector, p_values)
@@ -167,7 +132,7 @@ class Plotter:
         return mask
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                        p_values, filename_to_save, plot_title):
+                                      p_values, filename_to_save, plot_title):
         """
         Prepares for plotting PRCC and p-values as a heatmap.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
@@ -530,9 +495,9 @@ class Plotter:
             # Iterate over compartments and sum values
             for comp in compartments:
                 comp_values = np.sum(
-                    solution[:, self.sim_obj.model.c_idx[comp] *
-                                self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) *
-                                                  self.sim_obj.n_ag], axis=1
+                    solution[:, self.sim_obj.model.c_idx[comp] * self.sim_obj.n_ag:
+                             (self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag],
+                    axis=1
                 )
                 summed_values += comp_values
 
@@ -679,6 +644,7 @@ class Plotter:
         color = blues_cmap(0.3)
         color2 = blues_cmap(0.5)
 
+        df = pd.DataFrame()
         if model == "rost":
             compartments = ["l1", "l2", "ip", "ia1", "ia2", "ia3",
                             "is1", "is2", "is3", "ih", "ic", "icr"]
@@ -722,10 +688,10 @@ class Plotter:
                 max_peak_size_per_compartment.append(max_peak_size)
 
                 # Calculate the combined epidemic curve
-                combined_curve += np.sum([solution[:,
-                     self.sim_obj.model.c_idx[comp] *
-                     self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag].sum(
-                        axis=1) for comp in self.sim_obj.model.compartments], axis=0)
+                combined_curve += np.sum([
+                    solution[:, self.sim_obj.model.c_idx[comp] * self.sim_obj.n_ag:
+                             (self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag
+                             ].sum(axis=1) for comp in self.sim_obj.model.compartments], axis=0)
             if model in ["rost", "seir"]:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
@@ -763,7 +729,7 @@ class Plotter:
         peak_day = np.argmax(combined_curve)
         peak_value = combined_curve[peak_day]
         legend_text = (fr"$\sigma={susc}$, $\overline{{\mathcal{{R}}}}_0={base_r0}$, "
-                        fr"$\mathcal{{R}}={1 - ratio}$,\nPeak Size: {peak_value:.2f}")
+                       fr"$\mathcal{{R}}={1 - ratio}$,\nPeak Size: {peak_value:.2f}")
 
         # Get y-axis limits
         y_min, y_max = ax.get_ylim()
@@ -1152,14 +1118,14 @@ class Plotter:
                 parameters=self.sim_obj.params,
                 cm=cm)
             if model == "chikina":
-                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
-                                                               idx=self.sim_obj.model.c_idx["c"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(
+                    solution=solution, idx=self.sim_obj.model.c_idx["c"])
             elif model == "rost":
-                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
-                                                         idx=self.sim_obj.model.c_idx["ic"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(
+                    solution=solution, idx=self.sim_obj.model.c_idx["ic"])
             elif model == "moghadas":
-                icu_values_curve = self.sim_obj.model.aggregate_by_age(solution=solution,
-                                                               idx=self.sim_obj.model.c_idx["c"])
+                icu_values_curve = self.sim_obj.model.aggregate_by_age(
+                    solution=solution, idx=self.sim_obj.model.c_idx["c"])
             else:
                 raise Exception("Invalid model")
             # icu collector

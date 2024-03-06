@@ -41,27 +41,23 @@ class ContactManipulation:
                 model=self.model, ratio=ratio)
             # epidemic peak
             self.plotter.plot_peak_size_epidemic(
-                time=t, params=self.params, cm_list=cm_list, legend_list=legend_list,
-                title_part="_epidemic_size_".join([str(self.susc), str(self.base_r0)]),
+                time=t, cm_list=cm_list,
+                legend_list=legend_list,
                 model=self.model, ratio=ratio)
             # plot icu size
             self.plotter.plot_icu_size(
-                time=t, params=self.params,
-                cm_list=cm_list, susc=self.susc, base_r0=self.base_r0,
+                time=t, cm_list=cm_list,
                 legend_list=legend_list,
-                title_part="_icu_".join([str(self.susc), str(self.base_r0), str(ratio)]),
                 model=self.model, ratio=ratio)
             # number of hospitalized
             self.plotter.plot_solution_hospitalized_size(
-                time=t, params=self.params, cm_list=cm_list,
+                time=t, cm_list=cm_list,
                 legend_list=legend_list,
-                title_part="_hospitalized_peak_".join([str(self.susc), str(self.base_r0)]),
                 model=self.model, ratio=ratio)
             # final death size
             self.plotter.plot_solution_final_death_size(
-                time=t, params=self.params, cm_list=cm_list,
+                time=t, cm_list=cm_list,
                 legend_list=legend_list,
-                title_part="_final_deaths_".join([str(self.susc), str(self.base_r0)]),
                 model=self.model, ratio=ratio)
 
     def get_full_cm(self, cm_list, legend_list):
