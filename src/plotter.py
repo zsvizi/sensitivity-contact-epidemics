@@ -175,7 +175,6 @@ class Plotter:
         cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
 
         images[1].set_norm(norm=log_norm)
-        # images[0].set_norm(norm=norm)
         images[0].set_norm(norm=norm)
 
         locator = LogLocator()
