@@ -488,7 +488,6 @@ class Plotter:
             }
             # Append the result_entry to the results_list
             results_list.append(result_entry)
-            print(results_list)
             # Convert the list of dictionaries to a DataFrame
             df = pd.DataFrame(results_list)
 
