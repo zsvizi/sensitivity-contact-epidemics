@@ -143,7 +143,7 @@ class Plotter:
         return mask
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                        p_values, filename_to_save, plot_title):
+                                      p_values, filename_to_save, plot_title):
         """
         Prepares for plotting PRCC and p-values as a heatmap.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
@@ -459,10 +459,10 @@ class Plotter:
                 max_peak_size_per_compartment.append(max_peak_size)
 
                 # Calculate the combined epidemic curve
-                combined_curve += np.sum([solution[:,
-                     self.sim_obj.model.c_idx[comp] *
-                     self.sim_obj.n_ag:(self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag].sum(
-                        axis=1) for comp in self.sim_obj.model.compartments], axis=0)
+                combined_curve += np.sum(
+                    [solution[:, self.sim_obj.model.c_idx[comp] * self.sim_obj.n_ag:
+                              (self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag
+                              ].sum(axis=1) for comp in self.sim_obj.model.compartments], axis=0)
             if model in ["rost", "seir"]:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
@@ -630,8 +630,8 @@ class Plotter:
                 parameters=self.sim_obj.params,
                 cm=cm)
             # hospital collector
-            cum_hospitals = self.sim_obj.model.aggregate_by_age(solution=solution,
-                                                                  idx=self.sim_obj.model.c_idx["hosp"])
+            cum_hospitals = self.sim_obj.model.aggregate_by_age(
+                solution=solution, idx=self.sim_obj.model.c_idx["hosp"])
 
             # Save the results in a dictionary with metadata
             result_entry = {
@@ -838,10 +838,10 @@ class Plotter:
                     )
         # Construct legend text
         legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
-                          f'${{\\mathcal{{R}}={1 - ratio}}}$'
+                      f'${{\\mathcal{{R}}={1 - ratio}}}$'
         # Plot the legend
-        ax.legend([TriangleHandler()], [legend_text], fontsize=10,
-                      labelcolor="navy", loc='upper left', bbox_to_anchor=(0.0, 1.0))
+        ax.legend([TriangleHandler()], [legend_text], fontsize=10, labelcolor="navy",
+                  loc='upper left', bbox_to_anchor=(0.0, 1.0))
 
         ax.add_patch(rect)
         ax.add_line(line)

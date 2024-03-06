@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class StateCalculator:
     def __init__(self, sim_obj, epi_model):
         self.sim_obj = sim_obj
@@ -21,81 +18,78 @@ class StateCalculator:
     def _calculate_infecteds_seir(self, sol):
         # Calculate the number of infected individuals in the SEIR model
         n_infecteds = (
-            self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["e"]) +
-            self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["i"])
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
         )
         return n_infecteds
 
     def _calculate_infecteds_rost(self, sol):
         # Calculate the number of infected individuals in the Rost model
-        state = np.array([sol])
         n_infecteds = (
-            state.sum() -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["s"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["c"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["hosp"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["icu"])
+            sol.sum(axis=1) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["d"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["hosp"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["icu"])
         )
         return n_infecteds
 
     def _calculate_infecteds_moghadas(self, sol):
         # Calculate the number of infected individuals in the Moghadas model
-        state = np.array([sol])
         n_infecteds = (
-            state.sum() -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["s"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["i"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["hosp"]) -
-            self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["icu"])
+            sol.sum(axis=1) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["d"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["hosp"]) -
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["icu"])
         )
         return n_infecteds
 
     def _calculate_infecteds_chikina(self, sol):
         # Calculate the number of infected individuals in the Chikina model
         n_infecteds = (
-            self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["i"]) +
-            self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["cp"]) +
-            self.sim_obj.model.aggregate_by_age(solution=np.array([sol]), idx=self.sim_obj.model.c_idx["c"])
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"]) +
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["cp"]) +
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"])
         )
         return n_infecteds[0]
 
     def calculate_epidemic_peaks(self, sol):
-        state = np.array([sol])
         if self.epi_model == "rost":
             infecteds_peak = (
-                state.sum() -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["s"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["c"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["hosp"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["icu"])
+                sol.sum(axis=1) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["d"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["hosp"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["icu"])
             ).max()
         elif self.epi_model == "chikina":
             infecteds_peak = (
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["i"]) +
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["cp"]) +
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["c"])
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"]) +
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["cp"]) +
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"])
             ).max()
         elif self.epi_model == "moghadas":
             infecteds_peak = (
-                state.sum() -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["s"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["r"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["i"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["hosp"]) -
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["icu"])
+                sol.sum(axis=1) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["r"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["d"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["hosp"]) -
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["icu"])
             ).max()
         elif self.epi_model == "seir":
             # Calculate the infected peak in the SEIR model
             infecteds_peak = (
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["e"]) +
-                self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["i"])
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
             ).max()
         else:
             raise Exception("Invalid model!")
@@ -131,6 +125,6 @@ class StateCalculator:
         return icu_now
 
     def calculate_final_size_dead(self, sol):
-        state = np.array([sol[-1]])
+        state = sol[-1].reshape((1, -1))
         final_size_dead = self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"])
         return final_size_dead

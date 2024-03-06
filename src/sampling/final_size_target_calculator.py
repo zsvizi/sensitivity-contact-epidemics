@@ -29,20 +29,9 @@ class FinalSizeTargetCalculator(TargetCalculator):
         )
         complete_sol = sol.copy()
         state = sol[-1]
-        hospital_peak = (
-            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
-            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
-            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["icr"])
-        ).max()
 
         while True:
-            hospital_peak_now = self.state_calc.calculate_hospital_peak(sol)
-            # check whether it is higher than it was in the previous turn
-            if hospital_peak_now > hospital_peak:
-                hospital_peak = hospital_peak_now
-                hospital_peak_now = np.array([hospital_peak_now])
-
-            infecteds = self.state_calc.calculate_infecteds(state)
+            infecteds = self.state_calc.calculate_infecteds(sol=np.array([state]))
             if infecteds < 1:
                 break
 
@@ -53,14 +42,16 @@ class FinalSizeTargetCalculator(TargetCalculator):
                 t=t,
                 parameters=self.sim_obj.params,
                 cm=cm)
+
             t_interval_complete += t_interval
             state = sol[-1]
             complete_sol = np.append(complete_sol, sol[1:, :], axis=0)
 
+        hospital_peak_now = self.state_calc.calculate_hospital_peak(sol=complete_sol)
         infecteds = self.state_calc.calculate_infecteds(sol=complete_sol)
         infecteds_peak = self.state_calc.calculate_epidemic_peaks(sol=complete_sol)
         final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
-        icu = self.state_calc.calculate_icu(sol=np.array([complete_sol]))
+        icu = self.state_calc.calculate_icu(sol=complete_sol)
 
         # return the targets
         if self.config["include_final_size_dead"]:
