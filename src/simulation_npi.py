@@ -153,8 +153,8 @@ class SimulationNPI(SimulationBase):
                 directories = [
                     f"./sens_data/Epidemic/Epidemic_values",
                     f"./sens_data/icu/icu_values",
-                    f"./sens_data/death_size/death_values",
-                    f"./sens_data/hospital/hosp_values"
+                    f"./sens_data/death/death_values",
+                    f"./sens_data/hospital/hospital_values"
                 ]
                 # Initialize dictionary to store DataFrames
                 dfs = {}
