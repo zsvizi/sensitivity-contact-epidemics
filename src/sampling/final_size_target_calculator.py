@@ -17,7 +17,7 @@ class FinalSizeTargetCalculator(TargetCalculator):
         self.state_calc = StateCalculator(sim_obj=sim_obj, epi_model=epi_model)
 
     def get_output(self, cm: np.ndarray):
-        t_interval = 100
+        t_interval = 250
         t = np.arange(0, t_interval, 0.5)
         t_interval_complete = 0
 
