@@ -119,9 +119,11 @@ class StateCalculator:
 
     def calculate_icu(self, sol):
         if self.epi_model == "rost":
-            icu_now = self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ic"])
+            icu_now = self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ic"]
+                                                          ).max()
         else:
-            icu_now = self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"])
+            icu_now = self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["c"]
+                                                          ).max()
         return icu_now
 
     def calculate_final_size_dead(self, sol):

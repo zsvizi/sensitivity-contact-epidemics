@@ -143,13 +143,14 @@ class Plotter:
         return mask
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                      p_values, filename_to_save, plot_title):
+                                      p_values, filename_to_save, plot_title, option):
         """
         Prepares for plotting PRCC and p-values as a heatmap.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param p_values: (numpy.ndarray): The p-values vector.
         :param filename_to_save: : The filename to save the plot.
         :param plot_title: The title of the plot.
+        :param option: (str): target options for epidemic size.
         :return: None
         """
         p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
@@ -195,33 +196,41 @@ class Plotter:
         plt.tight_layout()
         plt.title(plot_title, y=1.03, fontsize=25)
         plt.title(plot_title, y=1.03, fontsize=25)
-        plt.savefig('./sens_data/heatmap/' + filename_to_save + '.pdf', format="pdf",
-                    bbox_inches='tight')
         plt.close()
 
     def generate_prcc_p_values_heatmaps(self, prcc_vector,
-                                        p_values, filename_without_ext):
+                                        p_values, filename_without_ext, option):
         """
         Generates actual PRCC and p-values masked heatmaps.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param p_values: (numpy.ndarray): The p-values vector.
         :param filename_without_ext: (str): The filename prefix for the saved plot.
+        :param option: (str): target options for epidemic size.
         :return: masked Heatmaps
         """
-        os.makedirs("sens_data/heatmap", exist_ok=True)
+        if option:
+            os.makedirs(os.path.join("sens_data", option, "prcc_plot"), exist_ok=True)
+            save_path = os.path.join("sens_data", option, "prcc_plot",
+                                     filename_without_ext + '.pdf')
+        else:
+            os.makedirs("sens_data/prcc_plot", exist_ok=True)
+            save_path = os.path.join("sens_data", "prcc_plot", filename_without_ext + '.pdf')
+
+        # os.makedirs("sens_data/heatmap", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
         title_list = filename_without_ext.split("_")
         plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
+
         self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector, p_values=p_values,
-                                           filename_to_save="PRCC_P_VALUES" +
+                                           filename_to_save="prcc_plot" +
                                                             filename_without_ext + "_R0",
-                                           plot_title=plot_title)
+                                           plot_title=plot_title, option=option)
 
     @staticmethod
     def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values,
-                                      filename_to_save, plot_title):
+                                      filename_to_save, plot_title, option):
         """
               Prepares for plotting aggregated PRCC and standard values as error bars.
               :param param_list: list of the parameters
@@ -229,10 +238,18 @@ class Plotter:
               :param std_values: (numpy.ndarray): The std values from calculating
                aggregated PRCC vector.
               :param filename_to_save: : The filename to save the plots.
+              :param option: (str): target options for epidemic size.
               :param plot_title: The title of the plots.
               :return: None
               """
-        os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
+        if option:
+            os.makedirs(os.path.join("sens_data", option, "agg_plot"), exist_ok=True)
+            save_path = os.path.join("sens_data", option, "agg_plot",
+                                     filename_to_save + '.pdf')
+        else:
+            os.makedirs("sens_data/agg_plot", exist_ok=True)
+            save_path = os.path.join("sens_data", "agg_plot", filename_to_save + '.pdf')
+        # os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
@@ -252,17 +269,17 @@ class Plotter:
         axes.set_ylim([0, 1.0])
         plt.xlabel('age groups', labelpad=10, fontsize=20)
         plt.title(plot_title, y=1.03, fontsize=20)
-        plt.savefig('./sens_data/PRCC_PVAL_PLOT/' + filename_to_save + '.pdf',
-                    format="pdf", bbox_inches='tight')
+        plt.savefig(save_path, format="pdf", bbox_inches='tight')
         plt.close()
 
     def plot_aggregation_prcc_pvalues(self, prcc_vector, std_values,
-                                      filename_without_ext):
+                                      filename_without_ext, option):
         """
         Generates actual aggregated PRCC plots with std values as error bars.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param std_values: (numpy.ndarray): standard deviation values.
         :param filename_without_ext: (str): The filename prefix for the saved plot.
+        :param option: (str): target options for epidemic size.
         :return: bar plots with error bars
         """
         title_list = filename_without_ext.split("_")
@@ -270,7 +287,7 @@ class Plotter:
         self.aggregated_prcc_pvalues_plots(param_list=self.sim_obj.n_ag,
                                            prcc_vector=prcc_vector, std_values=std_values,
                                            filename_to_save=filename_without_ext,
-                                           plot_title=plot_title)
+                                           plot_title=plot_title, option=option)
 
     @staticmethod
     def plot_model_max_values(max_values, model: str,

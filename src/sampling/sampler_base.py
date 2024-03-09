@@ -8,7 +8,9 @@ import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_obj: src.SimulationNPI) -> None:
+    def __init__(self, sim_obj: src.SimulationNPI, config, target="r0") -> None:
+        self.config= config
+        self.target = target
         self.sim_obj = sim_obj
         self.base_r0 = sim_obj.sim_state["base_r0"]
         self.beta = sim_obj.sim_state["beta"]
@@ -17,7 +19,7 @@ class SamplerBase(ABC):
         self.lhs_boundaries = None
 
     @abstractmethod
-    def run(self):
+    def run(self, option):
         pass
 
     @abstractmethod
@@ -37,18 +39,35 @@ class SamplerBase(ABC):
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
                                        lower=lower_bound,
                                        upper=upper_bound)
-        print("Simulation for", number_of_samples,
-              "samples (", "-".join(self._get_variable_parameters()), ")")
+        # Print simulation details based on the target and options
+        if self.target == "r0":
+            print(
+                f"Simulation for {self.target} {number_of_samples} "
+                f"samples ({'-'.join(self._get_variable_parameters())})")
+        else:
+            print(
+                f"Simulation for {self.target} {number_of_samples} "
+                f"samples ({'-'.join(self._get_variable_parameters())})")
+            config_list = list(self.config)
+            for option in config_list:
+                if self.config[option]:
+                    print(
+                        f"Simulation for {option} {number_of_samples} "
+                        f"samples ({'-'.join(self._get_variable_parameters())})")
+
         return lhs_table
 
-    def _save_output(self, output, folder_name):
+    def _save_output(self, output, folder_name, option=None):
+        if self.target == "r0":
+            option_folder = ""
+        else:
+            option_folder = option + "/"
         # Create directories for saving calculation outputs
-        os.makedirs("./sens_data", exist_ok=True)
-
-        # Save LHS output
-        os.makedirs("./sens_data/" + folder_name, exist_ok=True)
-        filename = "./sens_data/" + folder_name + "/" + folder_name + "_Hungary_" + \
-                   "_".join(self._get_variable_parameters())
+        directory = os.path.join("./sens_data", option_folder, folder_name)
+        os.makedirs(directory, exist_ok=True)
+        filename = os.path.join(directory,
+                                f"{folder_name}_Hungary_" +
+                                "_".join(self._get_variable_parameters()))
         np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
 
 

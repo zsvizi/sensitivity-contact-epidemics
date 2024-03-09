@@ -8,11 +8,11 @@ class FinalSizeTargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: SimulationNPI, epi_model: str = "rost"):
         super().__init__(sim_obj=sim_obj)
         self.config = {
-            "include_infecteds": False,
-            "include_infecteds_peak": False,
-            "include_hospital_peak": False,
-            "include_icu": False,
-            "include_final_size_dead": True
+            "include_final_death_size": False,
+            "include_icu_peak": False,
+            "include_hospital_peak": True,
+            "include_infecteds": True,
+            "include_infecteds_peak": True
         }
         self.state_calc = StateCalculator(sim_obj=sim_obj, epi_model=epi_model)
 
@@ -54,9 +54,9 @@ class FinalSizeTargetCalculator(TargetCalculator):
         icu = self.state_calc.calculate_icu(sol=complete_sol)
 
         # return the targets
-        if self.config["include_final_size_dead"]:
+        if self.config["include_final_death_size"]:
             return np.array([final_size_dead])
-        elif self.config["include_icu"]:
+        elif self.config["include_icu_peak"]:
             return np.array([icu])
         elif self.config["include_hospital_peak"]:
             return np.array([hospital_peak_now])
