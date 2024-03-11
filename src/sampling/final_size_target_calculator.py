@@ -5,15 +5,9 @@ from src.sampling.target_calculator import TargetCalculator
 
 
 class FinalSizeTargetCalculator(TargetCalculator):
-    def __init__(self, sim_obj: SimulationNPI, epi_model: str = "rost"):
+    def __init__(self, sim_obj: SimulationNPI, config: dict, epi_model: str = "rost"):
         super().__init__(sim_obj=sim_obj)
-        self.config = {
-            "include_final_death_size": False,
-            "include_icu_peak": False,
-            "include_hospital_peak": True,
-            "include_infecteds": True,
-            "include_infecteds_peak": True
-        }
+        self.config = config
         self.state_calc = StateCalculator(sim_obj=sim_obj, epi_model=epi_model)
 
     def get_output(self, cm: np.ndarray):

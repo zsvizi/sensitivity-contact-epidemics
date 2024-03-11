@@ -14,10 +14,9 @@ from src.sampling.r0_target_calculator import R0TargetCalculator
 class SamplerNPI(SamplerBase):
     def __init__(self, sim_obj: src.SimulationNPI, country: str,
                  epi_model: str, config, target: str = "r0") -> None:
-        self.config = config
+        super().__init__(sim_obj=sim_obj, config=config)
         self.country = country
         self.epi_model = epi_model
-        super().__init__(sim_obj=sim_obj, config=config)
         self.sim_obj = sim_obj
         self.target = target
 
@@ -25,10 +24,12 @@ class SamplerNPI(SamplerBase):
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
 
         if self.target == "r0":
-            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, country=self.country)
+            self.calc = R0TargetCalculator(sim_obj=self.sim_obj,
+                                           country=self.country)
         elif self.target == "epidemic_size":
             self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj,
-                                                  epi_model=sim_obj.epi_model)
+                                                  epi_model=sim_obj.epi_model,
+                                                  config=self.config)
         self.susc = sim_obj.sim_state["susc"]
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
@@ -38,31 +39,15 @@ class SamplerNPI(SamplerBase):
         number_of_samples = self.sim_obj.n_samples
         lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
                                         kappa=kappa)
-        if self.target == "epidemic_size":
-            if option in self.config and self.config[option]:
-                results = list(tqdm(
-                    map(partial(self.get_sim_output, calc=self.calc),
-                        lhs_table),
-                    total=lhs_table.shape[0]))
-                results = np.array(results)
-
-                r0_col_idx = int(self.sim_obj.upper_tri_size)
-                res_min = results[:, r0_col_idx].min()
-                if res_min < 1:
-                    print("minimal lhs_r0: " + str(res_min))
-                sorted_idx = results[:, r0_col_idx].argsort()
-                results = results[sorted_idx]
-                lhs_table = np.array(lhs_table[sorted_idx])
-                sim_output = np.array(results)
-                sleep(0.3)
-                self._save_output(output=lhs_table, option=option, folder_name="lhs")
-                self._save_output(output=sim_output, option=option, folder_name="simulations")
-        else:
+        sim_output = None
+        if (self.target == "epidemic_size" and (option in self.config and self.config[option])) or \
+           (not self.target == "epidemic_size"):
             results = list(tqdm(
                 map(partial(self.get_sim_output, calc=self.calc),
                     lhs_table),
                 total=lhs_table.shape[0]))
             results = np.array(results)
+
             r0_col_idx = int(self.sim_obj.upper_tri_size)
             res_min = results[:, r0_col_idx].min()
             if res_min < 1:

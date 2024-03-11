@@ -1,4 +1,5 @@
 import os
+
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
@@ -143,14 +144,12 @@ class Plotter:
         return mask
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                      p_values, filename_to_save, plot_title, option):
+                                      p_values, plot_title):
         """
         Prepares for plotting PRCC and p-values as a heatmap.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param p_values: (numpy.ndarray): The p-values vector.
-        :param filename_to_save: : The filename to save the plot.
         :param plot_title: The title of the plot.
-        :param option: (str): target options for epidemic size.
         :return: None
         """
         p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
@@ -210,11 +209,8 @@ class Plotter:
         """
         if option:
             os.makedirs(os.path.join("sens_data", option, "prcc_plot"), exist_ok=True)
-            save_path = os.path.join("sens_data", option, "prcc_plot",
-                                     filename_without_ext + '.pdf')
         else:
             os.makedirs("sens_data/prcc_plot", exist_ok=True)
-            save_path = os.path.join("sens_data", "prcc_plot", filename_without_ext + '.pdf')
 
         # os.makedirs("sens_data/heatmap", exist_ok=True)
         plt.rc('text', usetex=True)
@@ -224,9 +220,7 @@ class Plotter:
         plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
 
         self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector, p_values=p_values,
-                                           filename_to_save="prcc_plot" +
-                                                            filename_without_ext + "_R0",
-                                           plot_title=plot_title, option=option)
+                                           plot_title=plot_title)
 
     @staticmethod
     def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values,

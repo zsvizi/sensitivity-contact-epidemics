@@ -147,7 +147,6 @@ class SimulationNPI(SimulationBase):
                 filename_without_ext = base_r0  # Construct the filename_without_ext
                 if self.target == "r0":
                     self.plot_values_for_target(agg_values=["PRCC_Pvalues", "agg_prcc"],
-                                                filename_without_ext=filename_without_ext,
                                                 option=None)
                 elif self.target == "epidemic_size":
                     for option in self.config:
@@ -155,10 +154,9 @@ class SimulationNPI(SimulationBase):
                             agg_values = [os.path.join(option, "PRCC_Pvalues"),
                                           os.path.join(option, "agg_prcc")]
                             self.plot_values_for_target(agg_values=agg_values,
-                                                        filename_without_ext=filename_without_ext,
                                                         option=option)
 
-    def plot_values_for_target(self, agg_values, filename_without_ext, option):
+    def plot_values_for_target(self, agg_values, option):
         for agg in agg_values:
             # Iterate through files in the directory
             for root, dirs, files in os.walk("./sens_data/" + agg):
@@ -166,6 +164,7 @@ class SimulationNPI(SimulationBase):
                     # Construct the filename_without_ext
                     filename_without_ext = os.path.splitext(filename)[0]
                     # Load PRCC-Pvalues
+                    root: str
                     saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
                     # Initialize Plotter
                     plotter = src.Plotter(sim_obj=self, data=self.data)
