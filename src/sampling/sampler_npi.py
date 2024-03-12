@@ -43,8 +43,12 @@ class SamplerNPI(SamplerBase):
 
         for target_key, target in self.config.items():
             if target:  # Check if the target is set to True
-                print(f"Simulation for {target_key}: {number_of_samples} "
-                      f"samples ({self.susc}-{self.base_r0})")
+                if self.target == "epidemic_size":
+                    print(f"Simulation for {target_key}: {number_of_samples} "
+                          f"samples ({self.susc}-{self.base_r0})")
+                else:
+                    print(f"Simulation for {self.target}: {number_of_samples} "
+                          f"samples ({self.susc}-{self.base_r0})")
                 # Calculate simulation output for the current target
                 results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
                                         lhs_table),

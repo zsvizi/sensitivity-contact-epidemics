@@ -54,10 +54,10 @@ class SimulationNPI(SimulationBase):
                     sampler_npi.run()
 
     def calculate_prcc_values(self):
-        sim_folder, lhs_folder = "simulations", "lhs"
+        sim_folder = "simulations"
+        lhs_folder = "lhs"
         prcc_dir = "PRCC_Pvalues"
         agg_dir = "agg_prcc"
-
         # Read files from the generated folder based on the given parameters
         for root, dirs, files in os.walk(os.path.join("./sens_data", sim_folder)):
             for filename in files:
@@ -71,25 +71,21 @@ class SimulationNPI(SimulationBase):
                     delimiter=';'
                 )
 
-                susc = float(filename.split("_")[2])
-                base_r0 = float(filename.split("_")[3])
+                susc, base_r0 = float(filename.split("_")[2]), \
+                                float(filename.split("_")[3])
 
                 # CALCULATIONS
-                for target_idx in range(self.upper_tri_size, saved_simulation.shape[0]):
-                    # Calculate PRCC values
+                for target_idx in range(self.upper_tri_size, saved_simulation.shape[1]):
                     prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
                     prcc_calculator.calculate_prcc_values(
                         lhs_table=saved_lhs_values,
                         sim_output=saved_simulation[:, target_idx]
                     )
-
-                    # Calculate p-values
                     prcc_calculator.calculate_p_values()
                     stack_prcc_pval = np.hstack(
                         [prcc_calculator.prcc_list, prcc_calculator.p_value]
                     ).reshape(-1, self.upper_tri_size).T
 
-                    # Aggregate PRCC values
                     prcc_calculator.aggregate_prcc_values()
                     stack_value = np.hstack(
                         [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
@@ -98,65 +94,52 @@ class SimulationNPI(SimulationBase):
 
                     target_index = str(target_idx - self.upper_tri_size)
                     # Save PRCC values
-                    os.makedirs(os.path.join("./sens_data", prcc_dir), exist_ok=True)
                     fname = "_".join([str(susc), str(base_r0)])
-                    prcc_fname = os.path.join("sens_data", prcc_dir, fname, "_" + target_index,".csv")
+                    prcc_folder = os.path.join("./sens_data", prcc_dir, fname, "_" +
+                                               target_index)
+                    os.makedirs(prcc_folder, exist_ok=True)
+                    prcc_fname = os.path.join(prcc_folder, "prcc.csv")
                     np.savetxt(fname=prcc_fname, X=stack_prcc_pval, delimiter=";")
 
                     # Save agg_prcc values and the std deviations
-                    os.makedirs(os.path.join("./sens_data", agg_dir), exist_ok=True)
-                    agg_fname = os.path.join("sens_data", agg_dir, fname, "_" + target_index, ".csv")
+                    agg_folder = os.path.join("./sens_data", agg_dir, fname, "_" + target_index)
+                    os.makedirs(agg_folder, exist_ok=True)
+                    agg_fname = os.path.join(agg_folder, "agg.csv")
                     np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
 
     def plot_prcc_values(self):
+        agg_values = ["agg_prcc", "PRCC_Pvalues"]
+
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
                 print(susc, base_r0)
-                filename_without_ext = base_r0  # Construct the filename_without_ext
-                if self.target == "r0":
-                    self.plot_values_for_target(agg_values=["PRCC_Pvalues", "agg_prcc"],
-                                                option=None)
-                elif self.target == "epidemic_size":
-                    for option in self.config:
-                        if self.config[option]:
-                            agg_values = [os.path.join(option, "PRCC_Pvalues"),
-                                          os.path.join(option, "agg_prcc")]
-                            self.plot_values_for_target(agg_values=agg_values,
-                                                        option=option)
+                for agg in agg_values:
+                    agg_dir = f"./sens_data/{agg}/{susc}_{base_r0}"
+                    for root, dirs, files in os.walk(agg_dir):
+                        for filename in files:
+                            plotter = src.Plotter(sim_obj=self, data=self.data)
+                            # plot contact matrices of the models
+                            plotter.plot_contact_matrices_models(filename="contact",
+                                                                 model="rost",
+                                                                 contact_data=self.data.contact_data,
+                                                                 plot_total_contact=True)
 
-    def plot_values_for_target(self, agg_values, option):
-        for agg in agg_values:
-            # Iterate through files in the directory
-            for root, dirs, files in os.walk("./sens_data/" + agg):
-                for filename in files:
-                    # Construct the filename_without_ext
-                    filename_without_ext = os.path.splitext(filename)[0]
-                    # Load PRCC-Pvalues
-                    root: str
-                    saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
-                    # Initialize Plotter
-                    plotter = src.Plotter(sim_obj=self, data=self.data)
-                    # plot the contact matrices
-                    plotter.plot_contact_matrices_models(
-                        filename="contact",
-                        model="rost",
-                        contact_data=self.data.contact_data)
-                    if "PRCC_Pvalues" in agg:
-                        # Plot PRCC P-values
-                        plotter.generate_prcc_p_values_heatmaps(
-                            prcc_vector=saved_prcc_pval[:, 0],
-                            p_values=saved_prcc_pval[:, 1],
-                            filename_without_ext=filename_without_ext,
-                            option=option
-                        )
-                    elif "agg_prcc" in agg:
-                        # Plot aggregated values
-                        plotter.plot_aggregation_prcc_pvalues(
-                            prcc_vector=saved_prcc_pval[:, 0],
-                            std_values=saved_prcc_pval[:, 1],
-                            filename_without_ext=filename_without_ext,
-                            option=option
-                        )
+                            if filename == "prcc.csv":
+                                saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
+                                plotter.generate_prcc_p_values_heatmaps(
+                                    prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                    p_values=abs(saved_prcc_pval[:, 1]),
+                                    filename_without_ext=root[-6:-3],
+                                    option=root
+                                )
+                            elif filename == "agg.csv":
+                                saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
+                                plotter.plot_aggregation_prcc_pvalues(
+                                    prcc_vector=saved_prcc_pval[:, 0],
+                                    std_values=saved_prcc_pval[:, 1],
+                                    filename_without_ext=root[-6:-3],
+                                    option=root
+                                )
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector

@@ -144,34 +144,35 @@ class Plotter:
         return mask
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                      p_values, plot_title):
+                                          p_values, filename_to_save, plot_title, option):
         """
-        Prepares for plotting PRCC and p-values as a heatmap.
-        :param prcc_vector: (numpy.ndarray): The PRCC vector.
-        :param p_values: (numpy.ndarray): The p-values vector.
-        :param plot_title: The title of the plot.
-        :return: None
-        """
+                   Prepares for plotting PRCC and p-values as a heatmap.
+                   :param prcc_vector: (numpy.ndarray): The PRCC vector.
+                   :param p_values: (numpy.ndarray): The p-values vector.
+                   :param plot_title: The title of the plot.
+                   :param filename_to_save: (str): The filename prefix for the saved plot.
+                   :param plot_title: The title of the plots.
+                   :param option: (str): target options for epidemic size.
+                   :return: None
+                   """
+        if option:
+            os.makedirs(os.path.join(option), exist_ok=True)
+            save_path = os.path.join(option, 'prcc_plot.pdf')
+        else:
+            os.makedirs("sens_data/prcc_plot", exist_ok=True)
+            save_path = os.path.join("sens_data", "prcc_plot" + '.pdf')
         p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
-        # p_valu = ListedColormap(['black', 'black', 'violet', 'violet', 'purple', 'grey',
-        #                          'lightgreen',
-        #                          'green', 'green', 'darkgreen'])
         cmaps = ["Greens", p_value_cmap]
 
         log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
-        # norm = colors.Normalize(vmin=-1, vmax=1e0)  # used for p_values
-
         fig, ax = plt.subplots()
         triang = self.construct_triangle_grids_prcc_p_value()
         mask = self.get_mask_and_values(prcc_vector=prcc_vector, p_values=p_values)
         images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
                   for t, val, cmap in zip(triang,
                                           mask, cmaps)]
-
-        # fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7)  # for the prcc values
         cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
-
         cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
 
         images[1].set_norm(norm=log_norm)
@@ -192,9 +193,9 @@ class Plotter:
         plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
         ax.margins(x=0, y=0)
         ax.set_aspect('equal', 'box')  # square cells
+        plt.title(plot_title, y=1.03, fontsize=20)
         plt.tight_layout()
-        plt.title(plot_title, y=1.03, fontsize=25)
-        plt.title(plot_title, y=1.03, fontsize=25)
+        plt.savefig(save_path, format="pdf", bbox_inches='tight')
         plt.close()
 
     def generate_prcc_p_values_heatmaps(self, prcc_vector,
@@ -207,24 +208,21 @@ class Plotter:
         :param option: (str): target options for epidemic size.
         :return: masked Heatmaps
         """
-        if option:
-            os.makedirs(os.path.join("sens_data", option, "prcc_plot"), exist_ok=True)
-        else:
-            os.makedirs("sens_data/prcc_plot", exist_ok=True)
-
-        # os.makedirs("sens_data/heatmap", exist_ok=True)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
-        title_list = filename_without_ext.split("_")
-        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
+        title_list = filename_without_ext
+        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list
 
-        self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector, p_values=p_values,
-                                           plot_title=plot_title)
+        self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector,
+                                           p_values=p_values,
+                                           filename_to_save=filename_without_ext,
+                                           plot_title=plot_title,
+                                           option=option)
 
     @staticmethod
-    def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values,
-                                      filename_to_save, plot_title, option):
+    def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values, plot_title,
+                                      filename_to_save, option):
         """
               Prepares for plotting aggregated PRCC and standard values as error bars.
               :param param_list: list of the parameters
@@ -237,13 +235,12 @@ class Plotter:
               :return: None
               """
         if option:
-            os.makedirs(os.path.join("sens_data", option, "agg_plot"), exist_ok=True)
-            save_path = os.path.join("sens_data", option, "agg_plot",
-                                     filename_to_save + '.pdf')
+            os.makedirs(os.path.join(option), exist_ok=True)
+            save_path = os.path.join(option, 'agg_plot.pdf')
         else:
             os.makedirs("sens_data/agg_plot", exist_ok=True)
             save_path = os.path.join("sens_data", "agg_plot", filename_to_save + '.pdf')
-        # os.makedirs("sens_data/PRCC_PVAL_PLOT", exist_ok=True)
+
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif', size=14)
         plt.margins(0, tight=False)
@@ -276,8 +273,10 @@ class Plotter:
         :param option: (str): target options for epidemic size.
         :return: bar plots with error bars
         """
-        title_list = filename_without_ext.split("_")
-        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
+        # title_list = filename_without_ext.split("_")
+        title_list = filename_without_ext
+        # plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
+        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list
         self.aggregated_prcc_pvalues_plots(param_list=self.sim_obj.n_ag,
                                            prcc_vector=prcc_vector, std_values=std_values,
                                            filename_to_save=filename_without_ext,
@@ -300,8 +299,6 @@ class Plotter:
         directory_column_orders = [
             (f"./sens_data/Epidemic/Epidemic_values", [
                 "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
-                "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
-                "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                 "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                 "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
                 "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
@@ -372,7 +369,8 @@ class Plotter:
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$"]
 
             plt.figure(figsize=(22, 8))
-            heatmap = sns.heatmap(stacked_df, cmap='inferno', annot=True, fmt=".1f")
+            heatmap = sns.heatmap(stacked_df, cmap='inferno', annot=True, fmt=".1f",
+                                  cbar=False)
             # Draw a vertical line after the first column
             plt.axvline(x=1.0, color='white', linestyle="solid", linewidth=10)
             # Remove y-axis label for the inserted column
@@ -397,8 +395,7 @@ class Plotter:
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
 
-    def plot_epidemic_peak_and_size(self, time, cm_list, legend_list, ratio, model: str,
-                                    plot_option: str = "Epidemic_size"):
+    def plot_epidemic_peak_and_size(self, time, cm_list, legend_list, ratio, model: str):
         """
         Calculates and saves the max values after running an epidemic peak simulation by varying
         age group contacts, then plots the epidemic peak size for different combinations
@@ -408,39 +405,16 @@ class Plotter:
         :param legend_list:
         :param ratio: The ratio value, [0.25, 0.5]
         :param model: The different models
-        :param plot_option: plot cumulative epidemic size or epidemic peak
         :return: plots and age group max epidemic peak size as csv files.
         """
         # Define the output directory for plot
         plot_dir, output_dir = self.create_directories(target="Epidemic")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        # Get the Blues colormap
-        blues_cmap = get_cmap('Blues')
-        color = blues_cmap(0.3)
-        color2 = blues_cmap(0.5)
-
-        if model == "rost":
-            compartments = ["l1", "l2", "ip", "ia1", "ia2", "ia3",
-                            "is1", "is2", "is3", "ih", "ic", "icr"]
-        elif model == "moghadas":
-            compartments = ["e", "i_n",
-                            "q_n", "i_h", "q_h", "a_n",
-                            "a_q", "h", "c"]
-        elif model == "chikina":
-            compartments = ["i", "cp", "c"]
-        elif model == "seir":
-            compartments = ["e", "i"]
-        else:
-            raise Exception("Invalid model")
 
         # Initialize an empty list to store results
         results_list = []
-        df = pd.DataFrame()
-
         susc = self.sim_obj.sim_state["susc"]
         base_r0 = self.sim_obj.sim_state["base_r0"]
         # Initialize combined_curve outside the loop
-        combined_curve = np.zeros_like(time)
         init_values = self.sim_obj.model.get_initial_values()
         for cm, legend in zip(cm_list, legend_list):
             # Get solution for the current combination
@@ -450,13 +424,6 @@ class Plotter:
                 parameters=self.sim_obj.params,
                 cm=cm
             )
-            # Iterate over compartments and sum values
-            combined_curve = np.zeros((len(solution), ))
-            for compartment in compartments:
-                combined_curve += self.sim_obj.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.sim_obj.model.c_idx[compartment])
-
             if model in ["rost", "seir"]:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
@@ -477,8 +444,7 @@ class Plotter:
                 'susc': susc,
                 'base_r0': base_r0,
                 'ratio': ratio,
-                'n_infected_max': total_infecteds,
-                'n_infecteds_peak': combined_curve
+                'n_infected_max': total_infecteds
             }
             # Append the result_entry to the results_list
             results_list.append(result_entry)
@@ -486,54 +452,43 @@ class Plotter:
             df = pd.DataFrame(results_list)
 
             # Plot the epidemic peak for the current combination
-            if plot_option == "Epidemic_size":
-                # Plot the cumulative epidemic size for the current combination
-                ax.plot(time, result_entry['n_infected_max'],
-                        label=f'susc={susc}, 'f'r0={base_r0}, ratio={1 - ratio}', color=color2)
-                ax.fill_between(time, 0, result_entry['n_infected_max'],
-                                color=color2, alpha=0.8)
-            else:
-                ax.plot(time, result_entry['n_infecteds_peak'],
-                        label=f'susc={susc}, 'f'r0={base_r0}, ratio={1 - ratio}', color=color2)
-                ax.fill_between(time, 0, result_entry['n_infecteds_peak'],
-                                color=color2, alpha=0.8)
-        # Find the peak value and its corresponding day
-        peak_day = np.argmax(combined_curve)
-        peak_value = combined_curve[peak_day]
-        print(peak_value)
-        self.create_rectangular_box_on_the_right(ax=ax, color=color, susc=susc,
-                                                 base_r0=base_r0, ratio=ratio,
-                                                 model=model,
-                                                 plot_option="Epidemic")
-        # Set spine properties
-        self.set_spine_properties(ax=ax)
-
-        if plot_option == "Epidemic_size":
-            output_path = os.path.join(plot_dir,
-                                       f"epidemic_size_plot_{susc}_{base_r0}_{ratio}.pdf")
-        else:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            # Get the Blues colormap
+            blues_cmap = get_cmap('Blues')
+            color = blues_cmap(0.3)
+            color2 = blues_cmap(0.5)
+            ax.plot(time, result_entry['n_infected_max'],
+                    label=f'susc={susc}, 'f'r0={base_r0}, ratio={1 - ratio}', color=color2)
+            ax.fill_between(time, 0, result_entry['n_infected_max'],
+                            color=color2, alpha=0.8)
+            self.create_rectangular_box_on_the_right(ax=ax, color=color, susc=susc,
+                                                     base_r0=base_r0, ratio=ratio,
+                                                     model=model,
+                                                     plot_option="Epidemic")
+            # Set spine properties
+            self.set_spine_properties(ax=ax)
             output_path = os.path.join(plot_dir,
                                        f"epidemic_peak_plot_{susc}_{base_r0}_{ratio}.pdf")
 
-        plt.savefig(output_path, format="pdf",
-                    bbox_inches='tight', pad_inches=0.5)
-        plt.savefig(output_path, format="pdf")
-        plt.close()
+            plt.savefig(output_path, format="pdf",
+                        bbox_inches='tight', pad_inches=0.5)
+            plt.savefig(output_path, format="pdf")
+            plt.close()
 
-        # Find the maximum value in each row
-        max_infected_values = np.array([max(row) for row in df['n_infected_max']])
-        # Add a new column 'max_n_icu' to df containing the maximum values
-        df['max_n_infected'] = max_infected_values
-        # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
-        # Pivot the DataFrame
-        pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
-                                  values='max_n_infected',
-                                  aggfunc='first')
-        # Reset the index and save the results
-        self.prepare_and_save_results(pivot_df=pivot_df, susc=susc,
-                                      base_r0=base_r0, ratio=ratio,
-                                      output_dir=output_dir)
+            # Find the maximum value in each row
+            max_infected_values = np.array([max(row) for row in df['n_infected_max']])
+            # Add a new column 'max_n_icu' to df containing the maximum values
+            df['max_n_infected'] = max_infected_values
+            # Add an 'age_group' column to your DataFrame based on the index
+            df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
+            # Pivot the DataFrame
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+                                      values='max_n_infected',
+                                      aggfunc='first')
+            # Reset the index and save the results
+            self.prepare_and_save_results(pivot_df=pivot_df, susc=susc,
+                                          base_r0=base_r0, ratio=ratio,
+                                          output_dir=output_dir)
 
     def plot_solution_final_death_size(self, time, cm_list, legend_list, ratio, model):
         """
@@ -636,41 +591,40 @@ class Plotter:
             }
             # Append the result_entry to the results_list
             results_list.append(result_entry)
+            # Convert the list of dictionaries to a DataFrame
+            df = pd.DataFrame(results_list)
+            fig, ax = plt.subplots(figsize=(8, 6))
+            blues_cmap = get_cmap('Blues')
+            color = blues_cmap(0.3)
+            color2 = blues_cmap(0.5)
+            ax.plot(time, df['n_hospitals_max'].iloc[0], color=color2)
+            ax.fill_between(time, df['n_hospitals_max'].iloc[0],
+                            color=color2, alpha=0.8)
+            self.create_rectangular_box_on_the_right(ax=ax, color=color, susc=susc,
+                                                     base_r0=base_r0, ratio=ratio,
+                                                     model=model,
+                                                     plot_option="Hospitalized")
+            # Set spine properties
+            self.set_spine_properties(ax=ax)
+            output_path = os.path.join(plot_dir,
+                                       f"hosp_size_plot_{susc}_{base_r0}_{1 - ratio}.pdf")
+            plt.savefig(output_path, format="pdf", bbox_inches='tight', pad_inches=0.5)
+            plt.close()
 
-        # Convert the list of dictionaries to a DataFrame
-        df = pd.DataFrame(results_list)
-        fig, ax = plt.subplots(figsize=(8, 6))
-        blues_cmap = get_cmap('Blues')
-        color = blues_cmap(0.3)
-        color2 = blues_cmap(0.5)
-        ax.plot(time, df['n_hospitals_max'].iloc[0], color=color2)
-        ax.fill_between(time, df['n_hospitals_max'].iloc[0],
-                        color=color2, alpha=0.8)
-        self.create_rectangular_box_on_the_right(ax=ax, color=color, susc=susc,
-                                                 base_r0=base_r0, ratio=ratio,
-                                                 model=model,
-                                                 plot_option="Hospitalized")
-        # Set spine properties
-        self.set_spine_properties(ax=ax)
-        output_path = os.path.join(plot_dir,
-                                   f"hosp_size_plot_{susc}_{base_r0}_{1 - ratio}.pdf")
-        plt.savefig(output_path, format="pdf", bbox_inches='tight', pad_inches=0.5)
-        plt.close()
-
-        # Find the maximum value in each row
-        max_hosp_values = np.array([max(row) for row in df['n_hospitals_max']])
-        # Add a new column 'max_n_icu' to df containing the maximum values
-        df['max_n_hosp'] = max_hosp_values
-        # Add an 'age_group' column to your DataFrame based on the index
-        df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
-        # Pivot the DataFrame
-        pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
-                                  values='max_n_hosp',
-                                  aggfunc='first')
-        # Reset the index and save the results
-        self.prepare_and_save_results(pivot_df=pivot_df, susc=susc,
-                                      base_r0=base_r0, ratio=ratio,
-                                      output_dir=output_dir)
+            # Find the maximum value in each row
+            max_hosp_values = np.array([max(row) for row in df['n_hospitals_max']])
+            # Add a new column 'max_n_icu' to df containing the maximum values
+            df['max_n_hosp'] = max_hosp_values
+            # Add an 'age_group' column to your DataFrame based on the index
+            df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
+            # Pivot the DataFrame
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+                                      values='max_n_hosp',
+                                      aggfunc='first')
+            # Reset the index and save the results
+            self.prepare_and_save_results(pivot_df=pivot_df, susc=susc,
+                                          base_r0=base_r0, ratio=ratio,
+                                          output_dir=output_dir)
 
     def plot_icu_size(self, time, cm_list, legend_list, ratio, model: str):
         """
@@ -834,8 +788,8 @@ class Plotter:
         legend_text = f'${{\\sigma={susc}}}$, ${{\\overline{{\\mathcal{{R}}}}_0={base_r0}}}$, ' \
                       f'${{\\mathcal{{R}}={1 - ratio}}}$'
         # Plot the legend
-        ax.legend([TriangleHandler()], [legend_text], fontsize=10, labelcolor="navy",
-                  loc='upper left', bbox_to_anchor=(0.0, 1.0))
+        ax.legend([TriangleHandler()], [legend_text], fontsize=15, labelcolor="navy",
+                  loc='upper center', bbox_to_anchor=(0.5, 1.1))
 
         ax.add_patch(rect)
         ax.add_line(line)
@@ -864,5 +818,5 @@ class TriangleHandler(Line2D):
         color = kwargs.pop('color', 'navy')
 
         # Call the parent constructor
-        super().__init__([], [], label=label, color=color, marker='^',
+        super().__init__([], [], label=label, color=color, marker=None,
                          markersize=10, **line_props)
