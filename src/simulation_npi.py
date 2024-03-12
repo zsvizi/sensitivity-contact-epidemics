@@ -19,8 +19,8 @@ class SimulationNPI(SimulationBase):
                  country: str = "usa",
                  epi_model: str = "rost_model") -> None:
         self.config = {
-            "include_final_death_size": False,
-            "include_icu_peak": False,
+            "include_final_death_size": True,
+            "include_icu_peak": True,
             "include_hospital_peak": True,
             "include_infecteds_peak": True,
             "include_infecteds": True
@@ -51,16 +51,7 @@ class SimulationNPI(SimulationBase):
                         target=self.target, epi_model=self.epi_model,
                         country=self.country, config=self.config
                     )
-                    if self.target == "r0":
-                        sampler_npi.run(option=None)
-                    elif self.target == "epidemic_size":
-                        for option in self.config:
-                            if self.config[option]:
-                                # print the current simulation
-                                print(f"Simulation for {option} "
-                                      f"{self.n_samples} samples "
-                                      f"({susc}-{base_r0})")
-                                sampler_npi.run(option=option)
+                    sampler_npi.run()
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector

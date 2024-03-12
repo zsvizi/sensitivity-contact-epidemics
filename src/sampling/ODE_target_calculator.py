@@ -4,7 +4,7 @@ from src.sampling.state_calculator import StateCalculator
 from src.sampling.target_calculator import TargetCalculator
 
 
-class FinalSizeTargetCalculator(TargetCalculator):
+class ODETargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: SimulationNPI, config: dict, epi_model: str = "rost"):
         super().__init__(sim_obj=sim_obj)
         self.config = config

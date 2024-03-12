@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import src
 from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
-from src.sampling.final_size_target_calculator import FinalSizeTargetCalculator
+from src.sampling.ODE_target_calculator import ODETargetCalculator
 from src.sampling.sampler_base import SamplerBase
 from src.sampling.r0_target_calculator import R0TargetCalculator
 
@@ -27,39 +27,54 @@ class SamplerNPI(SamplerBase):
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj,
                                            country=self.country)
         elif self.target == "epidemic_size":
-            self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj,
+            self.calc = ODETargetCalculator(sim_obj=self.sim_obj,
                                                   epi_model=sim_obj.epi_model,
                                                   config=self.config)
         self.susc = sim_obj.sim_state["susc"]
         self.lhs_boundaries = cm_calc.lhs_boundaries
 
-    def run(self, option):
+    def run(self):
         kappa = self.calculate_kappa()
         print("computing kappa for base_r0=" + str(self.base_r0))
         number_of_samples = self.sim_obj.n_samples
-        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
-                                        kappa=kappa)
-        sim_output = None
-        if (self.target == "epidemic_size" and (option in self.config and self.config[option])) or \
-           (not self.target == "epidemic_size"):
-            results = list(tqdm(
-                map(partial(self.get_sim_output, calc=self.calc),
-                    lhs_table),
-                total=lhs_table.shape[0]))
-            results = np.array(results)
+        num_parameters = len(self._get_lhs_table(number_of_samples=number_of_samples,
+                                                 kappa=kappa)[0])
+        sim_outputs = {}  # Dictionary to store sim outputs for each target
+        lhs_outputs = {}  # Dictionary to store lhs outputs for each target
 
-            r0_col_idx = int(self.sim_obj.upper_tri_size)
-            res_min = results[:, r0_col_idx].min()
-            if res_min < 1:
-                print("minimal lhs_r0: " + str(res_min))
-            sorted_idx = results[:, r0_col_idx].argsort()
-            results = results[sorted_idx]
-            lhs_table = np.array(lhs_table[sorted_idx])
-            sim_output = np.array(results)
-            sleep(0.3)
-            self._save_output(output=lhs_table, option=option, folder_name="lhs")
-            self._save_output(output=sim_output, option=option, folder_name="simulations")
-        return lhs_table, sim_output
+        for target_key, target in self.config.items():
+            if target:  # Check if the target is set to True
+                print(f"Simulation for {target_key}: {number_of_samples} "
+                      f"samples ({self.susc}-{self.base_r0})")
+                lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
+                                                kappa=kappa)
+                # Calculate simulation output for the current target
+                results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+                                        lhs_table),
+                                    total=lhs_table.shape[0]))
+                results = np.array(results)
+                r0_col_idx = int(self.sim_obj.upper_tri_size)
+                res_min = results[:, r0_col_idx].min()
+                if res_min < 1:
+                    print("minimal lhs_r0: " + str(res_min))
+                sorted_idx = results[:, r0_col_idx].argsort()
+                results = results[sorted_idx]
+                # store outputs for the current target
+                lhs_outputs[target_key] = np.array(lhs_table[sorted_idx])
+                sim_outputs[target_key] = np.array(results)
+
+                # Initialize lhs and sim outputs for all targets with zeros
+                for other_target_key in self.config.keys():
+                    lhs_outputs.setdefault(other_target_key, np.zeros_like(results))
+                    sim_outputs.setdefault(other_target_key, np.zeros_like(results))
+                    # Update sim outputs for the current target
+                lhs_outputs[target_key] = np.array(lhs_table[sorted_idx])
+                sim_outputs[target_key] = np.array(results)
+                # Sleep for a short time to avoid overloading the system
+                sleep(0.3)
+        self._save_output(sim_outputs, folder_name="simulations")
+        self._save_output(lhs_outputs, folder_name="lhs")
+        return lhs_outputs, sim_outputs
 
     def calculate_kappa(self):
         kappas = np.linspace(0, 1, 1000)
