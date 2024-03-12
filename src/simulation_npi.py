@@ -53,36 +53,11 @@ class SimulationNPI(SimulationBase):
                     )
                     sampler_npi.run()
 
-    def generate_analysis_results(self):
-        # Update params by susceptibility vector
-        susceptibility = np.ones(self.n_ag)
-        for susc in self.susc_choices:
-            susceptibility[:4] = susc
-            self.params.update({"susc": susceptibility})
-            # Update params by calculated BASELINE beta
-            for base_r0 in self.r0_choices:
-                self.prepare_simulations(base_r0=base_r0, susc=susc)
-                analysis = ContactManipulation(sim_obj=self, susc=susc,
-                                               base_r0=base_r0, model="rost")
-                return analysis.run_plots()
-
     def calculate_prcc_values(self):
-        if self.target == "r0":
-            sim_folder, lhs_folder = "simulations", "lhs"
-            prcc_dir = "PRCC_Pvalues"
-            agg_dir = "agg_prcc"
-            self._calculate_prcc_for_target(sim_folder, lhs_folder, prcc_dir, agg_dir)
-        elif self.target == "epidemic_size":
-            for option in self.config:
-                if self.config[option]:
-                    sim_folder = os.path.join(option, "simulations")
-                    lhs_folder = os.path.join(option, "lhs")
-                    prcc_dir = os.path.join(option, "PRCC_Pvalues")
-                    agg_dir = os.path.join(option, "agg_prcc")
-                    self._calculate_prcc_for_target(sim_folder, lhs_folder,
-                                                    prcc_dir, agg_dir)
+        sim_folder, lhs_folder = "simulations", "lhs"
+        prcc_dir = "PRCC_Pvalues"
+        agg_dir = "agg_prcc"
 
-    def _calculate_prcc_for_target(self, sim_folder, lhs_folder, prcc_dir, agg_dir):
         # Read files from the generated folder based on the given parameters
         for root, dirs, files in os.walk(os.path.join("./sens_data", sim_folder)):
             for filename in files:
@@ -100,36 +75,38 @@ class SimulationNPI(SimulationBase):
                 base_r0 = float(filename.split("_")[3])
 
                 # CALCULATIONS
-                # Calculate PRCC values
-                prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
-                prcc_calculator.calculate_prcc_values(
-                    lhs_table=saved_lhs_values,
-                    sim_output=saved_simulation
-                )
+                for target_idx in range(self.upper_tri_size, saved_simulation.shape[0]):
+                    # Calculate PRCC values
+                    prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
+                    prcc_calculator.calculate_prcc_values(
+                        lhs_table=saved_lhs_values,
+                        sim_output=saved_simulation[:, target_idx]
+                    )
 
-                # Calculate p-values
-                prcc_calculator.calculate_p_values()
-                stack_prcc_pval = np.hstack(
-                    [prcc_calculator.prcc_list, prcc_calculator.p_value]
-                ).reshape(-1, self.upper_tri_size).T
+                    # Calculate p-values
+                    prcc_calculator.calculate_p_values()
+                    stack_prcc_pval = np.hstack(
+                        [prcc_calculator.prcc_list, prcc_calculator.p_value]
+                    ).reshape(-1, self.upper_tri_size).T
 
-                # Aggregate PRCC values
-                prcc_calculator.aggregate_prcc_values()
-                stack_value = np.hstack(
-                    [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                ).reshape(-1, self.n_ag).T
-                # CALCULATIONS END
+                    # Aggregate PRCC values
+                    prcc_calculator.aggregate_prcc_values()
+                    stack_value = np.hstack(
+                        [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
+                    ).reshape(-1, self.n_ag).T
+                    # CALCULATIONS END
 
-                # Save PRCC values
-                os.makedirs(os.path.join("./sens_data", prcc_dir), exist_ok=True)
-                fname = "_".join([str(susc), str(base_r0)])
-                prcc_fname = os.path.join("sens_data", prcc_dir, fname + ".csv")
-                np.savetxt(fname=prcc_fname, X=stack_prcc_pval, delimiter=";")
+                    target_index = str(target_idx - self.upper_tri_size)
+                    # Save PRCC values
+                    os.makedirs(os.path.join("./sens_data", prcc_dir), exist_ok=True)
+                    fname = "_".join([str(susc), str(base_r0)])
+                    prcc_fname = os.path.join("sens_data", prcc_dir, fname, "_" + target_index,".csv")
+                    np.savetxt(fname=prcc_fname, X=stack_prcc_pval, delimiter=";")
 
-                # Save agg_prcc values and the std deviations
-                os.makedirs(os.path.join("./sens_data", agg_dir), exist_ok=True)
-                agg_fname = os.path.join("sens_data", agg_dir, fname + ".csv")
-                np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
+                    # Save agg_prcc values and the std deviations
+                    os.makedirs(os.path.join("./sens_data", agg_dir), exist_ok=True)
+                    agg_fname = os.path.join("sens_data", agg_dir, fname, "_" + target_index, ".csv")
+                    np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
 
     def plot_prcc_values(self):
         for susc in self.susc_choices:
@@ -180,6 +157,19 @@ class SimulationNPI(SimulationBase):
                             filename_without_ext=filename_without_ext,
                             option=option
                         )
+
+    def generate_analysis_results(self):
+        # Update params by susceptibility vector
+        susceptibility = np.ones(self.n_ag)
+        for susc in self.susc_choices:
+            susceptibility[:4] = susc
+            self.params.update({"susc": susceptibility})
+            # Update params by calculated BASELINE beta
+            for base_r0 in self.r0_choices:
+                self.prepare_simulations(base_r0=base_r0, susc=susc)
+                analysis = ContactManipulation(sim_obj=self, susc=susc,
+                                               base_r0=base_r0, model="rost")
+                analysis.run_plots()
 
     def plot_max_values_contact_manipulation(self):
         """

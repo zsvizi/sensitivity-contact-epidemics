@@ -439,7 +439,6 @@ class Plotter:
 
         susc = self.sim_obj.sim_state["susc"]
         base_r0 = self.sim_obj.sim_state["base_r0"]
-        max_peak_size_per_compartment = []
         # Initialize combined_curve outside the loop
         combined_curve = np.zeros_like(time)
         init_values = self.sim_obj.model.get_initial_values()
@@ -452,21 +451,12 @@ class Plotter:
                 cm=cm
             )
             # Iterate over compartments and sum values
+            combined_curve = np.zeros((len(solution), ))
             for compartment in compartments:
-                max_peak_size = 0
-                for t_idx in range(len(solution)):
-                    compartment_values = self.sim_obj.model.aggregate_by_age(
-                        solution=solution,
-                        idx=self.sim_obj.model.c_idx[compartment])
-                    peak_size_at_t = compartment_values.sum()
-                    max_peak_size = max(max_peak_size, peak_size_at_t)
-                max_peak_size_per_compartment.append(max_peak_size)
+                combined_curve += self.sim_obj.model.aggregate_by_age(
+                    solution=solution,
+                    idx=self.sim_obj.model.c_idx[compartment])
 
-                # Calculate the combined epidemic curve
-                combined_curve += np.sum(
-                    [solution[:, self.sim_obj.model.c_idx[comp] * self.sim_obj.n_ag:
-                              (self.sim_obj.model.c_idx[comp] + 1) * self.sim_obj.n_ag
-                              ].sum(axis=1) for comp in self.sim_obj.model.compartments], axis=0)
             if model in ["rost", "seir"]:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,

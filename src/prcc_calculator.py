@@ -19,7 +19,7 @@ class PRCCCalculator:
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
         sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
         sim_data = 1 - sim_data
-        simulation = np.append(sim_data, sim_output[:, - 1].reshape((-1, 1)), axis=1)
+        simulation = np.append(sim_data, sim_output.reshape((-1, 1)), axis=1)
         prcc_list = get_prcc_values(lhs_output_table=simulation)
         prcc_mtx = get_rectangular_matrix_from_upper_triu(
             rvector=prcc_list[:self.sim_obj.upper_tri_size],
