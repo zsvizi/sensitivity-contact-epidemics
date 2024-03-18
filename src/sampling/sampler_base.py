@@ -51,33 +51,20 @@ class SamplerBase(ABC):
         # Save NumPy array as CSV file
         np.savetxt(fname=filename + ".csv", X=output, delimiter=";")
 
-    def _save_output_json(self, output, folder_name, output_info=None):
-        # Create directories for saving calculation outputs
+    def _save_output_json(self, folder_name):
         directory = os.path.join("./sens_data", folder_name)
         os.makedirs(directory, exist_ok=True)
         filename = os.path.join(directory, f"{folder_name}_Hungary_" +
                                 "_".join(self._get_variable_parameters()))
+        value = dict()
+        i = 0
+        for k, v in self.sim_obj.config.items():
+            if v:
+                value[k] = self.sim_obj.upper_tri_size + i
+                i += 1
 
-        if output_info:
-            with open(filename + ".json", "w") as json_file:
-                json.dump(output_info, json_file)
-
-            # Check if output is a dictionary
-        if isinstance(output, dict):
-            # Check if output is a dictionary
-            if isinstance(output, dict):
-                # Define keys to exclude
-                excluded_keys = ["final_death_size", "icu_peak", "hospital_peak",
-                                 "infecteds_peak", "r0"]
-
-                # Save dictionary values as separate JSON files
-                for key, value in output.items():
-                    if key not in excluded_keys:
-                        with open(os.path.join(directory, f"{key}.json"), "w") as json_file:
-                            json.dump(value, json_file)
-            else:
-                # Save NumPy array as CSV file
-                np.savetxt(fname=filename + ".csv", X=output, delimiter=";")
+        with open(filename + ".json", "w") as json_file:
+            json.dump(value, json_file)
 
 
 def create_latin_table(n_of_samples, lower, upper) -> np.ndarray:
