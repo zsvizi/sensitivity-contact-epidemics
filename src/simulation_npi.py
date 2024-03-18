@@ -18,12 +18,13 @@ class SimulationNPI(SimulationBase):
                  target: str = "epidemic_size",
                  country: str = "usa",
                  epi_model: str = "rost_model") -> None:
+
         self.config = {
             "include_final_death_size": True,
             "include_icu_peak": True,
             "include_hospital_peak": True,
             "include_infecteds_peak": True,
-            "include_infecteds": True
+            "include_infecteds": False    # excluded from the targets
         }
         self.country = country
         self.target = target
@@ -49,9 +50,11 @@ class SimulationNPI(SimulationBase):
                     sampler_npi = src.SamplerNPI(
                         sim_obj=self,
                         target=self.target, epi_model=self.epi_model,
-                        country=self.country, config=self.config
-                    )
-                    sampler_npi.run()
+                        country=self.country, config=self.config)
+                    if self.target == "epidemic_size":
+                        sampler_npi.run()
+                    elif self.target == "r0":
+                        sampler_npi.run_r0()
 
     def calculate_prcc_values(self):
         sim_folder = "simulations"
@@ -75,7 +78,7 @@ class SimulationNPI(SimulationBase):
                                 float(filename.split("_")[3])
 
                 # CALCULATIONS
-                for target_idx in range(self.upper_tri_size, saved_simulation.shape[1]):
+                for target_idx in range(self.upper_tri_size, saved_simulation.shape[0]):
                     prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
                     prcc_calculator.calculate_prcc_values(
                         lhs_table=saved_lhs_values,
@@ -92,6 +95,8 @@ class SimulationNPI(SimulationBase):
                     ).reshape(-1, self.n_ag).T
                     # CALCULATIONS END
 
+                    print(saved_simulation.shape[0])
+
                     target_index = str(target_idx - self.upper_tri_size)
                     # Save PRCC values
                     fname = "_".join([str(susc), str(base_r0)])
@@ -102,7 +107,8 @@ class SimulationNPI(SimulationBase):
                     np.savetxt(fname=prcc_fname, X=stack_prcc_pval, delimiter=";")
 
                     # Save agg_prcc values and the std deviations
-                    agg_folder = os.path.join("./sens_data", agg_dir, fname, "_" + target_index)
+                    agg_folder = os.path.join("./sens_data", agg_dir, fname, "_" +
+                                              target_index)
                     os.makedirs(agg_folder, exist_ok=True)
                     agg_fname = os.path.join(agg_folder, "agg.csv")
                     np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
@@ -192,7 +198,7 @@ class SimulationNPI(SimulationBase):
                             # Add DataFrame to the dictionary
                             dfs[f"{base_dir}/{column_name}"] = df
                 plot = src.Plotter(sim_obj=self, data=self.data)
-                plot.plot_model_max_values(max_values=dfs, model="rost")
+                plot.plot_model_max_values(max_values=dfs, model="chikina")
 
     def prepare_simulations(self, base_r0, susc):
         r0generator = self.choose_r0_generator()

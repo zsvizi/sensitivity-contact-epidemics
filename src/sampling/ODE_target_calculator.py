@@ -47,14 +47,20 @@ class ODETargetCalculator(TargetCalculator):
         final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
         icu = self.state_calc.calculate_icu(sol=complete_sol)
 
-        # return the targets
+        output = {}
         if self.config["include_final_death_size"]:
-            return np.array([final_size_dead])
-        elif self.config["include_icu_peak"]:
-            return np.array([icu])
-        elif self.config["include_hospital_peak"]:
-            return np.array([hospital_peak_now])
-        elif self.config["include_infecteds_peak"]:
-            return np.array([infecteds_peak])
-        elif self.config["include_infecteds"]:
-            return np.array([infecteds])
+            output["final_death_size"] = np.array([final_size_dead])
+
+        if self.config["include_icu_peak"]:
+            output["icu_peak"] = np.array([icu])
+
+        if self.config["include_hospital_peak"]:
+            output["hospital_peak"] = np.array([hospital_peak_now])
+
+        if self.config["include_infecteds_peak"]:
+            output["infecteds_peak"] = np.array([infecteds_peak])
+
+        if self.config["include_infecteds"]:
+            output["infecteds"] = np.array([infecteds])
+
+        return output
