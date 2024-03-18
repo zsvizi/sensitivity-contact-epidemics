@@ -3,7 +3,7 @@ from src.dataloader import DataLoader
 
 
 def main():
-    data = DataLoader(country="usa")
+    data = DataLoader(country="hungary")
 
     simulation = src.SimulationNPI(data=data, n_samples=10,
                                    epi_model="rost", country="hungary")
