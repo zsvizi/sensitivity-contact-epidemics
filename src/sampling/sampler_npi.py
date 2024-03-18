@@ -1,6 +1,4 @@
 from functools import partial
-from time import sleep
-import os
 
 import numpy as np
 from tqdm import tqdm
