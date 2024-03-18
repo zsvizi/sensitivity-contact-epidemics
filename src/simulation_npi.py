@@ -24,7 +24,8 @@ class SimulationNPI(SimulationBase):
             "include_icu_peak": True,
             "include_hospital_peak": True,
             "include_infecteds_peak": True,
-            "include_infecteds": False    # excluded from the targets
+            "include_infecteds": False,  # excluded from the targets
+            "include_r0": True
         }
         self.country = country
         self.target = target
@@ -49,12 +50,9 @@ class SimulationNPI(SimulationBase):
                 if generate_lhs:
                     sampler_npi = src.SamplerNPI(
                         sim_obj=self,
-                        target=self.target, epi_model=self.epi_model,
+                        epi_model=self.epi_model,
                         country=self.country, config=self.config)
-                    if self.target == "epidemic_size":
-                        sampler_npi.run()
-                    elif self.target == "r0":
-                        sampler_npi.run_r0()
+                    sampler_npi.run()
 
     def calculate_prcc_values(self):
         sim_folder = "simulations"
