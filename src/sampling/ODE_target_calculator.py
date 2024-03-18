@@ -7,6 +7,7 @@ from src.sampling.target_calculator import TargetCalculator
 class ODETargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: SimulationNPI, config: dict, epi_model: str = "rost"):
         super().__init__(sim_obj=sim_obj)
+        self.sim_output_values = {}  # track the target
         self.config = config
         self.state_calc = StateCalculator(sim_obj=sim_obj, epi_model=epi_model)
 
@@ -47,20 +48,35 @@ class ODETargetCalculator(TargetCalculator):
         final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
         icu = self.state_calc.calculate_icu(sol=complete_sol)
 
-        output = []
+        output = []  # collecting the targets from epidemic size
         if self.config["include_final_death_size"]:
+            self.sim_output_values["final_death_size"] = {
+                "values":final_size_dead[0],
+                "description": "Run simulations with final_death_size as target"
+            }
             output.append(final_size_dead[0])
 
         if self.config["include_icu_peak"]:
+            self.sim_output_values["icu_peak"] = {
+                "values":icu,
+                "description": "Run simulations with icu_peak as target"
+            }
             output.append(icu)
 
         if self.config["include_hospital_peak"]:
+            self.sim_output_values["hospital_peak"] = {
+                "values": hospital_peak_now,
+                "description": "Run simulations with hospital_peak as target"
+            }
             output.append(hospital_peak_now)
 
         if self.config["include_infecteds_peak"]:
+            self.sim_output_values["infecteds_peak"] = {
+                "values": infecteds_peak,
+                "description": "Run simulations with infecteds_peak as target"
+            }
             output.append(infecteds_peak)
 
         if self.config["include_infecteds"]:
             output.append(infecteds)
-
         return np.array(output)

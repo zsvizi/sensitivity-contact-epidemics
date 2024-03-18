@@ -39,11 +39,58 @@ class SamplerNPI(SamplerBase):
         self.calc = ODETargetCalculator(sim_obj=self.sim_obj,
                                         epi_model=self.sim_obj.epi_model,
                                         config=self.config)
+
         # Calculate simulation output for the current target
         results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
                                 lhs_table),
                             total=lhs_table.shape[0]))
         sim_outputs = np.array(results)
+
+        # Define column information
+        column_info = {
+            "target_names": ["final_death_size", "icu_peak", "hospital_peak", "infecteds_peak"],  # column names
+            "column_descriptions": ["Run simulations with final_death_size as target",
+                                    "Run simulations with icu_peak as target",
+                                    "Run simulations with hospital_peak as target",
+                                    "Run simulations with infecteds_peak as target"]
+        }
+        # Extract individual targets from sim_outputs
+        final_death_size = sim_outputs[:, self.sim_obj.upper_tri_size + 0:
+                                          self.sim_obj.upper_tri_size + 1]
+        icu_peak = sim_outputs[:, self.sim_obj.upper_tri_size + 1:
+                                  self.sim_obj.upper_tri_size + 2]
+        hospital_peak = sim_outputs[:, self.sim_obj.upper_tri_size + 2:
+                                       self.sim_obj.upper_tri_size + 3]
+        infecteds_peak = sim_outputs[:, self.sim_obj.upper_tri_size + 3:
+                                        self.sim_obj.upper_tri_size + 4]
+
+        # Initialize empty dictionary to store simulation outputs
+        sim_output_values = {}
+        # Define simulation output values for each target
+        if self.config["include_final_death_size"]:
+            sim_output_values["final_death_size"] = {
+                "values": final_death_size.flatten().tolist(),
+                "description": "Run simulations with final_death_size as target"
+            }
+
+        if self.config["include_icu_peak"]:
+            sim_output_values["icu_peak"] = {
+                "values": icu_peak.flatten().tolist(),
+                "description": "Run simulations with icu_peak as target"
+            }
+
+        if self.config["include_hospital_peak"]:
+            sim_output_values["hospital_peak"] = {
+                "values": hospital_peak.flatten().tolist(),
+                "description": "Run simulations with hospital_peak as target"
+            }
+
+        if self.config["include_infecteds_peak"]:
+            sim_output_values["infecteds_peak"] = {
+                "values": infecteds_peak.flatten().tolist(),
+                "description": "Run simulations with infecteds_peak as target"
+            }
+
         if self.config["include_r0"]:
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj,
                                            country=self.country)
@@ -54,8 +101,24 @@ class SamplerNPI(SamplerBase):
                                     np.array(results)[:, self.sim_obj.upper_tri_size:].reshape(-1, 1),
                                     axis=1)
 
-        self._save_output(output=sim_outputs, folder_name="simulations")
-        self._save_output(output=lhs_table, folder_name="lhs")
+            r0 = sim_outputs[:, -1].flatten().tolist()  # Extract and update r0 values
+            # Append r0 values to sim_output_values dictionary
+            sim_output_values["r0"] = {
+                "values": r0,
+                "description": "Run simulations with r0 as target"
+            }
+
+            # Update column information for R0
+            column_info["target_names"].append("r0")
+            column_info["column_descriptions"].append("Run simulations with r0 as target")
+
+            # Save simulation outputs and LHS table
+            output_info = {"sim_output_values": sim_output_values}
+
+        self._save_output(lhs_table, folder_name="lhs")
+        self._save_output(sim_outputs, folder_name="simulations")
+        self._save_output_json(sim_output_values, folder_name="simulations",
+                          output_info=output_info)
 
     def calculate_kappa(self):
         kappas = np.linspace(0, 1, 1000)
