@@ -15,7 +15,6 @@ from src.simulation_base import SimulationBase
 
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader, n_samples: int = 1,
-                 target: str = "epidemic_size",
                  country: str = "usa",
                  epi_model: str = "rost_model") -> None:
 
@@ -28,7 +27,6 @@ class SimulationNPI(SimulationBase):
             "include_r0": True
         }
         self.country = country
-        self.target = target
         super().__init__(data=data, epi_model=epi_model,
                          country=country)
         self.n_samples = n_samples
