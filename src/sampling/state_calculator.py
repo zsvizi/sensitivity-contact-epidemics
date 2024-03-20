@@ -114,7 +114,7 @@ class StateCalculator:
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["h"])
             ).max()
         else:
-            raise Exception("Invalid model!")
+            hospital_peak_now = 0
         return hospital_peak_now
 
     def calculate_icu(self, sol):
@@ -127,6 +127,12 @@ class StateCalculator:
         return icu_now
 
     def calculate_final_size_dead(self, sol):
-        state = sol[-1].reshape((1, -1))
-        final_size_dead = self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"])
+        if self.epi_model in ["rost", "chikina", "moghadas"]:
+            state = sol[-1].reshape((1, -1))
+            final_size_dead = self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"])
+        else:
+            final_size_dead = 0
         return final_size_dead
+
+
+

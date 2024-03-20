@@ -32,8 +32,12 @@ class SamplerNPI(SamplerBase):
         lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
                                         kappa=kappa)
         # Initialize sim_outputs_combined as a copy of lhs_table
-        print(f"Simulation for {self.target}: {number_of_samples} "
-              f"samples ({self.susc}-{self.base_r0})")
+        print(f"Simulation for {self.epi_model} model, "
+              f"contact_matrix: {self.country}, "
+              f"sample_size: {number_of_samples}, "
+              f"susc: {self.susc}, "
+              f"base_r0: {self.base_r0}.")
+
         self.calc = ODETargetCalculator(sim_obj=self.sim_obj,
                                         epi_model=self.sim_obj.epi_model,
                                         config=self.config)
