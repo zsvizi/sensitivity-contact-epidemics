@@ -45,10 +45,16 @@ class PRCCCalculator:
                 np.sum(1 - self.p_value_mtx, axis=1, keepdims=True)
         )
         use_complex_logic = False
+        use_population_logic = True
         if use_complex_logic:
             distribution_prcc_p_val = (
                     (self.prcc_mtx * distribution_p_val) /
                     np.sum(self.prcc_mtx * distribution_p_val, axis=1, keepdims=True)
+            )
+        elif use_population_logic:
+            distribution_prcc_p_val = (
+                (1 - self.p_value_mtx) * self.sim_obj.population.reshape((1, -1)) /
+                np.sum((1 - self.p_value_mtx) * self.sim_obj.population.reshape((1, -1)), axis=1, keepdims=True)
             )
         else:
             distribution_prcc_p_val = distribution_p_val.copy()
