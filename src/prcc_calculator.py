@@ -40,19 +40,27 @@ class PRCCCalculator:
             matrix_size=self.sim_obj.n_ag)
 
     def aggregate_prcc_values(self):
-        distribution_p_val = (1 - self.p_value_mtx) / np.sum(1 - self.p_value_mtx, axis=0)
-        distribution_prcc_p_val = \
-            (self.prcc_mtx * distribution_p_val) / \
-            np.sum(self.prcc_mtx * distribution_p_val, axis=0)
+        distribution_p_val = (
+                (1 - self.p_value_mtx) /
+                np.sum(1 - self.p_value_mtx, axis=1, keepdims=True)
+        )
+        use_complex_logic = False
+        if use_complex_logic:
+            distribution_prcc_p_val = (
+                    (self.prcc_mtx * distribution_p_val) /
+                    np.sum(self.prcc_mtx * distribution_p_val, axis=1, keepdims=True)
+            )
+        else:
+            distribution_prcc_p_val = distribution_p_val.copy()
 
         agg = np.sum(
             self.prcc_mtx * distribution_prcc_p_val,
-            axis=0
+            axis=1
         )
 
         agg_square = np.sum(
             self.prcc_mtx ** 2 * distribution_prcc_p_val,
-            axis=0
+            axis=1
         )
         agg_std = np.sqrt(agg_square - agg ** 2)
 
