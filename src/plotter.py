@@ -331,21 +331,7 @@ class Plotter:
         xp = range(param_list)
         plt.figure(figsize=(15, 12))
         plt.tick_params(direction="in")
-        # fig, ax = plt.subplots()
-        # plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.5,
-        #         color="g", label="PRCC")
-        # for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
-        #     plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
-        #                  markersize=5, capsize=4, ecolor="r", elinewidth=4)
-        # plt.xticks(ticks=xp, rotation=90)
-        # # plt.yticks(ticks=np.arange(-1, 1.0, 0.2))
-        # plt.legend([r'$\mathrm{\textbf{P}}$', r'$\mathrm{\textbf{s}}$'])
-        # axes = plt.gca()
-        # axes.set_ylim([0, 1.0])
-        # plt.xlabel('age groups', labelpad=10, fontsize=20)
-        # plt.title(plot_title, y=1.03, fontsize=20)
-        # plt.savefig(save_path, format="pdf", bbox_inches='tight')
-        # plt.close()
+
         if model == "rost":
             labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
@@ -372,22 +358,11 @@ class Plotter:
         color = ['lightgreen' if abs(prcc) < 0.3 else 'green' if
         0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
 
-        # Assigning custom shades of green colors based on custom ranges
-
-        # ax.barh(y_pos, prcc_vector, height=bar_width, align='center', color=colors,
-        #        label='aggregated PRCC')
-        # Adding error bars for standard deviations
-        # for i, (y, std) in enumerate(zip(y_pos, std_values)):
-        #     ax.errorbar(prcc_vector[i], y, xerr=std, fmt='o', color='red',
-        #                 capsize=4)
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")
         for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
             plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
                          markersize=5, capsize=4, ecolor="r", elinewidth=4)
-
-        # ax.set_yticks(y_pos)
-        # ax.set_yticklabels(labels)
 
         # Remove vertical lines
         ax.grid(False)
@@ -473,9 +448,7 @@ class Plotter:
 
     def plot_prob_distribution(self, data,
                                       filename_without_ext, model, option):
-        # title_list = filename_without_ext.split("_")
         title_list = filename_without_ext
-        # plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
         plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list
         self.plot_prob_distributions(data=data,
                                            filename_to_save=filename_without_ext,
