@@ -25,7 +25,7 @@ class ContactManipulation:
         elif self.model == "chikina":
             t = np.arange(0, 2500, 0.5)
         else:
-            t = np.arange(0, 400, 0.5)
+            t = np.arange(0, 500, 0.5)
 
         ratios = [0.75, 0.5]
         for ratio in ratios:
@@ -35,24 +35,24 @@ class ContactManipulation:
                 self.generate_contact_matrix(
                     cm_list=cm_list, legend_list=legend_list,
                     age_group=i, ratio=ratio)
+
             # epidemic size and epidemic peak
             self.plotter.plot_epidemic_peak_and_size(
                 time=t, cm_list=cm_list, legend_list=legend_list,
                 model=self.model, ratio=ratio)
-
             # plot icu size
-            self.plotter.plot_icu_size(
-                time=t, cm_list=cm_list, legend_list=legend_list,
-                model=self.model, ratio=ratio)
-
-            # number of hospitalized
-            self.plotter.plot_solution_hospitalized_size(
-                time=t, cm_list=cm_list, legend_list=legend_list,
-                model=self.model, ratio=ratio)
-            # final death size
-            self.plotter.plot_solution_final_death_size(
-                time=t, cm_list=cm_list, legend_list=legend_list,
-                model=self.model, ratio=ratio)
+            if self.model in ["rost", "chikina", "moghadas"]:
+                self.plotter.plot_icu_size(
+                    time=t, cm_list=cm_list, legend_list=legend_list,
+                    model=self.model, ratio=ratio)
+                # number of hospitalized
+                self.plotter.plot_solution_hospitalized_size(
+                    time=t, cm_list=cm_list, legend_list=legend_list,
+                    model=self.model, ratio=ratio)
+                # final death size
+                self.plotter.plot_solution_final_death_size(
+                     time=t, cm_list=cm_list, legend_list=legend_list,
+                     model=self.model, ratio=ratio)
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.contact_matrix

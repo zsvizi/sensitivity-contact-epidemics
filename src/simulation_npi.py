@@ -153,14 +153,13 @@ class SimulationNPI(SimulationBase):
                         for filename in files:
                             plotter = src.Plotter(sim_obj=self, data=self.data)
 
-                            # plotter.get_percentage_age_group_contact(filename="mean_contact",
-                            #                                          model=self.epi_model
-                            #                                          )
-                            # plot total contact matrices of the models
-                            # plotter.plot_contact_matrices_models(filename="contact",
-                            #                                      model=self.epi_model,
-                            #                                      contact_data=self.data.contact_data,
-                            #                                      plot_total_contact=True)
+                            plotter.get_percentage_age_group_contact(filename="mean_contact",
+                                                                     model=self.epi_model
+                                                                     )
+                            plotter.plot_contact_matrices_models(filename="contact",
+                                                                 model=self.epi_model,
+                                                                 contact_data=self.data.contact_data,
+                                                                 plot_total_contact=True)
 
                             if filename == "prcc.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')

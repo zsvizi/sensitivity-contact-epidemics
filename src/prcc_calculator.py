@@ -76,21 +76,21 @@ class PRCCCalculator:
                                                                           self.p_value_mtx)
         agg, agg_std = self._calculate_aggregate_mean_std(prcc_mtx_log,
                                                           distribution_prcc_p_val)
-        std_lower = agg - agg_std
-        std_upper = agg + agg_std
+        agg_std_lower = agg - agg_std
+        agg_std_upper = agg + agg_std
 
         # transform back
         agg = np.exp(agg)
         agg_std = np.exp(agg_std)
-        std_lower = np.exp(std_lower)
-        std_upper = np.exp(std_upper)
+        agg_std_lower = np.exp(agg_std_lower)
+        agg_std_upper = np.exp(agg_std_upper)
 
-        self.std_lower = std_lower
-        self.std_upper = std_upper
+        self.std_lower = agg_std_lower
+        self.std_upper = agg_std_upper
         self.agg_std = agg_std
         self.agg_prcc = agg
 
-        return agg.flatten(), std_lower.flatten(), std_upper.flatten()
+        return agg.flatten(), agg_std_lower.flatten(), agg_std_upper.flatten()
 
     def aggregate_prcc_values_median(self):
         distribution_prcc_p_val = self._calculate_distribution_prcc_p_val(self.prcc_mtx,
