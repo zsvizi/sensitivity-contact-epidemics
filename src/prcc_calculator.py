@@ -70,61 +70,58 @@ class PRCCCalculator:
         self.agg_prcc = agg
         return agg.flatten(), agg_std.flatten()
 
-    def aggregate_prcc_values_log(self):
-        prcc_mtx_log = np.log(np.abs(self.prcc_mtx))
-        distribution_prcc_p_val = self._calculate_distribution_prcc_p_val(prcc_mtx_log,
-                                                                          self.p_value_mtx)
-        agg, agg_std = self._calculate_aggregate_mean_std(prcc_mtx_log,
-                                                          distribution_prcc_p_val)
-        agg_std_lower = agg - agg_std
-        agg_std_upper = agg + agg_std
-
-        # transform back
-        agg = np.exp(agg)
-        agg_std = np.exp(agg_std)
-        agg_std_lower = np.exp(agg_std_lower)
-        agg_std_upper = np.exp(agg_std_upper)
-
-        self.std_lower = agg_std_lower
-        self.std_upper = agg_std_upper
-        self.agg_std = agg_std
-        self.agg_prcc = agg
-
-        return agg.flatten(), agg_std_lower.flatten(), agg_std_upper.flatten()
-
     def aggregate_prcc_values_median(self):
+        median_values = []
+        q1_values = []
+        q3_values = []
+        # prob using complex logic
         distribution_prcc_p_val = self._calculate_distribution_prcc_p_val(self.prcc_mtx,
                                                                           self.p_value_mtx)
 
-        sort_indices = np.argsort(distribution_prcc_p_val[:, 0])
-        distribution_prcc_p_val_sorted = distribution_prcc_p_val[sort_indices]
-        sorted_values = np.sort(self.prcc_mtx[sort_indices], axis=1)
+        # Iterate over the columns of prcc and p_value
+        for i in range(16):
+            # Take the ith column from prcc
+            prcc_column = self.prcc_mtx[:, i]
 
-        cumulative_probs = np.cumsum(distribution_prcc_p_val_sorted, axis=1)
+            # Take the ith column from distribution_prcc_p_val
+            prob_value_column = distribution_prcc_p_val[:, i]
 
-        median_index = np.argmax(cumulative_probs >= 0.5, axis=1)
-        median_row = np.array([sorted_values[i][idx] for i,
-                                                         idx in enumerate(median_index)])
+            # Combine prcc_column and prob_value_column into a single matrix (16 * 2)
+            combined_matrix = np.column_stack((prcc_column, prob_value_column))
+            # Take the absolute values of the first column to avoid -ve median values
+            combined_matrix[:, 0] = np.abs(combined_matrix[:, 0])
+            # Sort the rows of combined_matrix by the first column
+            sorted_indices = np.argsort(combined_matrix[:, 0])
+            combined_matrix_sorted = combined_matrix[sorted_indices]
+            # Calculate the cumulative sum of the second column
+            second_column_cumsum = np.cumsum(combined_matrix_sorted[:, 1])
+            # Find the index where the cumulative sum >= 0.5 for median
+            median_index = np.argmax(second_column_cumsum >= 0.5)
+            median_value = combined_matrix_sorted[median_index, 0]
 
-        q1_index = np.argmax(cumulative_probs >= 0.25, axis=1)
-        q3_index = np.argmax(cumulative_probs >= 0.75, axis=1)
-        q1 = np.array([sorted_values[i][idx] for i, idx in enumerate(q1_index)])
-        q3 = np.array([sorted_values[i][idx] for i, idx in enumerate(q3_index)])
+            # Find the index where the cumulative sum >= 0.25 for Q1
+            q1_indices = np.where(second_column_cumsum >= 0.25)[0]
+            q1_index = q1_indices[0] if len(q1_indices) > 0 else median_index
+            q1_value = combined_matrix_sorted[q1_index, 0]
 
-        iqr = q3 - q1
-        agg_std = iqr / 1.35
+            # Find the index where the cumulative sum >= 0.75 for Q3
+            q3_index = np.where(second_column_cumsum >= 0.75)[0]
+            q3_index = q3_index[-1] if len(q3_index) > 0 else median_index
+            q3_value = combined_matrix_sorted[q3_index, 0]
 
-        self.std_lower = q1
-        self.std_upper = q3
-        self.agg_prcc = median_row
-        self.agg_std = agg_std
+            # Append the median, Q1, and Q3 values to their respective lists
+            median_values.append(median_value)
+            q1_values.append(q1_value)
+            q3_values.append(q3_value)
 
-        return self.agg_prcc.flatten(), q1.flatten(), q3.flatten()
+        self.agg_prcc = median_values
+        self.std_lower = q1_values
+        self.std_upper = q3_values
+
+        return median_values, q1_values, q3_values
 
     def aggregate_prcc_values(self, calculation_approach: str):
         if calculation_approach == 'mean':
             return self.aggregate_prcc_values_mean()
-        elif calculation_approach == 'log':
-            return self.aggregate_prcc_values_log()
         else:
             return self.aggregate_prcc_values_median()

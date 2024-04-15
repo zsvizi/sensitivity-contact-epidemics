@@ -179,11 +179,6 @@ class SimulationNPI(SimulationBase):
                                     model=self.epi_model,
                                     option=root
                                 )
-                                # plot box plots
-                                plotter.plot_prob_distribution(data=saved_prcc_pval,
-                                                               filename_without_ext=base_r0_value,
-                                                               model=self.epi_model,
-                                                               option=root)
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector
