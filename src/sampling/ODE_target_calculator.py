@@ -41,26 +41,25 @@ class ODETargetCalculator(TargetCalculator):
             state = sol[-1]
             complete_sol = np.append(complete_sol, sol[1:, :], axis=0)
 
-        hospital_peak_now = self.state_calc.calculate_hospital_peak(sol=complete_sol)
-        infecteds = self.state_calc.calculate_infecteds(sol=complete_sol)
-        infecteds_peak = self.state_calc.calculate_epidemic_peaks(sol=complete_sol)
-        final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
-        icu = self.state_calc.calculate_icu(sol=complete_sol)
-
         output = []  # collecting the targets from epidemic size
         if self.config["include_final_death_size"]:
+            final_size_dead = self.state_calc.calculate_final_size_dead(sol=complete_sol)
             output.append(final_size_dead[0])
 
         if self.config["include_icu_peak"]:
+            icu = self.state_calc.calculate_icu(sol=complete_sol)
             output.append(icu)
 
         if self.config["include_hospital_peak"]:
+            hospital_peak_now = self.state_calc.calculate_hospital_peak(sol=complete_sol)
             output.append(hospital_peak_now)
 
         if self.config["include_infecteds_peak"]:
+            infecteds_peak = self.state_calc.calculate_epidemic_peaks(sol=complete_sol)
             output.append(infecteds_peak)
 
         if self.config["include_infecteds"]:
+            infecteds = self.state_calc.calculate_infecteds(sol=complete_sol)
             output.append(infecteds)
 
         return np.array(output)
