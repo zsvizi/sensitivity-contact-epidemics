@@ -65,7 +65,7 @@ class SimulationNPI(SimulationBase):
                         country=self.country, config=self.config)
                     sampler_npi.run()
 
-    def calculate_prcc_values(self):
+    def calculate_prcc_values(self, calculation_approach):
         sim_folder = "simulations"
         lhs_folder = "lhs"
         prcc_dir = "PRCC_Pvalues"
@@ -91,6 +91,7 @@ class SimulationNPI(SimulationBase):
                     os.path.join("./sens_data", sim_folder, sim_filename),
                     delimiter=';'
                 )
+
                 # CALCULATIONS
                 for key, value in saved_json_data.items():
                     prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
@@ -98,15 +99,23 @@ class SimulationNPI(SimulationBase):
                         lhs_table=saved_lhs_table,
                         sim_output=saved_simulation[:, value]
                     )
+
                     prcc_calculator.calculate_p_values()
                     stack_prcc_pval = np.hstack(
                         [prcc_calculator.prcc_list, prcc_calculator.p_value]
                     ).reshape(-1, self.upper_tri_size).T
 
-                    prcc_calculator.aggregate_prcc_values()
-                    stack_value = np.hstack(
-                        [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                    ).reshape(-1, self.n_ag).T
+                    prcc_calculator.aggregate_prcc_values(
+                        calculation_approach=calculation_approach)
+                    if calculation_approach == "mean":
+                        stack_value = np.hstack(
+                            [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
+                        ).reshape(-1, self.n_ag).T
+                    else:
+                        stack_value = np.hstack(
+                            [prcc_calculator.agg_prcc, prcc_calculator.std_lower,
+                             prcc_calculator.std_upper]
+                        ).reshape(-1, self.n_ag).T
                     # CALCULATIONS END
 
                     # Save PRCC values
@@ -143,11 +152,15 @@ class SimulationNPI(SimulationBase):
                     for root, dirs, files in os.walk(agg_dir):
                         for filename in files:
                             plotter = src.Plotter(sim_obj=self, data=self.data)
+
+                            # plotter.get_percentage_age_group_contact(filename="mean_contact",
+                            #                                          model=self.epi_model
+                            #                                          )
                             # plot total contact matrices of the models
-                            plotter.plot_contact_matrices_models(filename="contact",
-                                                                 model=self.epi_model,
-                                                                 contact_data=self.data.contact_data,
-                                                                 plot_total_contact=True)
+                            # plotter.plot_contact_matrices_models(filename="contact",
+                            #                                      model=self.epi_model,
+                            #                                      contact_data=self.data.contact_data,
+                            #                                      plot_total_contact=True)
 
                             if filename == "prcc.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
@@ -161,11 +174,17 @@ class SimulationNPI(SimulationBase):
                             elif filename == "agg.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
                                 plotter.plot_aggregation_prcc_pvalues(
-                                    prcc_vector=saved_prcc_pval[:, 0],
-                                    std_values=saved_prcc_pval[:, 1],
+                                    prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                    std_values=abs(saved_prcc_pval[:, 1]),
                                     filename_without_ext=base_r0_value,
+                                    model=self.epi_model,
                                     option=root
                                 )
+                                # plot box plots
+                                plotter.plot_prob_distribution(data=saved_prcc_pval,
+                                                               filename_without_ext=base_r0_value,
+                                                               model=self.epi_model,
+                                                               option=root)
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector
@@ -177,7 +196,7 @@ class SimulationNPI(SimulationBase):
             for base_r0 in self.r0_choices:
                 self.prepare_simulations(base_r0=base_r0, susc=susc)
                 analysis = ContactManipulation(sim_obj=self, susc=susc,
-                                               base_r0=base_r0, model="rost")
+                                               base_r0=base_r0, model=self.epi_model)
                 analysis.run_plots()
 
     def plot_max_values_contact_manipulation(self):
@@ -192,12 +211,18 @@ class SimulationNPI(SimulationBase):
             for base_r0 in self.r0_choices:
                 print(susc, base_r0)
                 # Define directories and aggregation values
-                directories = [
-                    f"./sens_data/Epidemic/Epidemic_values",
-                    f"./sens_data/icu/icu_values",
-                    f"./sens_data/death/death_values",
-                    f"./sens_data/hospital/hospital_values"
-                ]
+                if self.epi_model in ["rost", "chikina", "moghadas"]:
+                    directories = [
+                        f"./sens_data/Epidemic/Epidemic_values",
+                        f"./sens_data/icu/icu_values",
+                        f"./sens_data/death/death_values",
+                        f"./sens_data/hospital/hospital_values"
+                    ]
+                else:
+                    directories = [
+                        f"./sens_data/Epidemic/Epidemic_values"
+                    ]
+
                 # Initialize dictionary to store DataFrames
                 dfs = {}
                 # Iterate over directories
@@ -218,7 +243,7 @@ class SimulationNPI(SimulationBase):
                             # Add DataFrame to the dictionary
                             dfs[f"{base_dir}/{column_name}"] = df
                 plot = src.Plotter(sim_obj=self, data=self.data)
-                plot.plot_model_max_values(max_values=dfs, model="chikina")
+                plot.plot_model_max_values(max_values=dfs, model=self.epi_model)
 
     def prepare_simulations(self, base_r0, susc):
         r0generator = self.choose_r0_generator()

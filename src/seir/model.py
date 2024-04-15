@@ -13,7 +13,7 @@ class SeirUK(EpidemicModelBase):
         iv["i"][3] = 1
         iv.update({"e": iv["e"], "r": iv["r"]})
 
-        iv.update({"s": self.population - (iv["e"] + iv["i"] + iv["r"])})
+        iv.update({"s": self.population - (iv["e"] + iv["i"] + iv["r"] + iv["c"])})
 
     def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!

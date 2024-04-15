@@ -13,8 +13,8 @@ class MoghadasModelUsa(EpidemicModelBase):
 
     def update_initial_values(self, iv: dict):
         iv["i_n"][2] = 1
-        keys = ["e", "q_n", "i_h", "q_h", "a_n", "a_q", "h", "c", "r",
-                "d", "i", "hosp", "icu"]
+        keys = ["e", "q_n", "i_h", "q_h", "a_n", "a_q", "h", "c",
+                "i", "hosp", "icu"]
         iv.update({key: iv[key] for key in keys})
         iv.update({"s": self.population - (iv["e"] + iv["i_n"] + iv["q_n"] +
                                            iv["i_h"] + iv["q_h"] + iv["a_n"] +
@@ -43,7 +43,7 @@ class MoghadasModelUsa(EpidemicModelBase):
                    (1 - ps["f_i"]) * ps["delta"] * i_h - ps["f_i"] * ps["tau_i"] * i_h,  # Ih'(t)
             "q_h": (1 - ps["theta"]) * ps["q"] * ps["h"] * ps["sigma"] * e - \
                    ps["delta"] * q_h + ps["f_i"] * ps["tau_i"] * i_h,  # Qh'(t)
-            "a_n": ps["theta"] * ps["sigma"] * e - (1 - ps["f_a"]) * ps["delta"] * a_n - \
+            "a_n": ps["theta"] * ps["sigma"] * e - (1 - ps["f_a"]) * ps["gamma"] * a_n - \
                    ps["f_a"] * ps["tau_a"] * a_n,  # An'(t)
             "a_q": ps["f_a"] * ps["tau_a"] * a_n - ps["gamma"] * a_q,  # Aq'(t)
             "h": (1 - ps["c"]) * (1 - ps["f_i"]) * ps["delta"] * i_h + (1 - ps["c"]) * \

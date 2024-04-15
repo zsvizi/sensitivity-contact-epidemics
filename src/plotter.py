@@ -4,8 +4,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
 from matplotlib.lines import Line2D
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from matplotlib.cm import get_cmap
+
 from matplotlib.ticker import LogFormatter
 from matplotlib.ticker import LogLocator, LogFormatterSciNotation as LogFormatter
 import matplotlib.colors as colors
@@ -32,7 +33,7 @@ class Plotter:
         self.sim_obj = sim_obj
         self.contact_full = np.array([])
 
-    def plot_contact_matrices_models(self, filename, model, contact_data,
+    def plot_contact_matrices_models(self, contact_data, model, filename,
                                      plot_total_contact: bool = True):
         """
         Plot contact matrices for different models and save it in sub-directory
@@ -53,18 +54,7 @@ class Plotter:
             "moghadas": {"Home": "inferno", "All": "inferno"},
             "seir": {"Physical": "inferno", "All": "inferno"}
         }
-
-        labels_dict = {
-            "rost": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70-74", "75+"],
-            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                        "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
-            "moghadas": ["0-19", "20-49", "50-65", "65+"],
-            "seir": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70+"]
-        }
-
-        labels = labels_dict.get(model, [])
+        labels = self.labels_dict().get(model, [])
         if not labels:
             raise ValueError("Invalid model provided")
 
@@ -93,7 +83,7 @@ class Plotter:
             else:
                 if plot_total_contact:
                     sns.heatmap(contact_matrix * self.data.age_data, cmap=cmap, square=True,
-                                cbar=contact_type == "Full", ax=ax)
+                                cbar=contact_type == "All", ax=ax)
                 else:
                     sns.heatmap(contact_matrix, cmap=cmap, vmin=0, vmax=10, square=True,
                                 cbar=contact_type == "All", ax=ax)
@@ -103,8 +93,80 @@ class Plotter:
 
             plt.title(f"{contact_type} contact", fontsize=25, fontweight="bold")
 
-            plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"), format="pdf", bbox_inches='tight')
+            plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"),
+                        format="pdf", bbox_inches='tight')
             plt.close()
+
+    @staticmethod
+    def labels_dict():
+        labels = {
+            "rost": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70-74", "75+"],
+            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                        "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
+            "moghadas": ["0-19", "20-49", "50-65", "65+"],
+            "seir": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70+"]
+        }
+        return labels
+
+    def get_percentage_age_group_contact(self, model, filename):
+        """
+        :param model: The model name representing the type of contact matrices.
+        :param filename: The filename prefix for the saved PDF files.
+        :return: Heatmaps for different models
+        """
+        output_dir = f"sens_data/contact_mean/{model}"
+        os.makedirs(output_dir, exist_ok=True)
+
+        labels = self.labels_dict().get(model, [])
+        if not labels:
+            raise ValueError("Invalid model provided")
+        # Calculate mean contact data for each age group
+        mean_contact = self.sim_obj.contact_matrix.mean(axis=1)
+
+        # Calculate total contact data for each age group
+        total_by_age_group = mean_contact.sum()
+        # Calculate percentage contribution of each mean contact data
+        percentage_contribution = (mean_contact / total_by_age_group) * 100
+
+        # Define colors based on percentage contribution
+        if model in ["rost", "seir", "chikina"]:
+            color = ['lightgreen' if pc <= 5 else 'green' if 5 < pc <= 8
+            else '#07553d' for pc in percentage_contribution]
+        else:
+            color = ['lightgreen' if pc <= 20 else 'green' if 20 < pc <= 30
+            else '#07553d' for pc in percentage_contribution]
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Plot bar plots with error bars for mean contact and percentage contribution
+        ax.bar(np.arange(len(labels)), mean_contact, align='center',
+               width=0.7, alpha=0.8,
+                color=color, label="Mean contact")
+        for pos, y, err in zip(np.arange(len(labels)), mean_contact,
+                               percentage_contribution):
+            plt.errorbar(pos, y, yerr=err / 100 * y, lw=2, capthick=2, fmt="or",
+                         markersize=5, capsize=4, ecolor="r", elinewidth=2)
+
+            # Annotate with percentages
+            ax.annotate(f'{err:.1f}\%', xy=(pos, y), xytext=(5, 5),
+                        textcoords='offset points',
+                        ha='left', va='bottom', fontsize=8, color='black')
+
+        ax.grid(False)
+        # Set x-ticks at the middle of each bar
+        if model in ["rost", "seir", "chikina"]:
+            ax.set_xticks(np.arange(len(labels)) + 0.25)
+        else:
+            ax.set_xticks(np.arange(len(labels)))
+        ax.set_xticklabels(labels, rotation=90, ha='right')
+
+        # Rotate x tick labels
+        plt.xticks(rotation=90, ha='right')
+        plt.xlabel('Age Group')
+        plt.savefig(os.path.join(output_dir, f"{filename}.pdf"),
+                    format="pdf", bbox_inches='tight')
+        plt.close()
 
     def construct_triangle_grids_prcc_p_value(self):
         """
@@ -143,6 +205,26 @@ class Plotter:
         mask = np.where(values[0] == 0, np.nan, values_all)
         return mask
 
+    @staticmethod
+    def adjust_colormap(cmap_name):
+        if cmap_name == "Greens":
+            # Get the colors from the "Greens" colormap for values greater than or equal to 0
+            cmap_greens = plt.cm.get_cmap("Greens")
+            colors_greens = cmap_greens(np.linspace(0, 1, 128))
+
+            # Get the colors from the "viridis" colormap for values less than 0
+            cmap_viridis = plt.cm.get_cmap("Greys")
+            colors_viridis = cmap_viridis(np.linspace(0, 1, 128))
+
+            # Combine the two colormaps
+            color = np.vstack((colors_viridis, colors_greens))
+
+            # Create a new colormap
+            cmap = LinearSegmentedColormap.from_list(cmap_name, color)
+            return cmap
+        else:
+            return plt.get_cmap(cmap_name)
+
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
                                           p_values, filename_to_save, plot_title, option):
         """
@@ -161,9 +243,10 @@ class Plotter:
         else:
             os.makedirs("sens_data/prcc_plot", exist_ok=True)
             save_path = os.path.join("sens_data", "prcc_plot" + '.pdf')
+
         p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
-
+        # adjusted_cmaps = [self.adjust_colormap(cmap) for cmap in cmaps]
         log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
         fig, ax = plt.subplots()
@@ -183,7 +266,7 @@ class Plotter:
         cbar_pval.locator = locator
         cbar_pval.formatter = formatter
         cbar_pval.update_normal(images[1])
-        cbar.update_normal(images[0])  # add
+        cbar.update_normal(images[0])
 
         ax.set_xticks(range(self.sim_obj.n_ag))
         ax.set_yticks(range(self.sim_obj.n_ag))
@@ -222,7 +305,7 @@ class Plotter:
 
     @staticmethod
     def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values, plot_title,
-                                      filename_to_save, option):
+                                      filename_to_save, model, option):
         """
               Prepares for plotting aggregated PRCC and standard values as error bars.
               :param param_list: list of the parameters
@@ -231,6 +314,7 @@ class Plotter:
                aggregated PRCC vector.
               :param filename_to_save: : The filename to save the plots.
               :param option: (str): target options for epidemic size.
+              :param model: (str): model choice.
               :param plot_title: The title of the plots.
               :return: None
               """
@@ -248,29 +332,165 @@ class Plotter:
         plt.figure(figsize=(15, 12))
         plt.tick_params(direction="in")
         # fig, ax = plt.subplots()
-        plt.bar(xp, list(abs(prcc_vector)), align='center', width=0.8, alpha=0.5,
-                color="g", label="PRCC")
-        for pos, y, err in zip(xp, list(abs(prcc_vector)), list(abs(std_values))):
+        # plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.5,
+        #         color="g", label="PRCC")
+        # for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
+        #     plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
+        #                  markersize=5, capsize=4, ecolor="r", elinewidth=4)
+        # plt.xticks(ticks=xp, rotation=90)
+        # # plt.yticks(ticks=np.arange(-1, 1.0, 0.2))
+        # plt.legend([r'$\mathrm{\textbf{P}}$', r'$\mathrm{\textbf{s}}$'])
+        # axes = plt.gca()
+        # axes.set_ylim([0, 1.0])
+        # plt.xlabel('age groups', labelpad=10, fontsize=20)
+        # plt.title(plot_title, y=1.03, fontsize=20)
+        # plt.savefig(save_path, format="pdf", bbox_inches='tight')
+        # plt.close()
+        if model == "rost":
+            labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70-74", "75+"]
+
+        elif model == "moghadas":
+            labels = ["0-19", "20-49", "50-65", "65+"]
+        elif model == "chikina":
+            labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70-74", "75-79", "80+"]
+        elif model == "seir":
+            labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70+"]
+        else:
+            raise Exception("Invalid model")
+
+        num_params = len(labels)
+        y_pos = np.arange(num_params)
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+        # Plotting sensitivity values with different colors based on conditions
+        color = ['lightgreen' if abs(prcc) < 0.3 else 'green' if
+        0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
+
+        # Assigning custom shades of green colors based on custom ranges
+
+        # ax.barh(y_pos, prcc_vector, height=bar_width, align='center', color=colors,
+        #        label='aggregated PRCC')
+        # Adding error bars for standard deviations
+        # for i, (y, std) in enumerate(zip(y_pos, std_values)):
+        #     ax.errorbar(prcc_vector[i], y, xerr=std, fmt='o', color='red',
+        #                 capsize=4)
+        plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
+                color=color, label="PRCC")
+        for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
             plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
                          markersize=5, capsize=4, ecolor="r", elinewidth=4)
-        plt.xticks(ticks=xp, rotation=90)
-        plt.yticks(ticks=np.arange(-1, 1.0, 0.2))
-        plt.legend([r'$\mathrm{\textbf{P}}$', r'$\mathrm{\textbf{s}}$'])
-        axes = plt.gca()
-        axes.set_ylim([0, 1.0])
-        plt.xlabel('age groups', labelpad=10, fontsize=20)
+
+        # ax.set_yticks(y_pos)
+        # ax.set_yticklabels(labels)
+
+        # Remove vertical lines
+        ax.grid(False)
+        if model in ["rost", "seir", "chikina"]:
+            ax.set_xticks(y_pos + 0.25)
+        else:
+            ax.set_xticks(y_pos)
+        ax.set_xticklabels(labels, rotation=90, ha='right')
+
+        ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathrm{\textbf{s}}$'])
         plt.title(plot_title, y=1.03, fontsize=20)
+
+        # ax.legend(['Aggregated PRCC', 'Std Dev'], loc='upper right')
         plt.savefig(save_path, format="pdf", bbox_inches='tight')
         plt.close()
 
+    def plot_prob_distributions(self, data, option,
+                                plot_title, filename_to_save, model):
+        labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                  "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                  "55-59", "60-64", "65-69", "70-74", "75+"]
+        # Transpose the data to have age groups as columns
+        data = np.transpose(data)
+
+        if option:
+            os.makedirs(os.path.join(option), exist_ok=True)
+            save_path = os.path.join(option, 'box_plot.pdf')
+        else:
+            os.makedirs("sens_data/prob_plot", exist_ok=True)
+            save_path = os.path.join("sens_data", "box_plot", filename_to_save + '.pdf')
+
+        mean_values = np.mean(data, axis=0)
+        # Determine the indices of the top 3, next 5, and the rest
+        top_3_indices = np.argsort(mean_values)[-3:]
+        next_5_indices = np.argsort(mean_values)[-8:-3]
+
+        # Create color list based on indices
+        colors = ['lightgreen'] * len(mean_values)
+        for i in top_3_indices:
+            colors[i] = '#07553d'
+        for i in next_5_indices:
+            colors[i] = 'green'
+
+        # Create box plots
+        fig, ax = plt.subplots(figsize=(12, 8))
+        bp = ax.boxplot(data, patch_artist=True, medianprops=dict(color='black'))
+        for box, color in zip(bp['boxes'], colors):
+            box.set(color='red', linewidth=1)
+            box.set(facecolor=color)
+        # Adjust the width of the boxes
+        for box in bp['boxes']:
+            box.set_linewidth(3)  # Set the width of the box lines
+        # Adjust the size of the median line representing the mean
+        for median in bp['medians']:
+            median.set(linewidth=2, color='purple')  # Set the desired line width
+        # Adjust the length and width of the caps connecting the whiskers
+        for whisker in bp['whiskers']:
+            whisker.set(color='red', linewidth=2, linestyle='-')
+            whisker.set(clip_on=False)
+            # Adjust the size of the caps on the whiskers
+        for cap in bp['caps']:
+            cap.set(color='red', linewidth=2)  # Adjust the properties of the caps
+        ax.set_xticklabels(labels, rotation=90, ha='center')
+
+        # Add gridlines for better readability
+        ax.grid(True, linestyle='--', alpha=0.7)
+        # Increase the width of the ticks
+        ax.tick_params(axis='both', which='major', width=3)
+        legend_labels = [r'$\mathrm{\textbf{P}}$']
+        legend_colors = ['purple']
+        legend_handles = [plt.Line2D([0], [0], color=color, linewidth=5,
+                                     solid_capstyle='butt')
+                          for color in legend_colors]
+        plt.legend(legend_handles, legend_labels, loc='upper right', fontsize=18)
+
+        plt.title(plot_title, y=1.03, fontsize=20)
+
+        plt.tight_layout()
+
+        # Save plot
+        plt.savefig(save_path, format="pdf", bbox_inches='tight')
+        plt.close()
+
+    def plot_prob_distribution(self, data,
+                                      filename_without_ext, model, option):
+        # title_list = filename_without_ext.split("_")
+        title_list = filename_without_ext
+        # plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
+        plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list
+        self.plot_prob_distributions(data=data,
+                                           filename_to_save=filename_without_ext,
+                                           plot_title=plot_title, model=model,
+                                     option=option)
+
     def plot_aggregation_prcc_pvalues(self, prcc_vector, std_values,
-                                      filename_without_ext, option):
+                                      filename_without_ext, model, option):
         """
         Generates actual aggregated PRCC plots with std values as error bars.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param std_values: (numpy.ndarray): standard deviation values.
         :param filename_without_ext: (str): The filename prefix for the saved plot.
         :param option: (str): target options for epidemic size.
+        :param model: (str): The model options
         :return: bar plots with error bars
         """
         # title_list = filename_without_ext.split("_")
@@ -280,7 +500,7 @@ class Plotter:
         self.aggregated_prcc_pvalues_plots(param_list=self.sim_obj.n_ag,
                                            prcc_vector=prcc_vector, std_values=std_values,
                                            filename_to_save=filename_without_ext,
-                                           plot_title=plot_title, option=option)
+                                           plot_title=plot_title, model=model, option=option)
 
     @staticmethod
     def plot_model_max_values(max_values, model: str,
@@ -296,41 +516,54 @@ class Plotter:
         :param plot_title: title of the heatmap
         :return: Heatmaps
         """
-        directory_column_orders = [
-            (f"./sens_data/Epidemic/Epidemic_values", [
-                "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
-                "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
-                "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
-                "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
-                "Epidemic_values/1.0_1.8_ratio_0.25", "Epidemic_values/1.0_1.8_ratio_0.5",
-                "Epidemic_values/1.0_2.5_ratio_0.25", "Epidemic_values/1.0_2.5_ratio_0.5"
-            ]),
-            (f"./sens_data/icu/icu_values", [
-                "icu_values/0.5_1.2_ratio_0.25", "icu_values/0.5_1.2_ratio_0.5",
-                "icu_values/0.5_1.8_ratio_0.25", "icu_values/0.5_1.8_ratio_0.5",
-                "icu_values/0.5_2.5_ratio_0.25", "icu_values/0.5_2.5_ratio_0.5",
-                "icu_values/1.0_1.2_ratio_0.25", "icu_values/1.0_1.2_ratio_0.5",
-                "icu_values/1.0_1.8_ratio_0.25", "icu_values/1.0_1.8_ratio_0.5",
-                "icu_values/1.0_2.5_ratio_0.25", "icu_values/1.0_2.5_ratio_0.5",
-            ]),
-            (f"./sens_data/death/death_values", [
-                "death_values/0.5_1.2_ratio_0.25", "death_values/0.5_1.2_ratio_0.5",
-                "death_values/0.5_1.8_ratio_0.25", "death_values/0.5_1.8_ratio_0.5",
-                "death_values/0.5_2.5_ratio_0.25", "death_values/0.5_2.5_ratio_0.5",
-                "death_values/1.0_1.2_ratio_0.25", "death_values/1.0_1.2_ratio_0.5",
-                "death_values/1.0_1.8_ratio_0.25", "death_values/1.0_1.8_ratio_0.5",
-                "death_values/1.0_2.5_ratio_0.25", "death_values/1.0_2.5_ratio_0.5"
-            ]),
+        if model in ["rost", "chikina", "moghadas"]:
+            directory_column_orders = [
+                (f"./sens_data/Epidemic/Epidemic_values", [
+                    "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
+                    "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
+                    "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
+                    "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
+                    "Epidemic_values/1.0_1.8_ratio_0.25", "Epidemic_values/1.0_1.8_ratio_0.5",
+                    "Epidemic_values/1.0_2.5_ratio_0.25", "Epidemic_values/1.0_2.5_ratio_0.5"
+                ]),
+                (f"./sens_data/icu/icu_values", [
+                    "icu_values/0.5_1.2_ratio_0.25", "icu_values/0.5_1.2_ratio_0.5",
+                    "icu_values/0.5_1.8_ratio_0.25", "icu_values/0.5_1.8_ratio_0.5",
+                    "icu_values/0.5_2.5_ratio_0.25", "icu_values/0.5_2.5_ratio_0.5",
+                    "icu_values/1.0_1.2_ratio_0.25", "icu_values/1.0_1.2_ratio_0.5",
+                    "icu_values/1.0_1.8_ratio_0.25", "icu_values/1.0_1.8_ratio_0.5",
+                    "icu_values/1.0_2.5_ratio_0.25", "icu_values/1.0_2.5_ratio_0.5",
+                ]),
+                (f"./sens_data/death/death_values", [
+                    "death_values/0.5_1.2_ratio_0.25", "death_values/0.5_1.2_ratio_0.5",
+                    "death_values/0.5_1.8_ratio_0.25", "death_values/0.5_1.8_ratio_0.5",
+                    "death_values/0.5_2.5_ratio_0.25", "death_values/0.5_2.5_ratio_0.5",
+                    "death_values/1.0_1.2_ratio_0.25", "death_values/1.0_1.2_ratio_0.5",
+                    "death_values/1.0_1.8_ratio_0.25", "death_values/1.0_1.8_ratio_0.5",
+                    "death_values/1.0_2.5_ratio_0.25", "death_values/1.0_2.5_ratio_0.5"
+                ]),
 
-            (f"./sens_data/hospital/hospital_values", [
-                "hospital_values/0.5_1.2_ratio_0.25", "hospital_values/0.5_1.2_ratio_0.5",
-                "hospital_values/0.5_1.8_ratio_0.25", "hospital_values/0.5_1.8_ratio_0.5",
-                "hospital_values/0.5_2.5_ratio_0.25", "hospital_values/0.5_2.5_ratio_0.5",
-                "hospital_values/1.0_1.2_ratio_0.25", "hospital_values/1.0_1.2_ratio_0.5",
-                "hospital_values/1.0_1.8_ratio_0.25", "hospital_values/1.0_1.8_ratio_0.5",
-                "hospital_values/1.0_2.5_ratio_0.25", "hospital_values/1.0_2.5_ratio_0.5"
-            ])
-        ]
+                (f"./sens_data/hospital/hospital_values", [
+                    "hospital_values/0.5_1.2_ratio_0.25", "hospital_values/0.5_1.2_ratio_0.5",
+                    "hospital_values/0.5_1.8_ratio_0.25", "hospital_values/0.5_1.8_ratio_0.5",
+                    "hospital_values/0.5_2.5_ratio_0.25", "hospital_values/0.5_2.5_ratio_0.5",
+                    "hospital_values/1.0_1.2_ratio_0.25", "hospital_values/1.0_1.2_ratio_0.5",
+                    "hospital_values/1.0_1.8_ratio_0.25", "hospital_values/1.0_1.8_ratio_0.5",
+                    "hospital_values/1.0_2.5_ratio_0.25", "hospital_values/1.0_2.5_ratio_0.5"
+                ])
+            ]
+        else:
+            directory_column_orders = [
+                (f"./sens_data/Epidemic/Epidemic_values", [
+                    "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
+                    "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
+                    "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
+                    "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
+                    "Epidemic_values/1.0_1.8_ratio_0.25", "Epidemic_values/1.0_1.8_ratio_0.5",
+                    "Epidemic_values/1.0_2.5_ratio_0.25", "Epidemic_values/1.0_2.5_ratio_0.5"
+                ])
+            ]
+
         # Define index
         if model == "rost":
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
@@ -369,7 +602,7 @@ class Plotter:
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$"]
 
             plt.figure(figsize=(22, 8))
-            heatmap = sns.heatmap(stacked_df, cmap='inferno', annot=True, fmt=".1f",
+            heatmap = sns.heatmap(stacked_df, cmap='Greens', annot=True, fmt=".1f",
                                   cbar=False)
             # Draw a vertical line after the first column
             plt.axvline(x=1.0, color='white', linestyle="solid", linewidth=10)
@@ -477,7 +710,7 @@ class Plotter:
 
             # Find the maximum value in each row
             max_infected_values = np.array([max(row) for row in df['n_infected_max']])
-            # Add a new column 'max_n_icu' to df containing the maximum values
+            # Add a new column 'max_n_infected' to df containing the maximum values
             df['max_n_infected'] = max_infected_values
             # Add an 'age_group' column to your DataFrame based on the index
             df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
@@ -552,7 +785,7 @@ class Plotter:
             plt.close()
             # Find the maximum value in each row
             max_death_values = np.array([max(row) for row in df['n_deaths_max']])
-            # Add a new column 'max_n_icu' to df containing the maximum values
+            # Add a new column 'max_n_death' to df containing the maximum values
             df['max_n_deaths'] = max_death_values
             # Add an 'age_group' column to your DataFrame based on the index
             df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)

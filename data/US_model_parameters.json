@@ -58,10 +58,11 @@
             0.4,
         "description": "Average time from symptom onset to hospitalization"
     },
-    "gamma": {
+
+  "gamma": {
         "value":
             0.217391,
-        "description": "Average time from symptom onset to hospitalization"
+        "description": "Average time from symptom onset to recovery"
     },
 
 "h": {
