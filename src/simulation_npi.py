@@ -92,9 +92,12 @@ class SimulationNPI(SimulationBase):
                     delimiter=';'
                 )
 
-                # CALCULATIONS
                 for key, value in saved_json_data.items():
-                    prcc_calculator = src.prcc_calculator.PRCCCalculator(sim_obj=self)
+                    # CALCULATIONS
+                    prcc_calculator = src.prcc_calculator.PRCCCalculator(
+                        sim_obj=self,
+                        calculation_approach=calculation_approach
+                    )
                     prcc_calculator.calculate_prcc_values(
                         lhs_table=saved_lhs_table,
                         sim_output=saved_simulation[:, value]
@@ -105,11 +108,16 @@ class SimulationNPI(SimulationBase):
                         [prcc_calculator.prcc_list, prcc_calculator.p_value]
                     ).reshape(-1, self.upper_tri_size).T
 
-                    prcc_calculator.aggregate_prcc_values(calculation_approach=
-                                                          calculation_approach)
-                    stack_value = np.hstack(
-                        [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                    ).reshape(-1, self.n_ag).T
+                    prcc_calculator.aggregate_prcc_values()
+                    if calculation_approach == "mean":
+                        stack_value = np.hstack(
+                            [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
+                        ).reshape(-1, self.n_ag).T
+                    else:
+                        stack_value = np.hstack(
+                            [prcc_calculator.agg_prcc, prcc_calculator.confidence_lower,
+                             prcc_calculator.confidence_upper]
+                        ).reshape(-1, self.n_ag).T
                     # CALCULATIONS END
 
                     # Save PRCC values
@@ -168,7 +176,8 @@ class SimulationNPI(SimulationBase):
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
                                 plotter.plot_aggregation_prcc_pvalues(
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                    std_values=abs(saved_prcc_pval[:, 1]),
+                                    conf_lower=abs(saved_prcc_pval[:, 1]),
+                                    conf_upper=abs(saved_prcc_pval[:, 2]),
                                     filename_without_ext=base_r0_value,
                                     model=self.epi_model,
                                     option=root

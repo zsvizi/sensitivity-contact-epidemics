@@ -304,7 +304,7 @@ class Plotter:
                                            option=option)
 
     @staticmethod
-    def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values, plot_title,
+    def aggregated_prcc_pvalues_plots(param_list, prcc_vector, conf_lower, conf_upper, plot_title,
                                       filename_to_save, model, option):
         """
               Prepares for plotting aggregated PRCC and standard values as error bars.
@@ -360,8 +360,8 @@ class Plotter:
 
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")
-        for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
-            plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
+        for pos, y, cl, cu in zip(xp, list(prcc_vector), list(conf_lower), list(conf_upper)):
+            plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], lw=4, capthick=4, fmt="or",
                          markersize=5, capsize=4, ecolor="r", elinewidth=4)
 
         # Remove vertical lines
@@ -379,7 +379,7 @@ class Plotter:
         plt.savefig(save_path, format="pdf", bbox_inches='tight')
         plt.close()
 
-    def plot_aggregation_prcc_pvalues(self, prcc_vector, std_values,
+    def plot_aggregation_prcc_pvalues(self, prcc_vector, conf_lower, conf_upper,
                                       filename_without_ext, model, option):
         """
         Generates actual aggregated PRCC plots with std values as error bars.
@@ -395,7 +395,8 @@ class Plotter:
         # plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list[1]
         plot_title = '$\\overline{\\mathcal{R}}_0=$' + title_list
         self.aggregated_prcc_pvalues_plots(param_list=self.sim_obj.n_ag,
-                                           prcc_vector=prcc_vector, std_values=std_values,
+                                           prcc_vector=prcc_vector,
+                                           conf_lower=conf_lower, conf_upper=conf_upper,
                                            filename_to_save=filename_without_ext,
                                            plot_title=plot_title, model=model, option=option)
 
