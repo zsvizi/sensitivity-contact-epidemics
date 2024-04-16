@@ -74,6 +74,7 @@ class PRCCCalculator:
         median_values = []
         q1_values = []
         q3_values = []
+        std_values = []
         # prob using complex logic
         distribution_prcc_p_val = self._calculate_distribution_prcc_p_val(self.prcc_mtx,
                                                                           self.p_value_mtx)
@@ -108,17 +109,21 @@ class PRCCCalculator:
             q3_index = np.where(second_column_cumsum >= 0.75)[0]
             q3_index = q3_index[-1] if len(q3_index) > 0 else median_index
             q3_value = combined_matrix_sorted[q3_index, 0]
+            # calculate std dev
+            std_dev = (q3_value - q1_value) / 1.35
 
             # Append the median, Q1, and Q3 values to their respective lists
             median_values.append(median_value)
             q1_values.append(q1_value)
             q3_values.append(q3_value)
+            std_values.append(std_dev)
 
         self.agg_prcc = median_values
+        self.agg_std = std_values
         self.std_lower = q1_values
         self.std_upper = q3_values
 
-        return median_values, q1_values, q3_values
+        return median_values, std_values
 
     def aggregate_prcc_values(self, calculation_approach: str):
         if calculation_approach == 'mean':

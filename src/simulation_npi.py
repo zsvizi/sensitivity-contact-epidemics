@@ -105,17 +105,11 @@ class SimulationNPI(SimulationBase):
                         [prcc_calculator.prcc_list, prcc_calculator.p_value]
                     ).reshape(-1, self.upper_tri_size).T
 
-                    prcc_calculator.aggregate_prcc_values(
-                        calculation_approach=calculation_approach)
-                    if calculation_approach == "mean":
-                        stack_value = np.hstack(
-                            [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                        ).reshape(-1, self.n_ag).T
-                    else:
-                        stack_value = np.hstack(
-                            [prcc_calculator.agg_prcc, prcc_calculator.std_lower,
-                             prcc_calculator.std_upper]
-                        ).reshape(-1, self.n_ag).T
+                    prcc_calculator.aggregate_prcc_values(calculation_approach=
+                                                          calculation_approach)
+                    stack_value = np.hstack(
+                        [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
+                    ).reshape(-1, self.n_ag).T
                     # CALCULATIONS END
 
                     # Save PRCC values
