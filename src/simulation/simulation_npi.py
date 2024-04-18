@@ -168,7 +168,7 @@ class SimulationNPI(SimulationBase):
             data = json.load(json_file)
         return data
 
-    def plot_prcc_values(self):
+    def plot_prcc_values(self, calculation_approach):
         agg_values = ["agg_prcc", "PRCC_Pvalues"]
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
@@ -200,14 +200,28 @@ class SimulationNPI(SimulationBase):
 
                             elif filename == "agg.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
-                                plotter.plot_aggregation_prcc_pvalues(
-                                    prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                    conf_lower=abs(saved_prcc_pval[:, 1]),
-                                    conf_upper=abs(saved_prcc_pval[:, 2]),
-                                    filename_without_ext=base_r0_value,
-                                    model=self.epi_model,
-                                    option=root
-                                )
+                                if calculation_approach == "median":
+                                    plotter.plot_aggregation_prcc_pvalues(
+                                        prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                        std_values=None,
+                                        conf_lower=abs(saved_prcc_pval[:, 1]),
+                                        conf_upper=abs(saved_prcc_pval[:, 2]),
+                                        filename_without_ext=base_r0_value,
+                                        model=self.epi_model,
+                                        option=root,
+                                        calculation_approach=calculation_approach
+                                    )
+                                else:
+                                    plotter.plot_aggregation_prcc_pvalues(
+                                        prcc_vector=abs(saved_prcc_pval[:, 0]),
+                                        std_values=abs(saved_prcc_pval[:, 1]),
+                                        conf_lower=None,
+                                        conf_upper=None,
+                                        filename_without_ext=base_r0_value,
+                                        model=self.epi_model,
+                                        option=root,
+                                        calculation_approach=calculation_approach
+                                    )
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector

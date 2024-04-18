@@ -19,8 +19,8 @@ class PRCCCalculator:
         self.prcc_list = None
         self.agg_std = None
 
-        self.complex_logic = False
-        self.pop_logic = True
+        self.complex_logic = True
+        self.pop_logic = False
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
         sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
@@ -70,6 +70,7 @@ class PRCCCalculator:
 
         self.confidence_lower = agg_std
         self.confidence_upper = agg_std
+        self.agg_std = agg_std
         self.agg_prcc = agg
         return agg.flatten(), agg_std.flatten()
 
@@ -81,7 +82,7 @@ class PRCCCalculator:
         distribution_prcc_p_val = self._calculate_distribution_prcc_p_val()
 
         # Iterate over the columns of prcc and p_value
-        for i in range(16):
+        for i in range(self.sim_obj.n_ag):
             # Take the ith column from prcc
             prcc_column = self.prcc_mtx[i, :]
 
