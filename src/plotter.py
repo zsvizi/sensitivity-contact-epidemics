@@ -16,8 +16,8 @@ import pandas as pd
 import seaborn as sns
 
 from src.dataloader import DataLoader
-from src.simulation_base import SimulationBase
-from src.prcc import get_rectangular_matrix_from_upper_triu
+from src.simulation.simulation_base import SimulationBase
+from src.prcc.prcc import get_rectangular_matrix_from_upper_triu
 
 plt.style.use('seaborn-whitegrid')
 matplotlib.use('agg')
@@ -132,17 +132,19 @@ class Plotter:
 
         # Define colors based on percentage contribution
         if model in ["rost", "seir", "chikina"]:
-            color = ['lightgreen' if pc <= 5 else 'green' if 5 < pc <= 8
-            else '#07553d' for pc in percentage_contribution]
+            color = ['lightgreen'
+                     if pc <= 5 else 'green' if 5 < pc <= 8
+                     else '#07553d' for pc in percentage_contribution]
         else:
-            color = ['lightgreen' if pc <= 20 else 'green' if 20 < pc <= 30
-            else '#07553d' for pc in percentage_contribution]
+            color = ['lightgreen'
+                     if pc <= 20 else 'green' if 20 < pc <= 30
+                     else '#07553d' for pc in percentage_contribution]
         fig, ax = plt.subplots(figsize=(10, 6))
 
         # Plot bar plots with error bars for mean contact and percentage contribution
         ax.bar(np.arange(len(labels)), mean_contact, align='center',
                width=0.7, alpha=0.8,
-                color=color, label="Mean contact")
+               color=color, label="Mean contact")
         for pos, y, err in zip(np.arange(len(labels)), mean_contact,
                                percentage_contribution):
             plt.errorbar(pos, y, yerr=err / 100 * y, lw=2, capthick=2, fmt="or",
@@ -226,7 +228,7 @@ class Plotter:
             return plt.get_cmap(cmap_name)
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                          p_values, filename_to_save, plot_title, option):
+                                      p_values, filename_to_save, plot_title, option):
         """
                    Prepares for plotting PRCC and p-values as a heatmap.
                    :param prcc_vector: (numpy.ndarray): The PRCC vector.
@@ -334,19 +336,19 @@ class Plotter:
 
         if model == "rost":
             labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
-                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70-74", "75+"]
+                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                      "55-59", "60-64", "65-69", "70-74", "75+"]
 
         elif model == "moghadas":
             labels = ["0-19", "20-49", "50-65", "65+"]
         elif model == "chikina":
             labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
-                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70-74", "75-79", "80+"]
+                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                      "55-59", "60-64", "65-69", "70-74", "75-79", "80+"]
         elif model == "seir":
             labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
-                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70+"]
+                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                      "55-59", "60-64", "65-69", "70+"]
         else:
             raise Exception("Invalid model")
 
@@ -355,8 +357,9 @@ class Plotter:
 
         fig, ax = plt.subplots(figsize=(10, 8))
         # Plotting sensitivity values with different colors based on conditions
-        color = ['lightgreen' if abs(prcc) < 0.3 else 'green' if
-        0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
+        color = ['lightgreen'
+                 if abs(prcc) < 0.3 else 'green' if
+                 0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
 
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")

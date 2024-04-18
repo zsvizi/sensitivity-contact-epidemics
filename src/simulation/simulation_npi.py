@@ -1,16 +1,14 @@
 import os
 import json
+
 import numpy as np
 import pandas as pd
 
 import src
-from src.contact_manipulation import ContactManipulation
+from src.simulation.contact_manipulation import ContactManipulation
 from src.dataloader import DataLoader
-from src.chikina.r0 import R0SirModel
-from src.model.r0_generator import R0Generator
-from src.moghadas.r0 import R0SeyedModel
-from src.seir.r0 import R0SeirSVModel
-from src.simulation_base import SimulationBase
+from src.examples import chikina, rost, moghadas, seir
+from src.simulation.simulation_base import SimulationBase
 
 
 class SimulationNPI(SimulationBase):
@@ -40,14 +38,41 @@ class SimulationNPI(SimulationBase):
             raise ValueError("Invalid epi_model")
 
         self.country = country
-        super().__init__(data=data, epi_model=epi_model,
-                         country=country)
+        super().__init__(data=data, country=country)
+        self._choose_model(epi_model=epi_model)
+        self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
+                                                            self.n_ag:(self.model.c_idx["s"] + 1) * self.n_ag]
         self.n_samples = n_samples
         self.epi_model = epi_model
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 1.8, 2.5]
+
+    def _choose_model(self, epi_model):
+        if epi_model == "rost":
+            self.model = rost.RostModelHungary(model_data=self.data)
+        elif epi_model == "chikina":
+            self.model = chikina.SirModel(model_data=self.data)
+        elif epi_model == "seir":
+            self.model = seir.SeirUK(model_data=self.data)
+        elif epi_model == "moghadas":
+            self.model = moghadas.MoghadasModelUsa(model_data=self.data)
+        else:
+            raise Exception("No model was given!")
+
+    def choose_r0_generator(self):
+        if self.epi_model == "chikina":
+            r0generator = chikina.R0SirModel(param=self.params)
+        elif self.epi_model == "rost":
+            r0generator = rost.R0Generator(param=self.params)
+        elif self.epi_model == "seir":
+            r0generator = seir.R0SeirSVModel(param=self.params)
+        elif self.epi_model == "moghadas":
+            r0generator = moghadas.R0SeyedModel(param=self.params)
+        else:
+            raise Exception("No model is given!")
+        return r0generator
 
     def generate_lhs(self, generate_lhs: bool = True):
         # Update params by susceptibility vector
@@ -94,7 +119,7 @@ class SimulationNPI(SimulationBase):
 
                 for key, value in saved_json_data.items():
                     # CALCULATIONS
-                    prcc_calculator = src.prcc_calculator.PRCCCalculator(
+                    prcc_calculator = src.PRCCCalculator(
                         sim_obj=self,
                         calculation_approach=calculation_approach
                     )
@@ -135,7 +160,8 @@ class SimulationNPI(SimulationBase):
                     agg_fname = os.path.join(agg_folder, "agg.csv")
                     np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
 
-    def _load_output_json(self, folder_name, filename):
+    @staticmethod
+    def _load_output_json(folder_name, filename):
         directory = os.path.join("./sens_data", folder_name)
         filename = os.path.join(directory, filename.replace(".csv", ".json"))
         with open(filename, "r") as json_file:
@@ -256,16 +282,3 @@ class SimulationNPI(SimulationBase):
              "beta": beta,
              "susc": susc,
              "r0generator": r0generator})
-
-    def choose_r0_generator(self):
-        if self.epi_model == "chikina":
-            r0generator = R0SirModel(param=self.params)
-        elif self.epi_model == "rost":
-            r0generator = R0Generator(param=self.params)
-        elif self.epi_model == "seir":
-            r0generator = R0SeirSVModel(param=self.params)
-        elif self.epi_model == "moghadas":
-            r0generator = R0SeyedModel(param=self.params)
-        else:
-            raise Exception("No model is given!")
-        return r0generator

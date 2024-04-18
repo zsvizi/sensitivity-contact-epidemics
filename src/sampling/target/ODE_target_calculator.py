@@ -1,7 +1,7 @@
 import numpy as np
-from src.simulation_npi import SimulationNPI
-from src.sampling.state_calculator import StateCalculator
-from src.sampling.target_calculator import TargetCalculator
+from src.simulation.simulation_npi import SimulationNPI
+from src.sampling.target.state_calculator import StateCalculator
+from src.sampling.target.target_calculator import TargetCalculator
 
 
 class ODETargetCalculator(TargetCalculator):

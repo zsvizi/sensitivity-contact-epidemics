@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import block_diag
 
-from src.model.r0 import R0GeneratorBase
+from src.model.r0_generator_base import R0GeneratorBase
 
 
 class R0SeirSVModel(R0GeneratorBase):

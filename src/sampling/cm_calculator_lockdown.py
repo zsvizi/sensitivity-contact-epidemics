@@ -1,7 +1,7 @@
 import numpy as np
 
 import src
-from src.prcc import get_rectangular_matrix_from_upper_triu
+from src.prcc.prcc import get_rectangular_matrix_from_upper_triu
 
 
 class CMCalculatorLockdown:

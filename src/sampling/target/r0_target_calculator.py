@@ -1,11 +1,11 @@
 import numpy as np
 
 import src
-from src.model.r0_generator import R0Generator
-from src.sampling.target_calculator import TargetCalculator
-from src.seir.r0 import R0SeirSVModel
-from src.chikina.r0 import R0SirModel
-from src.moghadas.r0 import R0SeyedModel
+from src.examples.rost.r0 import R0Generator
+from src.sampling.target.target_calculator import TargetCalculator
+from src.examples.seir.r0 import R0SeirSVModel
+from src.examples.chikina.r0 import R0SirModel
+from src.examples.moghadas.r0 import R0SeyedModel
 
 
 class R0TargetCalculator(TargetCalculator):

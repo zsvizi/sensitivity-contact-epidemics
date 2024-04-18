@@ -5,9 +5,9 @@ from tqdm import tqdm
 
 import src
 from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
-from src.sampling.ODE_target_calculator import ODETargetCalculator
+from src.sampling.target.ODE_target_calculator import ODETargetCalculator
 from src.sampling.sampler_base import SamplerBase
-from src.sampling.r0_target_calculator import R0TargetCalculator
+from src.sampling.target.r0_target_calculator import R0TargetCalculator
 
 
 class SamplerNPI(SamplerBase):

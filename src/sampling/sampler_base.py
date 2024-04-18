@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 import json
+
 import numpy as np
 from smt.sampling_methods import LHS
 

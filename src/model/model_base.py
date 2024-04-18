@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
 from scipy.integrate import odeint
 
 
-class EpidemicModelBase(ABC):
-    def __init__(self, model_data, compartments: list) -> None:
+class EpidemicModelBase:
+    def __init__(self, model_data=None, compartments=None) -> None:
+        if compartments is None:
+            compartments = []
         self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
@@ -37,10 +37,8 @@ class EpidemicModelBase(ABC):
         self.update_initial_values(iv=iv)
         return self.get_array_from_dict(comp_dict=iv)
 
-    @abstractmethod
     def update_initial_values(self, iv: dict):
         pass
 
-    @abstractmethod
     def get_model(self, xs, ts, ps, cm):
         pass

@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as ss
 
 import src
-from src.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
+from src.prcc.prcc import get_prcc_values, get_rectangular_matrix_from_upper_triu
 
 
 class PRCCCalculator:
