@@ -3,13 +3,11 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
-from matplotlib.lines import Line2D
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from matplotlib.cm import get_cmap
-
-from matplotlib.ticker import LogFormatter
-from matplotlib.ticker import LogLocator, LogFormatterSciNotation as LogFormatter
 import matplotlib.colors as colors
+from matplotlib.lines import Line2D
+from matplotlib.ticker import LogFormatterSciNotation as LogFormatter
+from matplotlib.ticker import LogLocator
 from matplotlib.tri import Triangulation
 import numpy as np
 import pandas as pd
@@ -222,23 +220,22 @@ class Plotter:
             color = np.vstack((colors_viridis, colors_greens))
 
             # Create a new colormap
-            cmap = LinearSegmentedColormap.from_list(cmap_name, color)
+            cmap = colors.LinearSegmentedColormap.from_list(cmap_name, color)
             return cmap
         else:
             return plt.get_cmap(cmap_name)
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                      p_values, filename_to_save, plot_title, option):
+                                      p_values, plot_title, option):
         """
-                   Prepares for plotting PRCC and p-values as a heatmap.
-                   :param prcc_vector: (numpy.ndarray): The PRCC vector.
-                   :param p_values: (numpy.ndarray): The p-values vector.
-                   :param plot_title: The title of the plot.
-                   :param filename_to_save: (str): The filename prefix for the saved plot.
-                   :param plot_title: The title of the plots.
-                   :param option: (str): target options for epidemic size.
-                   :return: None
-                   """
+        Prepares for plotting PRCC and p-values as a heatmap.
+       :param prcc_vector: (numpy.ndarray): The PRCC vector.
+       :param p_values: (numpy.ndarray): The p-values vector.
+       :param plot_title: The title of the plot.
+       :param plot_title: The title of the plots.
+       :param option: (str): target options for epidemic size.
+       :return: None
+       """
         if option:
             os.makedirs(os.path.join(option), exist_ok=True)
             save_path = os.path.join(option, 'prcc_plot.pdf')
@@ -246,7 +243,7 @@ class Plotter:
             os.makedirs("sens_data/prcc_plot", exist_ok=True)
             save_path = os.path.join("sens_data", "prcc_plot" + '.pdf')
 
-        p_value_cmap = ListedColormap(['Orange', 'red', 'darkred'])
+        p_value_cmap = colors.ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
         # adjusted_cmaps = [self.adjust_colormap(cmap) for cmap in cmaps]
         log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
@@ -301,7 +298,6 @@ class Plotter:
 
         self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector,
                                            p_values=p_values,
-                                           filename_to_save=filename_without_ext,
                                            plot_title=plot_title,
                                            option=option)
 
@@ -311,20 +307,20 @@ class Plotter:
                                       filename_to_save, model, option,
                                       calculation_approach):
         """
-              Prepares for plotting aggregated PRCC and standard values as error bars.
-              :param param_list: list of the parameters
-              :param prcc_vector: (numpy.ndarray): The aggregated PRCC vector.
-              :param std_values: (numpy.ndarray): standard deviation of aggregated PRCC vector.
-              :param conf_lower: (numpy.ndarray): lower quartiles of aggregated PRCC vector.
-               :param conf_upper: (numpy.ndarray): upper quartiles of aggregated PRCC vector.
-              :param filename_to_save: : The filename to save the plots.
-              :param option: (str): target options for epidemic size.
-              :param model: (str): model choice.
-              :param plot_title: The title of the plots.
-              :param calculation_approach: Calculation method for the aggregated prcc:
-              mean or median
-              :return: None
-              """
+        Prepares for plotting aggregated PRCC and standard values as error bars.
+        :param param_list: list of the parameters
+        :param prcc_vector: (numpy.ndarray): The aggregated PRCC vector.
+        :param std_values: (numpy.ndarray): standard deviation of aggregated PRCC vector.
+        :param conf_lower: (numpy.ndarray): lower quartiles of aggregated PRCC vector.
+        :param conf_upper: (numpy.ndarray): upper quartiles of aggregated PRCC vector.
+        :param filename_to_save: : The filename to save the plots.
+        :param option: (str): target options for epidemic size.
+        :param model: (str): model choice.
+        :param plot_title: The title of the plots.
+        :param calculation_approach: Calculation method for the aggregated prcc:
+        mean or median
+        :return: None
+        """
         if option:
             os.makedirs(os.path.join(option), exist_ok=True)
             save_path = os.path.join(option, 'agg_plot.pdf')
