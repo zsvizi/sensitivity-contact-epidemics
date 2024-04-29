@@ -1,46 +1,54 @@
-# sensitivity-covid19-hun
+# Sensitivity analysis of contact-related interventions for modeling epidemics.
 
 ## Introduction
+This repository conducts sensitivity analysis on various COVID-19 models, 
+exploring their behavior under different contact matrix element variations. 
 
-This repository contains code for sensitivity analysis of COVID-19 models.
+## Key Investigation
+- **Contact Matrix**: Analyzing the impact of contact matrix perturbation on the targets.
 
-The main setups investigated:
-- contact matrix vs. R0 & peak size of ICU compartment
-- vaccination parameters vs. final size & final size for dead compartment
+## targets investigated
+- R0
+- Epidemic size
+- ICU peak size
+- Hospital peak size
+- Final dead size
 
-For sensitivity analysis we use the following methods:
-- LHS (Latin Hypercube Sampling): used for parameter sampling
-- PRCC (Partial Rank Correlation Coefficient): used as a metric for sensitivity
+## Methods
+- **Latin Hypercube Sampling (LHS)**: Used for parameter sampling.
+- **Partial Rank Correlation Coefficient (PRCC)**: Metric for sensitivity analysis.
 
-Since model simulation (solving model equations for a time span) runs separately (CUDA code), the code has to be run 
-separately for the following use cases:
-1. **Parameter sampling**: generate CSV files with parameter samples along with placeholder values for target variables
-2. **Analysis**: generate plots about PRCC values, demonstrations (solving the model for specified scenarios)
+## Usage
+1. **Parameter Sampling**: Generates CSV files with parameter samples and placeholder values for target variables.
+2. **Plotter**: Generates plots showing PRCC values, p-values, aggregated PRCC values and their variations.
 
-## Structure
-For running simulation:
-- `main.py`: contains class `Simulation`, which runs the sampling and PRCC calculation for different scenarios
-- `dataloader.py`: contains class `DataLoader` for loading data in an arranged format
+## Folder Structure
+- **data**: CSV and json files for each model (e.g., population, contact matrix, model parameters).
+- **examples**: Investigated models (e.g., rost, seir, chikina, moghadas).
+- **model**: Scripts for implementing the models and R0 generation.
+- **prcc**: Scripts for PRCC calculation and the methods for aggregating them.
+- **sampling**: Sampling scripts for contact matrix elements.
+- **simulation**: Orchestrates simulation processes, calling other folders, analyzing contact manipulation.
+- *target*: Output folders for models (e.g., epidemic, icu peak, final dead size, hospital peak).
 
-Implementation of main methods:
-- `model.py`: contains model implementation
-- `r0.py`: contains R0 calculation
-- `prcc.py`: contains PRCC calculation
+## File Details
+- `main.py`: Contains `Simulation` class for running sampling and PRCC calculation.
+- `dataloader.py`: Loads data in an arranged format.
+- `model.py`: Implements COVID-19 models.
+- `r0.py`: Calculates R0 values.
+- `prcc.py`: Calculates PRCC and their aggregate values.
+- `sampler.py`: Conducts parameter sampling.
+- `contact_manipulation.py`: Analyzes age group percentage contact manipulation on the targets.
+- `plotter.py`: Generates plots based on analysis results.
 
-Implementation of setups for experiments:
-- `sampler.py`: contains two sampling setups (contact matrix, vaccination parameters)
+## Implementation Details
+This section provides insights into the implementation of the aforementioned use cases. 
+Each subsection represents a specific functionality that can be executed from the `main.py` script.
 
-For analyzing results:
-- `plotter.py`: contains plotting functions
-- `analysis.py`: contains contact matrix manipulations for demonstrations
+## Documentation
+For detailed documentation on each component of the project, refer to the respective folders and their README files.
 
-## Implementation details
-
-This section contains some details about the implementation for above mentioned use cases. 
-All subsections are functionalities, which can be activated from `main.py`.
-
-### Parameter sampling
-TODO
-
-### Analysis
-TODO
+## Requirement
+This project is developed and tested with Python 3.8 or higher. Install dependencies from `requirements.txt`:
+```bash
+pip install -r requirements.txt
