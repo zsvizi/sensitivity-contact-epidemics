@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import os
+import json
 
 import numpy as np
 from smt.sampling_methods import LHS
@@ -8,13 +9,14 @@ import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_state: dict, sim_obj: src.SimulationNPI) -> None:
+    def __init__(self, sim_obj: src.SimulationNPI, config, target="r0") -> None:
+        self.config = config
+        self.target = target
         self.sim_obj = sim_obj
-        self.sim_state = sim_state
-        self.base_r0 = sim_state["base_r0"]
-        self.beta = sim_state["beta"]
+        self.base_r0 = sim_obj.sim_state["base_r0"]
+        self.beta = sim_obj.sim_state["beta"]
 
-        self.r0generator = sim_state["r0generator"]
+        self.r0generator = sim_obj.sim_state["r0generator"]
         self.lhs_boundaries = None
 
     @abstractmethod
@@ -38,19 +40,32 @@ class SamplerBase(ABC):
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
                                        lower=lower_bound,
                                        upper=upper_bound)
-        print("Simulation for", number_of_samples,
-              "samples (", "-".join(self._get_variable_parameters()), ")")
         return lhs_table
 
     def _save_output(self, output, folder_name):
         # Create directories for saving calculation outputs
-        os.makedirs("./sens_data", exist_ok=True)
+        directory = os.path.join("./sens_data", folder_name)
+        os.makedirs(directory, exist_ok=True)
+        filename = os.path.join(directory, f"{folder_name}_Hungary_" +
+                                "_".join(self._get_variable_parameters()))
 
-        # Save LHS output
-        os.makedirs("./sens_data/" + folder_name, exist_ok=True)
-        filename = "./sens_data/" + folder_name + "/" + folder_name + "_Hungary_" + \
-                   "_".join(self._get_variable_parameters())
-        np.savetxt(fname=filename + ".csv", X=np.asarray(output), delimiter=";")
+        # Save NumPy array as CSV file
+        np.savetxt(fname=filename + ".csv", X=output, delimiter=";")
+
+    def _save_output_json(self, folder_name):
+        directory = os.path.join("./sens_data", folder_name)
+        os.makedirs(directory, exist_ok=True)
+        filename = os.path.join(directory, f"{folder_name}_Hungary_" +
+                                "_".join(self._get_variable_parameters()))
+        value = dict()
+        i = 0
+        for k, v in self.sim_obj.config.items():
+            if v:
+                value[k] = self.sim_obj.upper_tri_size + i
+                i += 1
+
+        with open(filename + ".json", "w") as json_file:
+            json.dump(value, json_file)
 
 
 def create_latin_table(n_of_samples, lower, upper) -> np.ndarray:

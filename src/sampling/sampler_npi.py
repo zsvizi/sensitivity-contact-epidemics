@@ -1,83 +1,72 @@
 from functools import partial
-from time import sleep
 
 import numpy as np
 from tqdm import tqdm
 
 import src
 from src.sampling.cm_calculator_lockdown import CMCalculatorLockdown
-from src.sampling.final_size_target_calculator import FinalSizeTargetCalculator
+from src.sampling.target.ODE_target_calculator import ODETargetCalculator
 from src.sampling.sampler_base import SamplerBase
-from src.sampling.r0_target_calculator import R0TargetCalculator
+from src.sampling.target.r0_target_calculator import R0TargetCalculator
 
 
 class SamplerNPI(SamplerBase):
-    def __init__(self, sim_obj: src.SimulationNPI, target: str = "r0") -> None:
-        super().__init__(sim_state=sim_obj.sim_state, sim_obj=sim_obj)
+    def __init__(self, sim_obj: src.SimulationNPI, country: str,
+                 epi_model: str, config) -> None:
+        super().__init__(sim_obj=sim_obj, config=config)
+        self.country = country
+        self.epi_model = epi_model
         self.sim_obj = sim_obj
-        self.target = target
-        self.n_samples = sim_obj.n_samples
 
-        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj, sim_state=sim_obj.sim_state)
+        cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj)
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
-
-        if self.target == "r0":
-            self.calc = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
-            self.r0_lhs_home = self.calc.get_output(cm=self.sim_obj.contact_home)
-        elif self.target == "epidemic_size":
-            self.calc = FinalSizeTargetCalculator(sim_obj=self.sim_obj)
-            self.final_size = self.calc.get_output(cm=self.sim_obj.contact_matrix)
-
         self.susc = sim_obj.sim_state["susc"]
-
-        # Matrices of frequently used contact types
-        self.contact_home = self.sim_obj.contact_home
-        self.contact_total = self.sim_obj.contact_matrix
-
         self.lhs_boundaries = cm_calc.lhs_boundaries
+
+        self.calc = None
 
     def run(self):
         kappa = self.calculate_kappa()
-        # check if r0_lhs contains < 1
         print("computing kappa for base_r0=" + str(self.base_r0))
-        number_of_samples = self.n_samples
-        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples, kappa=kappa)
+        number_of_samples = self.sim_obj.n_samples
+        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
+                                        kappa=kappa)
+        # Initialize sim_outputs_combined as a copy of lhs_table
+        print(f"Simulation for {self.epi_model} model, "
+              f"contact_matrix: {self.country}, "
+              f"sample_size: {number_of_samples}, "
+              f"susc: {self.susc}, "
+              f"base_r0: {self.base_r0}.")
 
-        # Results have shape of (number_of_samples, 136 + 1)
-        results = list(tqdm(
-            map(partial(self.get_sim_output, calc=self.calc),
-                lhs_table),
-            total=lhs_table.shape[0]))
-        results = np.array(results)
+        self.calc = ODETargetCalculator(sim_obj=self.sim_obj,
+                                        epi_model=self.sim_obj.epi_model,
+                                        config=self.config)
 
-        # check if all r0s are > 1
-        r0_col_idx = int(self.sim_obj.upper_tri_size)  # r0 position
-        res_min = results[:, r0_col_idx].min()
-        if res_min < 1:
-            print("minimal lhs_r0: " + str(res_min))
+        # Calculate simulation output for the current target
+        results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+                                lhs_table),
+                            total=lhs_table.shape[0]))
+        sim_outputs = np.array(results)
 
-        # Sort tables by R0 values
-        sorted_idx = results[:, r0_col_idx].argsort()
-        results = results[sorted_idx]
-        lhs_table = np.array(lhs_table[sorted_idx])
-        sim_output = np.array(results)
-        sleep(0.3)
+        if self.config["include_r0"]:
+            self.calc = R0TargetCalculator(sim_obj=self.sim_obj,
+                                           country=self.country)
+            results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+                                    lhs_table),
+                                total=lhs_table.shape[0]))
+            sim_outputs = np.append(sim_outputs,
+                                    np.array(results)[:, self.sim_obj.upper_tri_size:].reshape(-1, 1),
+                                    axis=1)
 
-        # Save outputs
-        self._save_output(output=lhs_table, folder_name='lhs')
-        self._save_output(output=sim_output, folder_name='simulations')
-        if self.target == "epidemic_size":
-            self._save_output(output=self.calc.age_deaths, folder_name='age_deaths')
-            self._save_output(output=self.calc.age_hospitalized, folder_name='age_hospitalized')
-            self._save_output(output=self.calc.final_deaths, folder_name='final_deaths')
-            self._save_output(output=self.calc.hospitalized, folder_name='final_hospitalized')
-
-        return lhs_table, sim_output
+        self._save_output(output=lhs_table, folder_name="lhs")
+        self._save_output(output=sim_outputs, folder_name="simulations")
+        self._save_output_json(folder_name="simulations")
 
     def calculate_kappa(self):
         kappas = np.linspace(0, 1, 1000)
         r0_home_kappas = np.array(list(map(self.kappify, kappas)))
-        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of the maximum values along an axis.
+        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of
+        # the maximum values along an axis.
         kappa = kappas[k]
         print("k", kappa)
         return kappa
@@ -86,7 +75,7 @@ class SamplerNPI(SamplerBase):
         cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         cm_sim = self.sim_obj.contact_home + kappa * cm_diff
 
-        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, sim_state=self.sim_state)
+        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, country=self.country)
         r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
         return r0_lhs_home_k
 

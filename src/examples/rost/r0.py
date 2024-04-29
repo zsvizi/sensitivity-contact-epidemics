@@ -1,17 +1,19 @@
 import numpy as np
 from scipy.linalg import block_diag
 
-from src.model.r0 import R0GeneratorBase
+from src.model.r0_generator_base import R0GeneratorBase
 
 
 class R0Generator(R0GeneratorBase):
-    def __init__(self, param: dict, n_age: int = 16) -> None:
+    def __init__(self, param: dict, n_age: int = 16,
+                 country: str = "Hungary") -> None:
+        self.country = country
+
         states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
         super().__init__(param=param, states=states, n_age=n_age)
         self.n_l = 2
         self.n_a = 3
         self.n_i = 3
-
         self._get_e()
         self._get_v()
 
