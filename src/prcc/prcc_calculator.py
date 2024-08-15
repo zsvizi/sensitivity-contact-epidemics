@@ -6,21 +6,15 @@ from src.prcc.prcc import get_prcc_values, get_rectangular_matrix_from_upper_tri
 
 
 class PRCCCalculator:
-    def __init__(self, sim_obj: src.SimulationNPI, calculation_approach):
+    def __init__(self, sim_obj: src.SimulationNPI):
         self.sim_obj = sim_obj
-        self.calculation_approach = calculation_approach
 
-        self.agg_prcc = None
         self.confidence_lower = None
         self.confidence_upper = None
         self.p_value = None
         self.p_value_mtx = None
         self.prcc_mtx = None
         self.prcc_list = None
-        self.agg_std = None
-
-        self.complex_logic = True
-        self.pop_logic = False
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
         sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
@@ -46,33 +40,10 @@ class PRCCCalculator:
             matrix_size=self.sim_obj.n_ag)
 
     def _calculate_distribution_prcc_p_val(self):
-        distribution_p_val = self.prcc_mtx * (1 - self.p_value_mtx)
-        if self.complex_logic:
-            distribution_prcc_p_val = distribution_p_val / \
-                                      np.sum(self.prcc_mtx * (1 - self.p_value_mtx), axis=1,
-                                             keepdims=True)
-        elif self.pop_logic:
-            distribution_prcc_p_val = ((1 - self.p_value_mtx) *
-                                       self.sim_obj.population.reshape((1, -1)) /
-                                       np.sum((1 - self.p_value_mtx) *
-                                              self.sim_obj.population.reshape((1, -1)),
-                                              axis=1, keepdims=True))
-        else:
-            distribution_prcc_p_val = (1 - self.p_value_mtx) / np.sum(1 - self.p_value_mtx,
-                                                                      axis=1, keepdims=True)
+        distribution_prcc_p_val = (1 - self.p_value_mtx) / \
+                                  np.sum(1 - self.p_value_mtx,
+                                         axis=1, keepdims=True)
         return distribution_prcc_p_val
-
-    def aggregate_prcc_values_mean(self):
-        distribution_prcc_p_val = self._calculate_distribution_prcc_p_val()
-        agg = np.sum(self.prcc_mtx * distribution_prcc_p_val, axis=1)
-        agg_square = np.sum(self.prcc_mtx ** 2 * distribution_prcc_p_val, axis=1)
-        agg_std = np.sqrt(agg_square - agg ** 2)
-
-        self.confidence_lower = agg_std
-        self.confidence_upper = agg_std
-        self.agg_std = agg_std
-        self.agg_prcc = agg
-        return agg.flatten(), agg_std.flatten()
 
     def aggregate_prcc_values_median(self):
         median_values = []
@@ -114,8 +85,3 @@ class PRCCCalculator:
         self.confidence_lower = conf_lower
         self.confidence_upper = conf_upper
 
-    def aggregate_prcc_values(self):
-        if self.calculation_approach == 'mean':
-            return self.aggregate_prcc_values_mean()
-        else:
-            return self.aggregate_prcc_values_median()

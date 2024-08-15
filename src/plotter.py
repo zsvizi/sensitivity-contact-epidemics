@@ -44,14 +44,15 @@ class Plotter:
         """
         output_dir = f"sens_data/contact_matrices/{model}"  # Subdirectory for each model
         os.makedirs(output_dir, exist_ok=True)
-
         cmaps = {
-            "rost": {"Home": "inferno", "Work": "inferno", "School": "inferno", "Other": "inferno", "Full": "inferno"},
+            "rost": {"Home": "Greens", "Work": "Greens", "School": "Greens", "Other": "Greens",
+                     "Full": "Greens"},
             "chikina": {"Home": "inferno", "Work": "inferno", "School": "inferno", "Other": "inferno",
                         "Full": "inferno"},
             "moghadas": {"Home": "inferno", "All": "inferno"},
             "seir": {"Physical": "inferno", "All": "inferno"}
         }
+
         labels = self.labels_dict().get(model, [])
         if not labels:
             raise ValueError("Invalid model provided")
@@ -304,8 +305,7 @@ class Plotter:
     @staticmethod
     def aggregated_prcc_pvalues_plots(param_list, prcc_vector, std_values, conf_lower,
                                       conf_upper, plot_title,
-                                      filename_to_save, model, option,
-                                      calculation_approach):
+                                      filename_to_save, model, option):
         """
         Prepares for plotting aggregated PRCC and standard values as error bars.
         :param param_list: list of the parameters
@@ -317,8 +317,6 @@ class Plotter:
         :param option: (str): target options for epidemic size.
         :param model: (str): model choice.
         :param plot_title: The title of the plots.
-        :param calculation_approach: Calculation method for the aggregated prcc:
-        mean or median
         :return: None
         """
         if option:
@@ -364,13 +362,9 @@ class Plotter:
 
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")
-        if calculation_approach == "median":
-            for pos, y, cl, cu in zip(xp, list(prcc_vector), list(conf_lower), list(conf_upper)):
-                plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], lw=4, capthick=4, fmt="or",
-                             markersize=5, capsize=4, ecolor="r", elinewidth=4)
-        else:
-            for pos, y, err in zip(xp, list(prcc_vector), list(std_values)):
-                plt.errorbar(pos, y, err, lw=4, capthick=4, fmt="or",
+        for pos, y, cl, cu in zip(xp, list(prcc_vector), list(conf_lower),
+                                  list(conf_upper)):
+            plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], lw=4, capthick=4, fmt="or",
                              markersize=5, capsize=4, ecolor="r", elinewidth=4)
 
         # Remove vertical lines
@@ -381,7 +375,7 @@ class Plotter:
             ax.set_xticks(y_pos)
         ax.set_xticklabels(labels, rotation=90, ha='right')
 
-        ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathrm{\textbf{s}}$'])
+        ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathcal{CI}$'])
         plt.title(plot_title, y=1.03, fontsize=20)
 
         # ax.legend(['Aggregated PRCC', 'Std Dev'], loc='upper right')
@@ -389,8 +383,7 @@ class Plotter:
         plt.close()
 
     def plot_aggregation_prcc_pvalues(self, prcc_vector, std_values, conf_lower,
-                                      conf_upper, filename_without_ext, model, option,
-                                      calculation_approach):
+                                      conf_upper, filename_without_ext, model, option):
         """
         Generates actual aggregated PRCC plots with std values as error bars.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
@@ -399,8 +392,6 @@ class Plotter:
         :param conf_upper: (numpy.ndarray): upper quartiles of aggregated PRCC vector.
         :param filename_without_ext: (str): The filename prefix for the saved plot.
         :param option: (str): target options for epidemic size.
-        :param calculation_approach: Calculation method for the aggregated prcc;
-        mean or median
         :param model: (str): The model options
         :return: bar plots with error bars
         """
@@ -413,8 +404,8 @@ class Plotter:
                                            std_values=std_values,
                                            conf_lower=conf_lower, conf_upper=conf_upper,
                                            filename_to_save=filename_without_ext,
-                                           plot_title=plot_title, model=model, option=option,
-                                           calculation_approach=calculation_approach)
+                                           plot_title=plot_title,
+                                           model=model, option=option)
 
     @staticmethod
     def plot_model_max_values(max_values, model: str,
