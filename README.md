@@ -7,18 +7,19 @@ exploring their behavior under different contact matrix element variations.
 ## Key Investigation
 - **Contact Matrix Analysis**: Evaluating how perturbations in the contact matrix affect various targets.
 
+
 ## Data Files
 ├── data  # Contains all files organized by model name and type.
 
-     │   ├── age_distribution  # Details the age group population used in the models.
-     
-     │   ├── contact_matrices # Contains contact matrices for different settings:
-     
-     │     │   ├── For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
+│   ├── age_distribution  # Details the age group population used in the models.
 
-     │     │   └── For **Seir** model: All, Physical.
+│   ├── contact_matrices # Contains contact matrices for different settings:
 
-     │   └── model_parameters  # JSON files containing parameters specific to each model.
+│   │   ├── For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
+
+│   │   └── For **Seir** model: All, Physical.
+
+│   └── model_parameters  # JSON files containing parameters specific to each model.
 
 
 ## Targets Investigated
