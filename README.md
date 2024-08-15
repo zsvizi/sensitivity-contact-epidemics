@@ -15,10 +15,10 @@ exploring their behavior under different contact matrix element variations.
 
 │   ├── contact_matrices # Contains contact matrices for different settings:
 
-│   │   ├── For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
+- For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
 
-│   │   └── For **Seir** model: All, Physical.
-
+- For **Seir** model: All, Physical.
+  
 │   └── model_parameters  # JSON files containing parameters specific to each model.
 
 
