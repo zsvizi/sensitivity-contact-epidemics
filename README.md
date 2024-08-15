@@ -9,11 +9,16 @@ exploring their behavior under different contact matrix element variations.
 
 ## Data Files
 ├── data  # Contains all files organized by model name and type.
-│   ├── age_distribution  # Details the age group population used in the models.
-│   ├── contact_matrices # Contains contact matrices for different settings:
-│   │   ├── For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
-│   │   └── For **Seir** model: All, Physical.
-│   └── model_parameters  # JSON files containing parameters specific to each model.
+
+     │   ├── age_distribution  # Details the age group population used in the models.
+     
+     │   ├── contact_matrices # Contains contact matrices for different settings:
+     
+     │     │   ├── For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
+
+     │     │   └── For **Seir** model: All, Physical.
+
+     │   └── model_parameters  # JSON files containing parameters specific to each model.
 
 
 ## Targets Investigated
@@ -57,6 +62,7 @@ A summary about the steps of the research project:
 │   │   ├── sampler_npi  
 │   ├── simulation      
 │   │   ├── contact_manipulation 
+
 │   │   ├── simulation_base       
 │   │   ├── simulation_npi      
 │   ├── dataloader     
