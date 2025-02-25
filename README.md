@@ -114,36 +114,40 @@ To run the simulation, follow these steps:
 2. Use the following code templates for different scenarios. Adjust the country and epi_model as needed.
 
 #### Example: United States with the Moghadas Model
+```
 data = DataLoader(country="united_states")
-
 simulation = src.SimulationNPI(data=data, n_samples=10000, epi_model="moghadas", country="united_states")
+```
 
 #### Example: Hungary with the Rost Model
+```
 data = DataLoader(country="Hungary")
-
 simulation = src.SimulationNPI(data=data, n_samples=10000, epi_model="rost", country="Hungary")
+```
 
 #### Example: United Kingdom (UK) with the SEIR Model
+```
 data = DataLoader(country="UK")
-
 simulation = src.SimulationNPI(data=data, n_samples=10000, epi_model="seir", country="UK")
+```
 
 #### Example: United States with the Chikina Model
+```
 data = DataLoader(country="usa")
-
 simulation = src.SimulationNPI(data=data, n_samples=10000, epi_model="chikina", country="usa")
+```
 
 3. Run the simulation with these steps:
   ##### Generate Latin Hypercube Sampling (LHS)
-  simulation.generate_lhs()
+  ```simulation.generate_lhs()```
   #### Calculate Partial Rank Correlation Coefficient (PRCC) values
-  simulation.calculate_prcc_values()
+  ```simulation.calculate_prcc_values()```
   #### Plot the PRCC values
-  simulation.plot_prcc_values()
+  ```simulation.plot_prcc_values()```
   #### Generate analysis results based on the simulation
-  simulation.generate_analysis_results()
+  ```simulation.generate_analysis_results()```
   #### Plot the maximum values for contact manipulation
-  simulation.plot_max_values_contact_manipulation()
+  ```simulation.plot_max_values_contact_manipulation()```
 
 
 ## Requirement
