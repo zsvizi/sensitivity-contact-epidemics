@@ -90,7 +90,7 @@ class SimulationNPI(SimulationBase):
                         country=self.country, config=self.config)
                     sampler_npi.run()
 
-    def calculate_prcc_values(self, calculation_approach):
+    def calculate_prcc_values(self):
         sim_folder = "simulations"
         lhs_folder = "lhs"
         prcc_dir = "PRCC_Pvalues"
@@ -120,8 +120,7 @@ class SimulationNPI(SimulationBase):
                 for key, value in saved_json_data.items():
                     # CALCULATIONS
                     prcc_calculator = src.PRCCCalculator(
-                        sim_obj=self,
-                        calculation_approach=calculation_approach
+                        sim_obj=self
                     )
                     prcc_calculator.calculate_prcc_values(
                         lhs_table=saved_lhs_table,
@@ -133,15 +132,11 @@ class SimulationNPI(SimulationBase):
                         [prcc_calculator.prcc_list, prcc_calculator.p_value]
                     ).reshape(-1, self.upper_tri_size).T
 
-                    prcc_calculator.aggregate_prcc_values()
-                    if calculation_approach == "mean":
-                        stack_value = np.hstack(
-                            [prcc_calculator.agg_prcc, prcc_calculator.agg_std]
-                        ).reshape(-1, self.n_ag).T
-                    else:
-                        stack_value = np.hstack(
-                            [prcc_calculator.agg_prcc, prcc_calculator.confidence_lower,
-                             prcc_calculator.confidence_upper]
+                    prcc_calculator.aggregate_prcc_values_median()
+
+                    stack_value = np.hstack(
+                        [prcc_calculator.agg_prcc, prcc_calculator.confidence_lower,
+                         prcc_calculator.confidence_upper]
                         ).reshape(-1, self.n_ag).T
                     # CALCULATIONS END
 
@@ -168,7 +163,7 @@ class SimulationNPI(SimulationBase):
             data = json.load(json_file)
         return data
 
-    def plot_prcc_values(self, calculation_approach):
+    def plot_prcc_values(self):
         agg_values = ["agg_prcc", "PRCC_Pvalues"]
         for susc in self.susc_choices:
             for base_r0 in self.r0_choices:
@@ -187,7 +182,7 @@ class SimulationNPI(SimulationBase):
                             plotter.plot_contact_matrices_models(filename="contact",
                                                                  model=self.epi_model,
                                                                  contact_data=self.data.contact_data,
-                                                                 plot_total_contact=True)
+                                                                 plot_total_contact=False)
 
                             if filename == "prcc.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
@@ -199,28 +194,17 @@ class SimulationNPI(SimulationBase):
                                 )
 
                             elif filename == "agg.csv":
-                                saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
-                                if calculation_approach == "median":
-                                    plotter.plot_aggregation_prcc_pvalues(
-                                        prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                        std_values=None,
-                                        conf_lower=abs(saved_prcc_pval[:, 1]),
-                                        conf_upper=abs(saved_prcc_pval[:, 2]),
-                                        filename_without_ext=base_r0_value,
-                                        model=self.epi_model,
-                                        option=root,
-                                        calculation_approach=calculation_approach
-                                    )
-                                else:
-                                    plotter.plot_aggregation_prcc_pvalues(
-                                        prcc_vector=abs(saved_prcc_pval[:, 0]),
-                                        std_values=abs(saved_prcc_pval[:, 1]),
-                                        conf_lower=None,
-                                        conf_upper=None,
-                                        filename_without_ext=base_r0_value,
-                                        model=self.epi_model,
-                                        option=root,
-                                        calculation_approach=calculation_approach
+                                saved_prcc_pval = np.loadtxt(os.path.join(root, filename),
+                                                             delimiter=';')
+
+                                plotter.plot_aggregation_prcc_pvalues(
+                                    prcc_vector=saved_prcc_pval[:, 0],
+                                    std_values=None,
+                                    conf_lower=saved_prcc_pval[:, 1],
+                                    conf_upper=saved_prcc_pval[:, 2],
+                                    filename_without_ext=base_r0_value,
+                                    model=self.epi_model,
+                                    option=root
                                     )
 
     def generate_analysis_results(self):
