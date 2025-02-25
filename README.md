@@ -9,18 +9,14 @@ exploring their behavior under different contact matrix element variations.
 
 
 ## Data Files
-├── data  # Contains all files organized by model name and type.
-
-│   ├── age_distribution  # Details the age group population used in the models.
-
-│   ├── contact_matrices # Contains contact matrices for different settings:
-
-- For **Chikina**, **Moghadas**, and **Rost** models: Home, School, Work, Other.
-
-- For **Seir** model: All, Physical.
-  
-│   └── model_parameters  # JSON files containing parameters specific to each model.
-
+```
+└──  data  # Contains all files organized by model name and type.
+     ├── age_distribution  # Details the age group population used in the models.
+     ├── contact_matrices # Contains contact matrices for different settings:
+     │   ├── For Chikina, Moghadas, and Rost models: Home, School, Work, Other.
+     │   └── For Seir model: All, Physical.
+     └── model_parameters  # JSON files containing parameters specific to each model.
+```
 
 ## Targets Investigated
 - **R0 (Basic Reproduction Number)**
@@ -44,49 +40,33 @@ A summary about the steps of the research project:
 
        
 ## Folder Structure
-
+```
 ├── data                
 ├── src                    
 │   ├── examples        
 │   │   ├── chikina  # Chikina model implementation and R0 calculation.
-
 │   │   ├── moghadas # Moghadas model implementation and R0 calculation.
-
 │   │   ├── rost # Rost model implementation and R0 calculation.
-
-│   │   ├── seir # SEIR model implementation and R0 calculation.
-
+│   │   └── seir # SEIR model implementation and R0 calculation.
 │   ├── model           
 │   │   ├── model_base # Base class for epidemic models.   
-
-│   │   ├── r0_generator_base # Framework for calculating R0 in the models.
-
+│   │   └── r0_generator_base # Framework for calculating R0 in the models.
 │   ├── prcc          
 │   │   ├── prcc # Converts vectors of matrix values into symmetric matrices and calculates PRCC values.
-
-│   │   ├── prcc_calculator  # Performs sensitivity analysis and calculates PRCC and p-values, aggregating results.
-
+│   │   └── prcc_calculator  # Performs sensitivity analysis and calculates PRCC and p-values, aggregating results.
 │   ├── sampling        
-│   │   ├── target      
-│   │   │   ├── cm_calculator_lockdown # Adjusts and calculates outputs for lockdown scenarios.
-
-│   │   │   ├── sampler_base # Base class for sampling with LHS sample generation and output saving.
-
-│   │   │   ├── sampler_npi # Implementation for simulation sampling, metric computation, and data handling.
-
+│   │   └── target      
+│   │       ├── cm_calculator_lockdown # Adjusts and calculates outputs for lockdown scenarios.
+│   │       ├── sampler_base # Base class for sampling with LHS sample generation and output saving.
+│   │       └── sampler_npi # Implementation for simulation sampling, metric computation, and data handling.
 │   ├── simulation                                                     
 │   │   ├── contact_manipulation # Manages and manipulates contact matrices, generates related plots.
-
 │   │   ├── simulation_base  # Base class for managing simulation states and contact data.
-
-│   │   ├── simulation_npi # Handles simulations, analysis, parameter updates, and plotting results.
-
+│   │   └── simulation_npi # Handles simulations, analysis, parameter updates, and plotting results.
 │   ├── dataloader # Loads and processes model data, parameters, contact matrices, and demographic data.
-
 │   └── plotter  # Visualizes contact matrices, PRCC values, and other data; manages plotting and saving.
-
 └── main  # Script to load data, run simulations, and generate results and visualizations.
-
+```
 ## File Details
 
 #### `src/examples/chikina`
