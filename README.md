@@ -1,5 +1,7 @@
 # Sensitivity analysis of contact-related interventions for modeling epidemics.
 
+See the manuscript written for this project [here](https://arxiv.org/pdf/2502.19206).
+
 ## Introduction
 This repository conducts sensitivity analysis on various COVID-19 models, 
 exploring their behavior under different contact matrix element variations.
