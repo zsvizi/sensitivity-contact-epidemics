@@ -1,5 +1,4 @@
 from functools import partial
-
 import numpy as np
 from tqdm import tqdm
 
@@ -26,12 +25,9 @@ class SamplerNPI(SamplerBase):
         self.calc = None
 
     def run(self):
-        kappa = self.calculate_kappa()
-        print("computing kappa for base_r0=" + str(self.base_r0))
         number_of_samples = self.sim_obj.n_samples
-        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
-                                        kappa=kappa)
-        # Initialize sim_outputs_combined as a copy of lhs_table
+        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples)
+
         print(f"Simulation for {self.epi_model} model, "
               f"contact_matrix: {self.country}, "
               f"sample_size: {number_of_samples}, "
@@ -42,42 +38,26 @@ class SamplerNPI(SamplerBase):
                                         epi_model=self.sim_obj.epi_model,
                                         config=self.config)
 
-        # Calculate simulation output for the current target
+        # Run the simulations using the LHS table and the contact matrix builder
         results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
                                 lhs_table),
                             total=lhs_table.shape[0]))
         sim_outputs = np.array(results)
 
+        # Optionally compute R0 values and append to simulation output
         if self.config["include_r0"]:
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj,
                                            country=self.country)
-            results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
-                                    lhs_table),
-                                total=lhs_table.shape[0]))
-            sim_outputs = np.append(sim_outputs,
-                                    np.array(results)[:, self.sim_obj.upper_tri_size:].reshape(-1, 1),
-                                    axis=1)
+            r0_results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+                                       lhs_table),
+                                   total=lhs_table.shape[0]))
+            r0_array = np.array(r0_results)[:, self.sim_obj.upper_tri_size:].reshape(-1, 1)
+            sim_outputs = np.append(sim_outputs, r0_array, axis=1)
 
+        # Save results
         self._save_output(output=lhs_table, folder_name="lhs")
         self._save_output(output=sim_outputs, folder_name="simulations")
         self._save_output_json(folder_name="simulations")
-
-    def calculate_kappa(self):
-        kappas = np.linspace(0, 1, 1000)
-        r0_home_kappas = np.array(list(map(self.kappify, kappas)))
-        k = np.argmax(r0_home_kappas > 1, axis=0)  # Returns the indices of
-        # the maximum values along an axis.
-        kappa = kappas[k]
-        print("k", kappa)
-        return kappa
-
-    def kappify(self, kappa: float = None) -> float:
-        cm_diff = self.sim_obj.contact_matrix - self.sim_obj.contact_home
-        cm_sim = self.sim_obj.contact_home + kappa * cm_diff
-
-        tar_out_r0 = R0TargetCalculator(sim_obj=self.sim_obj, country=self.country)
-        r0_lhs_home_k = tar_out_r0.get_output(cm=cm_sim)
-        return r0_lhs_home_k
 
     def _get_variable_parameters(self):
         return [str(self.susc), str(self.base_r0), format(self.beta, '.5f')]

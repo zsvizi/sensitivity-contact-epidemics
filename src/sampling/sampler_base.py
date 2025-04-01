@@ -27,14 +27,11 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 120000, kappa: float = None) -> np.ndarray:
+    def _get_lhs_table(self, number_of_samples: int = 120000) -> np.ndarray:
         # only computes lhs for icu with a_ij
         # Get actual limit matrices
         lower_bound = self.lhs_boundaries["lower"]
         upper_bound = self.lhs_boundaries["upper"]
-
-        if kappa is not None:
-            upper_bound *= (1 - kappa)
 
         # Get LHS tables
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
