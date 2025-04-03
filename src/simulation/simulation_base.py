@@ -28,7 +28,7 @@ class SimulationBase(ABC):
         self.upper_tri_size = int((self.n_ag + 1) * self.n_ag / 2)
 
     def __set_contact_data(self, country):
-        if country == "united_states":
+        if country in ["None", "Hungary", "united_states"]:
             self.contact_matrix = self.data.contact_data["All"]
             self.contact_home = self.data.contact_data["Home"]
             self.n_ag = self.data.contact_data["Home"].shape[0]

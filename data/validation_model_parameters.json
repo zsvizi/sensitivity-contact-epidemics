@@ -1,0 +1,16 @@
+{
+    "alpha": {
+        "value": 0.25,
+        "description": "Rate of transition from Exposed to Infectious (1/latency period), latency = 4 days"
+    },
+
+    "gamma": {
+        "value": 0.25,
+        "description": "Rate of leaving the Infectious compartment (1/infectious period), infectious period = 4 days"
+    },
+
+    "p_recovery": {
+        "value": 0.9091,
+        "description": "Probability of recovery from Infectious state"
+    }
+}

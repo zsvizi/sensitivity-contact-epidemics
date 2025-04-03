@@ -12,11 +12,21 @@ class StateCalculator:
             return self._calculate_infecteds_moghadas(sol=sol)
         elif self.epi_model == "chikina":
             return self._calculate_infecteds_chikina(sol=sol)
+        elif self.epi_model == "validation":
+            return self._calculate_infecteds_validation(sol=sol)
         else:
             raise ValueError("Invalid epi_model")
 
     def _calculate_infecteds_seir(self, sol):
         # Calculate the number of infected individuals in the SEIR model
+        n_infecteds = (
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
+            self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
+        )
+        return n_infecteds
+
+    def _calculate_infecteds_validation(self, sol):
+        # Calculate the number of infected individuals in the SEIRD model
         n_infecteds = (
             self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
             self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
@@ -91,6 +101,13 @@ class StateCalculator:
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
             ).max()
+        elif self.epi_model == "validation":
+            # Calculate the infected peak in the SEIRD model
+            infecteds_peak = (
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["e"]) +
+                self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["i"])
+            ).max()
+
         else:
             raise Exception("Invalid model!")
         return infecteds_peak
@@ -129,9 +146,10 @@ class StateCalculator:
         return icu_now
 
     def calculate_final_size_dead(self, sol):
-        if self.epi_model in ["rost", "chikina", "moghadas"]:
+        if self.epi_model in ["rost", "chikina", "moghadas", "validation"]:
             state = sol[-1].reshape((1, -1))
-            final_size_dead = self.sim_obj.model.aggregate_by_age(solution=state, idx=self.sim_obj.model.c_idx["d"])
+            final_size_dead = self.sim_obj.model.aggregate_by_age(
+                solution=state, idx=self.sim_obj.model.c_idx["d"])
         else:
             final_size_dead = 0
         return final_size_dead

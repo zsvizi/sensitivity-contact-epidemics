@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 import src
-from src.simulation.contact_manipulation import ContactManipulation
 from src.dataloader import DataLoader
-from src.examples import chikina, rost, moghadas, seir
+from src.examples import chikina, rost, moghadas, seir, validation
+from src.simulation.contact_manipulation import ContactManipulation
 from src.simulation.simulation_base import SimulationBase
 
 
@@ -34,6 +34,15 @@ class SimulationNPI(SimulationBase):
                 "include_infecteds": False,  # excluded from the targets
                 "include_r0": True
             }
+        elif epi_model == "validation":
+            self.config = {
+                "include_final_death_size": True,
+                "include_icu_peak": False,
+                "include_hospital_peak": False,
+                "include_infecteds_peak": True,
+                "include_infecteds": False,
+                "include_r0": True
+            }
         else:
             raise ValueError("Invalid epi_model")
 
@@ -58,6 +67,8 @@ class SimulationNPI(SimulationBase):
             self.model = seir.SeirUK(model_data=self.data)
         elif epi_model == "moghadas":
             self.model = moghadas.MoghadasModelUsa(model_data=self.data)
+        elif epi_model == "validation":
+            self.model = validation.ValidationModel(model_data=self.data)
         else:
             raise Exception("No model was given!")
 
@@ -70,6 +81,8 @@ class SimulationNPI(SimulationBase):
             r0generator = seir.R0SeirSVModel(param=self.params)
         elif self.epi_model == "moghadas":
             r0generator = moghadas.R0SeyedModel(param=self.params)
+        elif self.epi_model == "validation":
+            r0generator = validation.R0ValidationModel(param=self.params)
         else:
             raise Exception("No model is given!")
         return r0generator
@@ -176,13 +189,14 @@ class SimulationNPI(SimulationBase):
                         for filename in files:
                             plotter = src.Plotter(sim_obj=self, data=self.data)
 
-                            plotter.get_percentage_age_group_contact(filename="mean_contact",
-                                                                     model=self.epi_model
-                                                                     )
                             plotter.plot_contact_matrices_models(filename="contact",
                                                                  model=self.epi_model,
                                                                  contact_data=self.data.contact_data,
                                                                  plot_total_contact=False)
+
+                            plotter.get_percentage_age_group_contact(filename="mean_contact",
+                                                                     model=self.epi_model
+                                                                     )
 
                             if filename == "prcc.csv":
                                 saved_prcc_pval = np.loadtxt(os.path.join(root, filename), delimiter=';')
@@ -190,7 +204,8 @@ class SimulationNPI(SimulationBase):
                                     prcc_vector=abs(saved_prcc_pval[:, 0]),
                                     p_values=abs(saved_prcc_pval[:, 1]),
                                     filename_without_ext=base_r0_value,
-                                    option=root
+                                    option=root,
+                                    model=self.epi_model
                                 )
 
                             elif filename == "agg.csv":

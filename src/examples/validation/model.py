@@ -1,0 +1,40 @@
+import numpy as np
+
+from src.model.model_base import EpidemicModelBase
+
+
+class ValidationModel(EpidemicModelBase):
+    def __init__(self, model_data) -> None:
+        compartments = ["s", "e", "i", "r", "d", "c"]
+
+        super().__init__(model_data=model_data, compartments=compartments)
+
+    def update_initial_values(self, iv: dict):
+        iv["i"][1] = 1
+        iv.update({"c": iv["e"] + iv["r"] + iv["d"]
+                   })
+
+        iv.update({"s": self.population - (iv["i"] + iv["c"])})
+
+    def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
+        s, e, i, r, d, c = xs.reshape(-1, self.n_age)
+        transmission = ps["beta"] * np.array(i).dot(cm)  # E does not infect
+
+        model_eq_dict = {
+            "s": -transmission * s / self.population,  # S'(t)
+            "e": s / self.population * transmission - e * ps["alpha"],  # E'(t)
+            "i": ps["alpha"] * e - ps["gamma"] * i,  # I'(t)
+            "r": ps["p_recovery"] * ps["gamma"] * i,  # R'(t)
+            "d": (1 - ps["p_recovery"]) * ps["gamma"] * i,  # D'(t)
+            # add compartment to store total infecteds
+            "c": s / self.population * transmission + ps["alpha"] * e  # C'(t)
+        }
+        return self.get_array_from_dict(comp_dict=model_eq_dict)
+
+    def get_infected(self, solution) -> np.ndarray:
+        idx = self.c_idx["i"]
+        return self.aggregate_by_age(solution, idx)
+
+    def get_deaths(self, solution) -> np.ndarray:
+        idx = self.c_idx["d"]
+        return self.aggregate_by_age(solution, idx)

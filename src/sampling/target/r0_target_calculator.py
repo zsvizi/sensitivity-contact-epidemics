@@ -1,11 +1,12 @@
 import numpy as np
 
 import src
-from src.examples.rost.r0 import R0Generator
-from src.sampling.target.target_calculator import TargetCalculator
 from src.examples.seir.r0 import R0SeirSVModel
 from src.examples.chikina.r0 import R0SirModel
 from src.examples.moghadas.r0 import R0SeyedModel
+from src.examples.rost.r0 import R0Generator
+from src.examples.validation.r0 import R0ValidationModel
+from src.sampling.target.target_calculator import TargetCalculator
 
 
 class R0TargetCalculator(TargetCalculator):
@@ -24,6 +25,8 @@ class R0TargetCalculator(TargetCalculator):
             r0generator = R0SirModel(param=self.sim_obj.params)
         elif self.country == "united_states":
             r0generator = R0SeyedModel(param=self.sim_obj.params)
+        elif self.country == "validation":
+            r0generator = R0ValidationModel(param=self.sim_obj.params)
         else:
             raise Exception("Invalid country!")
 
