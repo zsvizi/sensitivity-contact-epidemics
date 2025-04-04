@@ -12,11 +12,14 @@ from src.sampling.target.r0_target_calculator import R0TargetCalculator
 
 class SamplerNPI(SamplerBase):
     def __init__(self, sim_obj: src.SimulationNPI, country: str,
-                 epi_model: str, config) -> None:
+                 epi_model: str, config, is_kappa_applied: bool,
+                 strategy: str) -> None:
         super().__init__(sim_obj=sim_obj, config=config)
         self.country = country
         self.epi_model = epi_model
         self.sim_obj = sim_obj
+        self.is_kappa_applied = is_kappa_applied
+        self.strategy = strategy
 
         cm_calc = CMCalculatorLockdown(sim_obj=self.sim_obj)
         self.get_sim_output = cm_calc.get_sim_output_cm_entries_lockdown
@@ -26,11 +29,21 @@ class SamplerNPI(SamplerBase):
         self.calc = None
 
     def run(self):
-        kappa = self.calculate_kappa()
-        print("computing kappa for base_r0=" + str(self.base_r0))
+        if self.is_kappa_applied:
+            kappa = self.calculate_kappa()
+            print("computing kappa for base_r0=" + str(self.base_r0))
+        else:
+            kappa = None
+            print("Skipping kappa calculation.")
+
         number_of_samples = self.sim_obj.n_samples
-        lhs_table = self._get_lhs_table(number_of_samples=number_of_samples,
-                                        kappa=0)
+        lhs_table = self._get_lhs_table(
+            number_of_samples=number_of_samples,
+            kappa=0 if kappa is None else kappa,
+            model=self.epi_model,
+            strategy=self.strategy
+        )
+
         # Initialize sim_outputs_combined as a copy of lhs_table
         print(f"Simulation for {self.epi_model} model, "
               f"contact_matrix: {self.country}, "
@@ -55,7 +68,8 @@ class SamplerNPI(SamplerBase):
                                     lhs_table),
                                 total=lhs_table.shape[0]))
             sim_outputs = np.append(sim_outputs,
-                                    np.array(results)[:, self.sim_obj.upper_tri_size:].reshape(-1, 1),
+                                    np.array(results)[:,
+                                    self.sim_obj.upper_tri_size:].reshape(-1, 1),
                                     axis=1)
 
         self._save_output(output=lhs_table, folder_name="lhs")

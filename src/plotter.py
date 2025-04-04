@@ -2,13 +2,17 @@ import os
 
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib import patches, lines
 from matplotlib.cm import get_cmap
 import matplotlib.colors as colors
 from matplotlib.lines import Line2D
 from matplotlib.ticker import LogFormatterSciNotation as LogFormatter
 from matplotlib.ticker import LogLocator
+from matplotlib.ticker import FuncFormatter
+
 from matplotlib.tri import Triangulation
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -17,7 +21,7 @@ from src.dataloader import DataLoader
 from src.simulation.simulation_base import SimulationBase
 from src.prcc.prcc import get_rectangular_matrix_from_upper_triu
 
-plt.style.use('seaborn-whitegrid')
+# plt.style.use('seaborn-whitegrid')
 matplotlib.use('agg')
 
 
@@ -31,6 +35,20 @@ class Plotter:
         self.sim_obj = sim_obj
         self.contact_full = np.array([])
 
+    @staticmethod
+    def labels_dict():
+        labels = {
+            "rost": ["0-4", "5-14", "15-29", "30-44", "45-59", "60-69", "70-79", "80-"],
+            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                        "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
+            "moghadas": ["0-19", "20-49", "50-65", "65+"],
+            "validation": ["0-29", "30-59", "60+"],
+            "seir": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29",
+                     "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70+"]
+        }
+        return labels
+
     def plot_contact_matrices_models(self, contact_data, model, filename,
                                      plot_total_contact: bool = True):
         """
@@ -42,72 +60,83 @@ class Plotter:
         :param plot_total_contact: for plotting total contacts
         :return: Heatmaps for different models
         """
-        output_dir = f"sens_data/contact_matrices/{model}"  # Subdirectory for each model
+        output_dir = f"sens_data/contact_matrices/{model}"
         os.makedirs(output_dir, exist_ok=True)
+
         cmaps = {
-            "rost": {"Home": "Greens", "Work": "Greens", "School": "Greens", "Other": "Greens",
-                     "Full": "Greens"},
-            "chikina": {"Home": "inferno", "Work": "inferno", "School": "inferno", "Other": "inferno",
-                        "Full": "inferno"},
+            "rost": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
+            "validation": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
+            "chikina": {"Home": "inferno", "Work": "inferno", "School": "inferno",
+                        "Other": "inferno", "Full": "inferno"},
             "moghadas": {"Home": "inferno", "All": "inferno"},
-            "seir": {"Physical": "inferno", "All": "inferno"}
+            "seir": {"Physical": "Greens", "All": "Greens"}
         }
 
         labels = self.labels_dict().get(model, [])
         if not labels:
-            raise ValueError("Invalid model provided")
+            raise ValueError(f"Invalid model '{model}' provided. "
+                             f"Available models: {list(cmaps.keys())}")
 
-        contact_full = np.array([contact_data[i] for i in cmaps[model].keys() if i != "Full"]).sum(axis=0)
+        contact_full = np.array([contact_data[i] for i in
+                                 cmaps[model].keys() if i != "Full"]).sum(axis=0)
 
         for contact_type, cmap in cmaps[model].items():
-            contacts = contact_data[contact_type] if contact_type != "Full" else contact_full
-            contact_matrix = pd.DataFrame(contacts, columns=range(self.sim_obj.n_ag),
-                                          index=range(self.sim_obj.n_ag))
+            contacts = contact_data[contact_type] if contact_type != "Full" else \
+                contact_full
+            contact_matrix = pd.DataFrame(contacts, columns=labels, index=labels)
 
-            # Turn off axis
-            ax = plt.gca()
+            if plot_total_contact:
+                data_to_plot = contact_matrix * self.data.age_data
+            else:
+                data_to_plot = contact_matrix
+
+            fig, ax = plt.subplots(figsize=(8, 8))
+
+            # Set up log normalization
+            norm = mcolors.LogNorm(vmin=0.01, vmax=10)
+
+            # Plot heatmap without default colorbar
+            sns.heatmap(data_to_plot, cmap=cmap, norm=norm, linewidths=0,
+                        square=True, cbar=False, ax=ax)
+
+            # Style adjustments
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(True)
+            ax.spines['left'].set_visible(True)
 
-            # Create heatmap
-            if model in ["rost", "chikina"]:
-                if plot_total_contact:
-                    sns.heatmap(contact_matrix * self.data.age_data, cmap=cmap, square=True,
-                                cbar=contact_type == "Full", ax=ax)
-                else:
-                    sns.heatmap(contact_matrix, cmap=cmap, vmin=0, vmax=10, square=True,
-                                cbar=contact_type == "Full", ax=ax)
-            else:
-                if plot_total_contact:
-                    sns.heatmap(contact_matrix * self.data.age_data, cmap=cmap, square=True,
-                                cbar=contact_type == "All", ax=ax)
-                else:
-                    sns.heatmap(contact_matrix, cmap=cmap, vmin=0, vmax=10, square=True,
-                                cbar=contact_type == "All", ax=ax)
-            # Rotate y tick labels
-            plt.yticks(rotation=0)
+            ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=12)
+            ax.set_yticklabels(labels, rotation=0, fontsize=12)
+            ax.set_xlabel("Respondent age", fontsize=14)
+            ax.set_ylabel("Contact age", fontsize=14)
+            ax.set_title(f"{contact_type} contact", fontsize=18, fontweight="bold")
+
+            # Only add colorbar for 'Full' (chikina, rost) or 'All' (moghadas, seir)
+            if contact_type in ["Full", "All"]:
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.45)
+
+                # Use real data range
+                vmin_data, vmax_data = data_to_plot.min().min(), \
+                                       data_to_plot.max().max()
+                norm = mcolors.LogNorm(vmin=max(vmin_data, 0.01),
+                                       vmax=max(vmax_data, 0.01))
+
+                mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+                mappable.set_array([])
+
+                cb = plt.colorbar(mappable=mappable, cax=cax)
+                cb.set_label("Avg. num. contacts", fontsize=12, labelpad=10)
+
+                cb.set_ticks(np.geomspace(max(vmin_data, 0.01), vmax_data, num=4))
+                cb.ax.yaxis.set_major_formatter(FuncFormatter(lambda val,
+                                                                     pos: f"{val:.2g}"))
+
             ax.invert_yaxis()
-
-            plt.title(f"{contact_type} contact", fontsize=25, fontweight="bold")
-
+            plt.tight_layout()
             plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"),
                         format="pdf", bbox_inches='tight')
             plt.close()
-
-    @staticmethod
-    def labels_dict():
-        labels = {
-            "rost": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70-74", "75+"],
-            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                        "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
-            "moghadas": ["0-19", "20-49", "50-65", "65+"],
-            "seir": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                     "55-59", "60-64", "65-69", "70+"]
-        }
-        return labels
 
     def get_percentage_age_group_contact(self, model, filename):
         """
@@ -227,13 +256,14 @@ class Plotter:
             return plt.get_cmap(cmap_name)
 
     def plot_prcc_p_values_as_heatmap(self, prcc_vector,
-                                      p_values, plot_title, option):
+                                      p_values, plot_title, model, option):
         """
         Prepares for plotting PRCC and p-values as a heatmap.
        :param prcc_vector: (numpy.ndarray): The PRCC vector.
        :param p_values: (numpy.ndarray): The p-values vector.
        :param plot_title: The title of the plot.
        :param plot_title: The title of the plots.
+       :param model: (str): Model options for epidemic size.
        :param option: (str): target options for epidemic size.
        :return: None
        """
@@ -249,14 +279,26 @@ class Plotter:
         # adjusted_cmaps = [self.adjust_colormap(cmap) for cmap in cmaps]
         log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8, 8))
         triang = self.construct_triangle_grids_prcc_p_value()
         mask = self.get_mask_and_values(prcc_vector=prcc_vector, p_values=p_values)
         images = [ax.tripcolor(t, np.ravel(val), cmap=cmap, ec="white")
                   for t, val, cmap in zip(triang,
                                           mask, cmaps)]
-        cbar = fig.colorbar(images[0], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
-        cbar_pval = fig.colorbar(images[1], ax=ax, shrink=0.7, aspect=20 * 0.7, pad=0.1)
+
+        pos = ax.get_position()
+        cbar_y_start = pos.y0  # Align color bar to start at same height as plot
+        cbar_height = pos.height  # Match the plot height
+
+        # PRCC color bar position (aligned dynamically)
+        cbar_ax = fig.add_axes([0.99, cbar_y_start, 0.03, cbar_height])
+        cbar = fig.colorbar(images[0], cax=cbar_ax)
+        cbar.set_label("PRCC", fontsize=22, labelpad=15, color="black")
+
+        # p-values color bar position (same height as PRCC)
+        cbar_pval_ax = fig.add_axes([1.2, cbar_y_start, 0.03, cbar_height])
+        cbar_pval = fig.colorbar(images[1], cax=cbar_pval_ax)
+        cbar_pval.set_label("p-values", fontsize=22, labelpad=15, color="black")
 
         images[1].set_norm(norm=log_norm)
         images[0].set_norm(norm=norm)
@@ -268,26 +310,37 @@ class Plotter:
         cbar_pval.update_normal(images[1])
         cbar.update_normal(images[0])
 
-        ax.set_xticks(range(self.sim_obj.n_ag))
-        ax.set_yticks(range(self.sim_obj.n_ag))
+        labels = self.labels_dict()[model]
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=90, ha="center", fontsize=18, color='black')
+        ax.set_yticks(range(len(labels)))
+        ax.set_yticklabels(labels, fontsize=18, color="black")
+
+        # Adjust y-axis alignment
         ax.yaxis.set_label_position("right")
         ax.yaxis.tick_right()
+
+        # Improve grid visibility
         ax.set(frame_on=False)
-        plt.gca().grid(which='minor', color='gray', linestyle='-', linewidth=1)
+        ax.grid(which='minor', color='gray', linestyle='-', linewidth=0.5)
+
         ax.margins(x=0, y=0)
-        ax.set_aspect('equal', 'box')  # square cells
-        plt.title(plot_title, y=1.03, fontsize=20)
+        ax.set_aspect('equal', 'box')
+
+        fig.suptitle(plot_title, fontsize=30, y=0.95, fontweight='bold', color="black")  # Centered at top of figure
+
         plt.tight_layout()
         plt.savefig(save_path, format="pdf", bbox_inches='tight')
         plt.close()
 
     def generate_prcc_p_values_heatmaps(self, prcc_vector,
-                                        p_values, filename_without_ext, option):
+                                        p_values, filename_without_ext, model, option):
         """
         Generates actual PRCC and p-values masked heatmaps.
         :param prcc_vector: (numpy.ndarray): The PRCC vector.
         :param p_values: (numpy.ndarray): The p-values vector.
         :param filename_without_ext: (str): The filename prefix for the saved plot.
+        :param model: (str): Model options for epidemic size.
         :param option: (str): target options for epidemic size.
         :return: masked Heatmaps
         """
@@ -300,6 +353,7 @@ class Plotter:
         self.plot_prcc_p_values_as_heatmap(prcc_vector=prcc_vector,
                                            p_values=p_values,
                                            plot_title=plot_title,
+                                           model=model,
                                            option=option)
 
     @staticmethod
@@ -334,12 +388,12 @@ class Plotter:
         plt.tick_params(direction="in")
 
         if model == "rost":
-            labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
-                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                      "55-59", "60-64", "65-69", "70-74", "75+"]
-
+            labels = ["0-4", "5-14", "15-29", "30-44", "45-59",
+                      "60-69", "70-79", "80-"]
         elif model == "moghadas":
             labels = ["0-19", "20-49", "50-65", "65+"]
+        elif model == "validation":
+            labels = ["0-29", "30-59", "60+"]
         elif model == "chikina":
             labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
                       "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
@@ -364,16 +418,19 @@ class Plotter:
                 color=color, label="PRCC")
         for pos, y, cl, cu in zip(xp, list(prcc_vector), list(conf_lower),
                                   list(conf_upper)):
-            plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], lw=4, capthick=4, fmt="or",
-                             markersize=5, capsize=4, ecolor="r", elinewidth=4)
+            plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], fmt='none',
+                         ecolor='red', elinewidth=2, capsize=5, capthick=4)
 
         # Remove vertical lines
         ax.grid(False)
         if model in ["rost", "seir", "chikina"]:
-            ax.set_xticks(y_pos + 0.25)
+            ax.set_xticks(y_pos)
         else:
             ax.set_xticks(y_pos)
-        ax.set_xticklabels(labels, rotation=90, ha='right')
+        ax.set_xticklabels(labels, rotation=90, ha='center', fontweight='bold',
+                           color='black')
+
+        ax.tick_params(axis='y', colors='black')
 
         ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathcal{CI}$'])
         plt.title(plot_title, y=1.03, fontsize=20)

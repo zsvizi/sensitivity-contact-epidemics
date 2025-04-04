@@ -25,7 +25,7 @@ class R0TargetCalculator(TargetCalculator):
             r0generator = R0SirModel(param=self.sim_obj.params)
         elif self.country == "united_states":
             r0generator = R0SeyedModel(param=self.sim_obj.params)
-        elif self.country == "validation":
+        elif self.country == "None":
             r0generator = R0ValidationModel(param=self.sim_obj.params)
         else:
             raise Exception("Invalid country!")

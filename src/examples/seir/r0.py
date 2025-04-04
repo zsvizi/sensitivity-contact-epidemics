@@ -31,8 +31,7 @@ class R0SeirSVModel(R0GeneratorBase):
         n_state = self.n_states
         susc_vec = self.parameters["susc"].reshape((-1, 1))
         f = np.zeros((self.n_age * n_state, self.n_age * n_state))
-        f[i["e"]:s_mtx:n_state, i["e"]:s_mtx:n_state] = cm.T * susc_vec
-        f[i["i"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T * susc_vec
+        f[i["e"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = cm.T * susc_vec
         return f
 
     def _get_e(self):

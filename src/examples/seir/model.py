@@ -12,10 +12,11 @@ class SeirUK(EpidemicModelBase):
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
-        iv["i"][3] = 1
-        iv.update({"e": iv["e"], "r": iv["r"]})
+        iv["e"][3] = 1
+        iv.update({"c": iv["i"] + iv["r"]
+                   })
 
-        iv.update({"s": self.population - (iv["e"] + iv["i"] + iv["r"] + iv["c"])})
+        iv.update({"s": self.population - (iv["e"] + iv["c"])})
 
     def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
@@ -31,7 +32,7 @@ class SeirUK(EpidemicModelBase):
             "r": ps["rho"] * i,  # R'(t)
 
             # add compartment to store total infecteds
-            "c": s / self.population * transmission + ps["gamma"] * e  # C'(t)
+            "c": ps["gamma"] * e  # C'(t)
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 

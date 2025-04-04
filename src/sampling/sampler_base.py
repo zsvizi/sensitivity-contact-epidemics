@@ -27,16 +27,42 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 10000, kappa: float = None) -> np.ndarray:
-        # only computes lhs for icu with a_ij
-        # Get actual limit matrices
+    def _get_lhs_table(self, model: str, strategy: str, number_of_samples: int = 120000,
+                       kappa: float = None, delta: float = 0.5) -> np.ndarray:
+        """
+        Generate LHS table using selected strategy:
+        - 'baseline': upper_bound *= (1 - kappa)
+        - 'absolute': [Cij - delta, Cij + delta]
+        - 'poisson': [Cij ± 2 * sqrt(Cij / n)]
+        :param number_of_samples: Number of LHS samples
+        :param kappa: Parameter for 'original' strategy
+        :return: delta: Parameter for 'absolute' strategy.
+        """
         lower_bound = self.lhs_boundaries["lower"]
         upper_bound = self.lhs_boundaries["upper"]
 
-        if kappa is not None:
+        if strategy == "baseline":
             upper_bound *= (1 - kappa)
 
-        # Get LHS tables
+        elif strategy == "absolute":
+            lower_bound = np.clip(upper_bound - delta, a_min=0, a_max=None)
+            upper_bound = upper_bound + delta
+
+        elif strategy == "poisson":
+            if model == "seir":
+                n_participants = 67  # POLY-MOD participants for GB (1012 / 15 age groups)
+            elif model == "rost":
+                # Online 3 week (12208), CATI Survey each month (1500), total 234503
+                n_participants = 188  # Using CATI (1500 / 8 age groups)
+            else:
+                raise ValueError(f"Unknown model '{model}' for poisson strategy.")
+            deviation = 2 * np.sqrt(upper_bound / n_participants)
+            lower_bound = np.clip(upper_bound - deviation, a_min=0, a_max=None)
+            upper_bound = upper_bound + deviation
+        else:
+            raise ValueError(f"Invalid strategy '{strategy}'. Choose 'baseline', "
+                             f"'absolute', or 'poisson'.")
+
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
                                        lower=lower_bound,
                                        upper=upper_bound)

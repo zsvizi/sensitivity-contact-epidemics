@@ -14,7 +14,9 @@ from src.simulation.simulation_base import SimulationBase
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader, n_samples: int = 1,
                  country: str = "usa",
-                 epi_model: str = "rost_model") -> None:
+                 epi_model: str = "rost_model",
+                 strategy: str = "absolute",
+                 is_kappa_applied: bool = False) -> None:
 
         if epi_model in ["rost", "chikina", "moghadas"]:
             self.config = {
@@ -46,6 +48,9 @@ class SimulationNPI(SimulationBase):
         else:
             raise ValueError("Invalid epi_model")
 
+        self.strategy = strategy
+        self.is_kappa_applied = is_kappa_applied
+
         self.country = country
         super().__init__(data=data, country=country)
         self._choose_model(epi_model=epi_model)
@@ -56,7 +61,7 @@ class SimulationNPI(SimulationBase):
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.2, 1.8, 2.5]
+        self.r0_choices = [1.2, 2.5]
 
     def _choose_model(self, epi_model):
         if epi_model == "rost":
@@ -100,7 +105,9 @@ class SimulationNPI(SimulationBase):
                     sampler_npi = src.SamplerNPI(
                         sim_obj=self,
                         epi_model=self.epi_model,
-                        country=self.country, config=self.config)
+                        country=self.country, config=self.config,
+                        is_kappa_applied=self.is_kappa_applied, strategy=self.strategy
+                    )
                     sampler_npi.run()
 
     def calculate_prcc_values(self):
