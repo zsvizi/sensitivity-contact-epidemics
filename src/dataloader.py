@@ -12,14 +12,21 @@ class DataLoader:
     def __init__(self, country: str):
         self.country = country
 
-        if country == "Hungary":   # our model of analysis
+        if country == "Hungary_maszk":
             self._model_parameters_data_file = os.path.join(
                 PROJECT_PATH, "../data", "maszk_model_parameters.json")
             self._contact_data_file = os.path.join(
                 PROJECT_PATH, "../data", "maszk_contact_data.xls")
             self._age_data_file = os.path.join(
                 PROJECT_PATH, "../data", "maszk_age_distribution.xls")
-        if country == "usa":  # Modeling strict age-targeted
+        elif country == "Hungary_prem":
+            self._model_parameters_data_file = os.path.join(
+                PROJECT_PATH, "../data", "rost_model_parameters.json")
+            self._contact_data_file = os.path.join(
+                PROJECT_PATH, "../data", "rost_contact_matrices.xls")
+            self._age_data_file = os.path.join(
+                PROJECT_PATH, "../data", "rost_age_distribution.xls")
+        elif country == "usa":  # Modeling strict age-targeted
             # mitigation strategies for COVID-19
             self._model_parameters_data_file = os.path.join(
                 PROJECT_PATH, "../data", "chikina_model_parameters.json")
@@ -78,7 +85,7 @@ class DataLoader:
         contact_matrices = dict()
         if self.country in ["united_states", "UK"]:
             num_sheets = 2
-        elif self.country in ["Hungary", "None"]:
+        elif self.country in ["Hungary_maszk", "None"]:
             num_sheets = 3
         else:
             num_sheets = 4

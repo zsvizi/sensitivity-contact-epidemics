@@ -18,7 +18,7 @@ class SimulationNPI(SimulationBase):
                  strategy: str = "absolute",
                  is_kappa_applied: bool = False) -> None:
 
-        if epi_model in ["rost", "chikina", "moghadas"]:
+        if epi_model in ["rost_maszk", "rost_prem", "chikina", "moghadas"]:
             self.config = {
                 "include_final_death_size": True,
                 "include_icu_peak": True,
@@ -60,11 +60,11 @@ class SimulationNPI(SimulationBase):
         self.epi_model = epi_model
 
         # User-defined parameters
-        self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.2, 2.5]
+        self.susc_choices = [0.5]
+        self.r0_choices = [1.2]
 
     def _choose_model(self, epi_model):
-        if epi_model == "rost":
+        if epi_model in ["rost_maszk", "rost_prem"]:
             self.model = rost.RostModelHungary(model_data=self.data)
         elif epi_model == "chikina":
             self.model = chikina.SirModel(model_data=self.data)
@@ -80,8 +80,8 @@ class SimulationNPI(SimulationBase):
     def choose_r0_generator(self):
         if self.epi_model == "chikina":
             r0generator = chikina.R0SirModel(param=self.params)
-        elif self.epi_model == "rost":
-            r0generator = rost.R0Generator(param=self.params)
+        elif self.epi_model in ["rost_maszk", "rost_prem"]:
+            r0generator = rost.R0Generator(param=self.params, n_age=self.n_ag)
         elif self.epi_model == "seir":
             r0generator = seir.R0SeirSVModel(param=self.params)
         elif self.epi_model == "moghadas":

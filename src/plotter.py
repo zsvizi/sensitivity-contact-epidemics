@@ -38,7 +38,9 @@ class Plotter:
     @staticmethod
     def labels_dict():
         labels = {
-            "rost": ["0-4", "5-14", "15-29", "30-44", "45-59", "60-69", "70-79", "80-"],
+            "rost_maszk": ["0-4", "5-14", "15-29", "30-44", "45-59", "60-69", "70-79", "80-"],
+            "rost_prem": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+             "55-59", "60-64", "65-69", "70-74", "75+"],
             "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                         "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
             "moghadas": ["0-19", "20-49", "50-65", "65+"],
@@ -64,7 +66,9 @@ class Plotter:
         os.makedirs(output_dir, exist_ok=True)
 
         cmaps = {
-            "rost": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
+            "rost_maszk": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
+            "rost_prem": {"Home": "Greens", "Work": "Greens", "School": "Greens",
+                          "Other": "Greens", "Full": "Greens"},
             "validation": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
             "chikina": {"Home": "inferno", "Work": "inferno", "School": "inferno",
                         "Other": "inferno", "Full": "inferno"},
@@ -159,7 +163,7 @@ class Plotter:
         percentage_contribution = (mean_contact / total_by_age_group) * 100
 
         # Define colors based on percentage contribution
-        if model in ["rost", "seir", "chikina"]:
+        if model in ["rost_maszk", "rost_prem", "seir", "chikina"]:
             color = ['lightgreen'
                      if pc <= 5 else 'green' if 5 < pc <= 8
                      else '#07553d' for pc in percentage_contribution]
@@ -185,7 +189,7 @@ class Plotter:
 
         ax.grid(False)
         # Set x-ticks at the middle of each bar
-        if model in ["rost", "seir", "chikina"]:
+        if model in ["rost_prem", "rost_maszk", "seir", "chikina"]:
             ax.set_xticks(np.arange(len(labels)) + 0.25)
         else:
             ax.set_xticks(np.arange(len(labels)))
@@ -387,9 +391,13 @@ class Plotter:
         plt.figure(figsize=(15, 12))
         plt.tick_params(direction="in")
 
-        if model == "rost":
+        if model == "rost_maszk":
             labels = ["0-4", "5-14", "15-29", "30-44", "45-59",
                       "60-69", "70-79", "80-"]
+        elif model == "rost_prem":
+            labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                      "55-59", "60-64", "65-69", "70-74", "75+"]
         elif model == "moghadas":
             labels = ["0-19", "20-49", "50-65", "65+"]
         elif model == "validation":
@@ -478,7 +486,7 @@ class Plotter:
         :param plot_title: title of the heatmap
         :return: Heatmaps
         """
-        if model in ["rost", "chikina", "moghadas"]:
+        if model in ["rost_maszk", "rost_prem", "chikina", "moghadas"]:
             directory_column_orders = [
                 (f"./sens_data/Epidemic/Epidemic_values", [
                     "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
@@ -527,11 +535,13 @@ class Plotter:
             ]
 
         # Define index
-        if model == "rost":
+        if model == "rost_prem":
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                      "55-59", "60-64", "65-69", "70-74", "75+"]
-
+        if model == "rost_maszk":
+            index = ["All", "0-4", "5-14", "15-29", "30-44", "45-59",
+                     "60-69", "70-79", "80-"]
         elif model == "moghadas":
             index = ["All", "0-19", "20-49", "50-65", "65+"]
         elif model == "chikina":
@@ -619,7 +629,7 @@ class Plotter:
                 parameters=self.sim_obj.params,
                 cm=cm
             )
-            if model in ["rost", "seir"]:
+            if model in ["rost_maszk", "rost_prem", "seir"]:
                 total_infecteds = self.sim_obj.model.aggregate_by_age(
                     solution=solution,
                     idx=self.sim_obj.model.c_idx["c"])
@@ -752,7 +762,8 @@ class Plotter:
             # Add an 'age_group' column to your DataFrame based on the index
             df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
             # Pivot the DataFrame
-            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'],
+                                      columns='age_group',
                                       values='max_n_deaths',
                                       aggfunc='first')
             # Reset the index and save the results
@@ -813,7 +824,8 @@ class Plotter:
             # Add an 'age_group' column to your DataFrame based on the index
             df['age_group'] = df.index % (self.sim_obj.contact_matrix.shape[0] + 1)
             # Pivot the DataFrame
-            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'], columns='age_group',
+            pivot_df = df.pivot_table(index=['susc', 'base_r0', 'ratio'],
+                                      columns='age_group',
                                       values='max_n_hosp',
                                       aggfunc='first')
             # Reset the index and save the results
@@ -925,7 +937,7 @@ class Plotter:
         patch_height = y_max - y_min
 
         # Define x_start, adj, and text_adj based on the model
-        if model == "rost":  # t = 1200
+        if model in ["rost_maszk", "rost_prem"]:  # t = 1200
             x_start = 1200
             adj = 200
             text_adj = 35

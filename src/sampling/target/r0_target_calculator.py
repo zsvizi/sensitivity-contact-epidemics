@@ -17,8 +17,9 @@ class R0TargetCalculator(TargetCalculator):
         self.beta = sim_obj.sim_state["beta"]
 
     def get_output(self, cm: np.ndarray):
-        if self.country == "Hungary":
-            r0generator = R0Generator(param=self.sim_obj.params)
+        if self.country in ["Hungary_maszk", "Hungary_prem"]:
+            r0generator = R0Generator(param=self.sim_obj.params,
+                                      n_age=self.sim_obj.n_ag)
         elif self.country == "UK":
             r0generator = R0SeirSVModel(param=self.sim_obj.params)
         elif self.country == "usa":

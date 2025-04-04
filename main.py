@@ -3,11 +3,11 @@ from src.dataloader import DataLoader
 
 
 def main():
-    data = DataLoader(country="None")
+    data = DataLoader(country="Hungary_maszk")
     simulation = src.SimulationNPI(data=data,
                                    n_samples=10000,
-                                   epi_model="validation",
-                                   country="None",
+                                   epi_model="rost_maszk",
+                                   country="Hungary_maszk",
                                    strategy="baseline",
                                    is_kappa_applied=False)
     simulation.generate_lhs()

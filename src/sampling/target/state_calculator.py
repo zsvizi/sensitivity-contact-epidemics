@@ -6,7 +6,7 @@ class StateCalculator:
     def calculate_infecteds(self, sol):
         if self.epi_model == "seir":
             return self._calculate_infecteds_seir(sol=sol)
-        elif self.epi_model == "rost":
+        elif self.epi_model in ["rost_maszk", "rost_prem"]:
             return self._calculate_infecteds_rost(sol=sol)
         elif self.epi_model == "moghadas":
             return self._calculate_infecteds_moghadas(sol=sol)
@@ -69,7 +69,7 @@ class StateCalculator:
         return n_infecteds[0]
 
     def calculate_epidemic_peaks(self, sol):
-        if self.epi_model == "rost":
+        if self.epi_model in ["rost_maszk", "rost_prem"]:
             infecteds_peak = (
                 sol.sum(axis=1) -
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["s"]) -
@@ -113,7 +113,7 @@ class StateCalculator:
         return infecteds_peak
 
     def calculate_hospital_peak(self, sol):
-        if self.epi_model == "rost":
+        if self.epi_model in ["rost_prem", "rost_maszk"]:
             hospital_peak_now = (
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ih"]) +
                 self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ic"]) +
@@ -135,7 +135,7 @@ class StateCalculator:
         return hospital_peak_now
 
     def calculate_icu(self, sol):
-        if self.epi_model == "rost":
+        if self.epi_model in ["rost_prem", "rost_mszk"]:
             icu_now = self.sim_obj.model.aggregate_by_age(solution=sol, idx=self.sim_obj.model.c_idx["ic"]
                                                           ).max()
         elif self.epi_model in ["chikina", "moghadas"]:
@@ -146,7 +146,7 @@ class StateCalculator:
         return icu_now
 
     def calculate_final_size_dead(self, sol):
-        if self.epi_model in ["rost", "chikina", "moghadas", "validation"]:
+        if self.epi_model in ["rost_prem", "rost_maszk", "chikina", "moghadas", "validation"]:
             state = sol[-1].reshape((1, -1))
             final_size_dead = self.sim_obj.model.aggregate_by_age(
                 solution=state, idx=self.sim_obj.model.c_idx["d"])
