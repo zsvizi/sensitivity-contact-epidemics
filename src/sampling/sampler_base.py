@@ -3,6 +3,7 @@ import os
 import json
 
 import numpy as np
+from scipy.stats import norm
 from smt.sampling_methods import LHS
 
 import src
@@ -31,41 +32,69 @@ class SamplerBase(ABC):
                        kappa: float = None, delta: float = 0.5) -> np.ndarray:
         """
         Generate LHS table using selected strategy:
-        - 'baseline': upper_bound *= (1 - kappa)
-        - 'absolute': [Cij - delta, Cij + delta]
-        - 'poisson': [Cij ± 2 * sqrt(Cij / n)]
-        :param number_of_samples: Number of LHS samples
-        :param kappa: Parameter for 'original' strategy
-        :return: delta: Parameter for 'absolute' strategy.
+        - 'baseline': sample reduction ratios in [0, 1 - kappa]
+        - 'absolute': sample Cij ± delta
+        - 'relative': sample Cij ± 50%
+        - 'poisson': sample from Normal(Cij, sqrt(Cij / n))
         """
-        lower_bound = self.lhs_boundaries["lower"]
-        upper_bound = self.lhs_boundaries["upper"]
+        lower_bound_base = self.lhs_boundaries["lower"]
+        upper_bound_base = self.lhs_boundaries["upper"]
+        n_params = self.sim_obj.upper_tri_size
 
         if strategy == "baseline":
-            upper_bound *= (1 - kappa)
+            if kappa is None:
+                raise ValueError("Kappa must be provided for 'baseline' strategy.")
+            lower_bound = lower_bound_base
+            upper_bound = upper_bound_base * (1 - kappa)
+            return create_latin_table(n_of_samples=number_of_samples,
+                                      lower=lower_bound,
+                                      upper=upper_bound)
 
-        elif strategy == "absolute":
-            lower_bound = np.clip(upper_bound - delta, a_min=0, a_max=None)
-            upper_bound = upper_bound + delta
+        # Other strategies
+        # Get actual contact matrix entries (upper triangle values only)
+        contact_matrix = self.sim_obj.contact_matrix
+        contact_home = self.sim_obj.contact_home
+
+        # Compute "other" contact matrix (non-home), upper triangle only
+        contact_other = (contact_matrix - contact_home)
+        contact_other_values = contact_other[self.sim_obj.upper_tri_indexes]
+
+        # Sample from [0, 1], then transform
+        lhs_table = create_latin_table(n_of_samples=number_of_samples,
+                                       lower=[0.0] * n_params,
+                                       upper=[1.0] * n_params)
+
+        if strategy == "absolute":
+            lower_bound = np.clip(contact_other_values - delta, 0, None)
+            upper_bound = contact_other_values + delta
+            for i in range(n_params):
+                lhs_table[:, i] = lhs_table[:, i] * (upper_bound[i] -
+                                                     lower_bound[i]) + lower_bound[i]
+
+        elif strategy == "relative":
+            lower_bound = contact_other_values * 0.5
+            upper_bound = contact_other_values * 1.5
+            for i in range(n_params):
+                lhs_table[:, i] = lhs_table[:, i] * (upper_bound[i] -
+                                                     lower_bound[i]) + lower_bound[i]
 
         elif strategy == "poisson":
             if model == "seir":
-                n_participants = 67  # POLY-MOD participants for GB (1012 / 15 age groups)
-            elif model == "rost":
-                # Online 3 week (12208), CATI Survey each month (1500), total 234503
-                n_participants = 188  # Using CATI (1500 / 8 age groups)
+                n_participants = 67
+            elif model in ["rost_maszk", "rost_prem"]:
+                n_participants = 188
             else:
                 raise ValueError(f"Unknown model '{model}' for poisson strategy.")
-            deviation = 2 * np.sqrt(upper_bound / n_participants)
-            lower_bound = np.clip(upper_bound - deviation, a_min=0, a_max=None)
-            upper_bound = upper_bound + deviation
-        else:
-            raise ValueError(f"Invalid strategy '{strategy}'. Choose 'baseline', "
-                             f"'absolute', or 'poisson'.")
 
-        lhs_table = create_latin_table(n_of_samples=number_of_samples,
-                                       lower=lower_bound,
-                                       upper=upper_bound)
+            std = np.sqrt(contact_other_values / n_participants)
+            for i in range(n_params):
+                lhs_table[:, i] = norm(loc=contact_other_values[i],
+                                       scale=std[i]).ppf(lhs_table[:, i])
+                lhs_table[:, i] = np.clip(lhs_table[:, i], 0, None)
+
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+
         return lhs_table
 
     def _save_output(self, output, folder_name):

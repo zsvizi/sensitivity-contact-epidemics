@@ -60,8 +60,8 @@ class SimulationNPI(SimulationBase):
         self.epi_model = epi_model
 
         # User-defined parameters
-        self.susc_choices = [0.5]
-        self.r0_choices = [1.2]
+        self.susc_choices = [0.5, 1.0]
+        self.r0_choices = [1.2, 2.5]
 
     def _choose_model(self, epi_model):
         if epi_model in ["rost_maszk", "rost_prem"]:
