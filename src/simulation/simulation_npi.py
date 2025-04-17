@@ -16,8 +16,35 @@ class SimulationNPI(SimulationBase):
                  country: str = "usa",
                  epi_model: str = "rost_model",
                  strategy: str = "absolute",
-                 is_kappa_applied: bool = False) -> None:
+                 is_kappa_applied: bool = True) -> None:
 
+        super().__init__(data=data, country=country)
+
+        self.strategy = strategy
+        self.is_kappa_applied = is_kappa_applied
+        self.country = country
+        self.n_samples = n_samples
+        self.epi_model = epi_model
+
+        self.config = None
+        self._set_up_config(epi_model=epi_model)
+        # Susceptibility configuration for each model
+        self.model_susceptibility_ages = {
+            "rost_prem": 4,
+            "rost_maszk": 2,
+            "seir": 4,
+            "chikina": 4,
+            "moghadas": 1,
+            "validation": 1
+        }
+        self._choose_model(epi_model=epi_model)
+        self.susceptibles = self.model.get_initial_values()[
+                                self.model.c_idx["s"] * self.n_ag:(self.model.c_idx["s"] + 1) * self.n_ag]
+        # User-defined parameters
+        self.susc_choices = [0.5, 1.0]
+        self.r0_choices = [1.2, 2.5]
+
+    def _set_up_config(self, epi_model):
         if epi_model in ["rost_maszk", "rost_prem", "chikina", "moghadas"]:
             self.config = {
                 "include_final_death_size": True,
@@ -47,31 +74,6 @@ class SimulationNPI(SimulationBase):
             }
         else:
             raise ValueError("Invalid epi_model")
-
-        self.strategy = strategy
-        self.is_kappa_applied = is_kappa_applied
-
-        self.country = country
-        super().__init__(data=data, country=country)
-        self._choose_model(epi_model=epi_model)
-        self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
-                                                            self.n_ag:(self.model.c_idx["s"] + 1) * self.n_ag]
-        self.n_samples = n_samples
-        self.epi_model = epi_model
-
-        # User-defined parameters
-        self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.2, 2.5]
-
-        # Susceptibility configuration for each model
-        self.model_susceptibility_ages = {
-            "rost_prem": 4,
-            "rost_maszk": 2,
-            "seir": 4,
-            "chikina": 4,
-            "moghadas": 1,
-            "validation": 1
-        }
 
     def _choose_model(self, epi_model):
         if epi_model in ["rost_maszk", "rost_prem"]:

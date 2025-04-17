@@ -50,13 +50,8 @@ class SamplerBase(ABC):
                                       lower=lower_bound,
                                       upper=upper_bound)
 
-        # Other strategies
-        # Get actual contact matrix entries (upper triangle values only)
-        contact_matrix = self.sim_obj.contact_matrix
-        contact_home = self.sim_obj.contact_home
-
         # Compute "other" contact matrix (non-home), upper triangle only
-        contact_other = (contact_matrix - contact_home)
+        contact_other = self.sim_obj.contact_matrix - self.sim_obj.contact_home
         contact_other_values = contact_other[self.sim_obj.upper_tri_indexes]
 
         # Sample from [0, 1], then transform
