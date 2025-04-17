@@ -63,6 +63,16 @@ class SimulationNPI(SimulationBase):
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 2.5]
 
+        # Susceptibility configuration for each model
+        self.model_susceptibility_ages = {
+            "rost_prem": 4,
+            "rost_maszk": 2,
+            "seir": 4,
+            "chikina": 4,
+            "moghadas": 1,
+            "validation": 1
+        }
+
     def _choose_model(self, epi_model):
         if epi_model in ["rost_maszk", "rost_prem"]:
             self.model = rost.RostModelHungary(model_data=self.data)
@@ -76,6 +86,12 @@ class SimulationNPI(SimulationBase):
             self.model = validation.ValidationModel(model_data=self.data)
         else:
             raise Exception("No model was given!")
+
+    def get_model_susceptibility(self, susc_value):
+        n_susc_ages = self.model_susceptibility_ages[self.epi_model]
+        susceptibility = np.ones(self.n_ag)
+        susceptibility[:n_susc_ages] = susc_value
+        return susceptibility
 
     def choose_r0_generator(self):
         if self.epi_model == "chikina":
@@ -94,9 +110,8 @@ class SimulationNPI(SimulationBase):
 
     def generate_lhs(self, generate_lhs: bool = True):
         # Update params by susceptibility vector
-        susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
-            susceptibility[:4] = susc
+            susceptibility = self.get_model_susceptibility(susc)
             self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
@@ -231,9 +246,8 @@ class SimulationNPI(SimulationBase):
 
     def generate_analysis_results(self):
         # Update params by susceptibility vector
-        susceptibility = np.ones(self.n_ag)
         for susc in self.susc_choices:
-            susceptibility[:4] = susc
+            susceptibility = self.get_model_susceptibility(susc)
             self.params.update({"susc": susceptibility})
             # Update params by calculated BASELINE beta
             for base_r0 in self.r0_choices:
