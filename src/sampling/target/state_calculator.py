@@ -99,6 +99,3 @@ class StateCalculator:
             )
         else:
             return 0
-
-
-
