@@ -4,12 +4,12 @@ from src.plotter import Plotter
 
 
 class ContactManipulation:
-    def __init__(self, sim_obj, susc: float, base_r0: float, model: str):
+    def __init__(self, sim_obj, susc: float, base_r0: float):
         self.sim_obj = sim_obj
         self.base_r0 = base_r0
         self.susc = susc
-        self.model = model
 
+        self.model = sim_obj.model
         self.contact_matrix = sim_obj.contact_matrix
         self.contact_home = sim_obj.contact_home
         self.params = sim_obj.params

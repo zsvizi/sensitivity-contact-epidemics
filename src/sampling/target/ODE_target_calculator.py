@@ -5,10 +5,10 @@ from src.sampling.target.target_calculator import TargetCalculator
 
 
 class ODETargetCalculator(TargetCalculator):
-    def __init__(self, sim_obj: SimulationNPI, config: dict, epi_model: str = "rost"):
+    def __init__(self, sim_obj: SimulationNPI):
         super().__init__(sim_obj=sim_obj)
-        self.config = config
-        self.state_calc = StateCalculator(sim_obj=sim_obj, epi_model=epi_model)
+        self.config = sim_obj.config
+        self.state_calc = StateCalculator(sim_obj=sim_obj)
 
     def get_output(self, cm: np.ndarray):
         t_interval = 250

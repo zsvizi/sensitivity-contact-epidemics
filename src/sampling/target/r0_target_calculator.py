@@ -10,8 +10,8 @@ from src.sampling.target.target_calculator import TargetCalculator
 
 
 class R0TargetCalculator(TargetCalculator):
-    def __init__(self, sim_obj: src.SimulationNPI, country: str):
-        self.country = country
+    def __init__(self, sim_obj: src.SimulationNPI):
+        self.country = sim_obj.country
         super().__init__(sim_obj=sim_obj)
         self.base_r0 = sim_obj.sim_state["base_r0"]
         self.beta = sim_obj.sim_state["beta"]

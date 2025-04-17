@@ -1,7 +1,7 @@
 class StateCalculator:
-    def __init__(self, sim_obj, epi_model):
+    def __init__(self, sim_obj):
         self.sim_obj = sim_obj
-        self.epi_model = epi_model
+        self.epi_model = sim_obj.epi_model
 
     def _infected_by_exclusion(self, sol, exclude_keys):
         total = sol.sum(axis=1)

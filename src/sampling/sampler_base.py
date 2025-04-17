@@ -10,9 +10,8 @@ import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_obj: src.SimulationNPI, config, target="r0") -> None:
-        self.config = config
-        self.target = target
+    def __init__(self, sim_obj: src.SimulationNPI) -> None:
+        self.config = sim_obj.config
         self.sim_obj = sim_obj
         self.base_r0 = sim_obj.sim_state["base_r0"]
         self.beta = sim_obj.sim_state["beta"]

@@ -9,6 +9,7 @@ class PRCCCalculator:
     def __init__(self, sim_obj: src.SimulationNPI):
         self.sim_obj = sim_obj
 
+        self.agg_prcc = None
         self.confidence_lower = None
         self.confidence_upper = None
         self.p_value = None
@@ -84,4 +85,3 @@ class PRCCCalculator:
         self.agg_prcc = median_values
         self.confidence_lower = conf_lower
         self.confidence_upper = conf_upper
-

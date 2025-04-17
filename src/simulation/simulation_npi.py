@@ -119,12 +119,7 @@ class SimulationNPI(SimulationBase):
             for base_r0 in self.r0_choices:
                 self.prepare_simulations(base_r0=base_r0, susc=susc)
                 if generate_lhs:
-                    sampler_npi = src.SamplerNPI(
-                        sim_obj=self,
-                        epi_model=self.epi_model,
-                        country=self.country, config=self.config,
-                        is_kappa_applied=self.is_kappa_applied, strategy=self.strategy
-                    )
+                    sampler_npi = src.SamplerNPI(sim_obj=self)
                     sampler_npi.run()
 
     def calculate_prcc_values(self):
@@ -255,7 +250,7 @@ class SimulationNPI(SimulationBase):
             for base_r0 in self.r0_choices:
                 self.prepare_simulations(base_r0=base_r0, susc=susc)
                 analysis = ContactManipulation(sim_obj=self, susc=susc,
-                                               base_r0=base_r0, model=self.epi_model)
+                                               base_r0=base_r0)
                 analysis.run_plots()
 
     def plot_max_values_contact_manipulation(self):
