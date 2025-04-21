@@ -31,10 +31,15 @@ class ValidationModel(EpidemicModelBase):
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_infected(self, solution) -> np.ndarray:
-        idx = self.c_idx["i"]
-        return self.aggregate_by_age(solution, idx)
+    def get_infected(self, solution: np.ndarray) -> np.ndarray:
+        idx_e = self.c_idx["e"]
+        idx_i = self.c_idx["i"]
+        return self.aggregate_by_age(solution, idx_e) + \
+               self.aggregate_by_age(solution, idx_i)
 
-    def get_deaths(self, solution) -> np.ndarray:
-        idx = self.c_idx["d"]
-        return self.aggregate_by_age(solution, idx)
+    def get_epidemic_peak(self, solution: np.ndarray) -> float:
+        idx_e = self.c_idx["e"]
+        idx_i = self.c_idx["i"]
+        return (self.aggregate_by_age(solution, idx_e) +
+                self.aggregate_by_age(solution, idx_i)).max()
+

@@ -46,14 +46,16 @@ class SamplerNPI(SamplerBase):
         self.calc = ODETargetCalculator(sim_obj=self.sim_obj)
 
         # Calculate simulation output for the current target
-        results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+        results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc,
+                                        strategy=self.strategy),
                                 lhs_table),
                             total=lhs_table.shape[0]))
         sim_outputs = np.array(results)
 
         if self.config["include_r0"]:
             self.calc = R0TargetCalculator(sim_obj=self.sim_obj)
-            results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc),
+            results = list(tqdm(map(partial(self.get_sim_output, calc=self.calc,
+                                            strategy=self.strategy),
                                     lhs_table),
                                 total=lhs_table.shape[0]))
             sim_outputs = np.append(sim_outputs,

@@ -65,13 +65,36 @@ class MoghadasModelUsa(EpidemicModelBase):
 
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:
-        idx = self.c_idx["i_h"]
-        idx_2 = self.c_idx["q_h"]
-        idx_3 = self.c_idx["h"]
-        return self.aggregate_by_age(solution, idx) + \
-            self.aggregate_by_age(solution, idx_2) + self.aggregate_by_age(solution, idx_3)
+    def get_infected(self, solution: np.ndarray) -> np.ndarray:
+        """
+        All individuals not in s, r, d, i, hosp, icu are counted as infected
+        """
+        total = solution.sum(axis=1)
+        s = self.aggregate_by_age(solution, self.c_idx["s"])
+        r = self.aggregate_by_age(solution, self.c_idx["r"])
+        d = self.aggregate_by_age(solution, self.c_idx["d"])
+        i = self.aggregate_by_age(solution, self.c_idx["i"])
+        hosp = self.aggregate_by_age(solution, self.c_idx["hosp"])
+        icu = self.aggregate_by_age(solution, self.c_idx["icu"])
 
-    def get_icu_cases(self, solution: np.ndarray) -> np.ndarray:
+        return total - s - r - d - i - hosp - icu
+
+    def get_epidemic_peak(self, solution: np.ndarray) -> float:
+        infected = self.get_infected(solution)
+        return infected.max()
+
+    def get_hospital_peak(self, solution: np.ndarray) -> float:
+        idx1 = self.c_idx["i_h"]
+        idx2 = self.c_idx["q_h"]
+        idx3 = self.c_idx["h"]
+        return (self.aggregate_by_age(solution, idx1) +
+                self.aggregate_by_age(solution, idx2) +
+                self.aggregate_by_age(solution, idx3)).max()
+
+    def get_icu_cases(self, solution: np.ndarray) -> float:
         idx = self.c_idx["c"]
-        return self.aggregate_by_age(solution, idx)
+        return self.aggregate_by_age(solution, idx).max()
+
+    def get_final_size_dead(self, solution: np.ndarray) -> float:
+        state = solution[-1].reshape((1, -1))
+        return self.aggregate_by_age(state, self.c_idx["d"])

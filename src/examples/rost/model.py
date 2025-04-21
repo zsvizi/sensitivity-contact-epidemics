@@ -57,11 +57,30 @@ class RostModelHungary(EpidemicModelBase):
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:
-        idx = self.c_idx["ih"]
-        idx_2 = self.c_idx["icr"]
-        return self.aggregate_by_age(solution, idx) + self.aggregate_by_age(solution, idx_2)
+    def get_infected(self, solution: np.ndarray) -> np.ndarray:
+        total = solution.sum(axis=1)
+        s = self.aggregate_by_age(solution, self.c_idx["s"])
+        r = self.aggregate_by_age(solution, self.c_idx["r"])
+        d = self.aggregate_by_age(solution, self.c_idx["d"])
+        c = self.aggregate_by_age(solution, self.c_idx["c"])
+        hosp = self.aggregate_by_age(solution, self.c_idx["hosp"])
+        icu = self.aggregate_by_age(solution, self.c_idx["icu"])
+        return total - s - r - d - c - hosp - icu
 
-    def get_ventilated(self, solution: np.ndarray) -> np.ndarray:
+    def get_epidemic_peak(self, solution: np.ndarray) -> float:
+        return self.get_infected(solution).max()
+
+    def get_hospital_peak(self, solution: np.ndarray) -> float:
+        ih = self.aggregate_by_age(solution, self.c_idx["ih"])
+        ic = self.aggregate_by_age(solution, self.c_idx["ic"])
+        icr = self.aggregate_by_age(solution, self.c_idx["icr"])
+        return (ih + ic + icr).max()
+
+    def get_icu_cases(self, solution: np.ndarray) -> float:
         idx = self.c_idx["ic"]
-        return self.aggregate_by_age(solution, idx)
+        return self.aggregate_by_age(solution, idx).max()
+
+    def get_final_size_dead(self, solution: np.ndarray) -> float:
+        state = solution[-1].reshape((1, -1))
+        return self.aggregate_by_age(state, self.c_idx["d"])
+

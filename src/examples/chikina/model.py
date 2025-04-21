@@ -40,14 +40,39 @@ class SirModel(EpidemicModelBase):
 
         return self.get_array_from_dict(comp_dict=sir_eq_dict)
 
-    def get_infected(self, solution) -> np.ndarray:
-        idx = self.c_idx["i"]
-        return self.aggregate_by_age(solution, idx)
+    def get_infected(self, solution: np.ndarray) -> np.ndarray:
+        idx_i = self.c_idx["i"]
+        idx_cp = self.c_idx["cp"]
+        idx_c = self.c_idx["c"]
+        return (
+                self.aggregate_by_age(solution, idx_i) +
+                self.aggregate_by_age(solution, idx_cp) +
+                self.aggregate_by_age(solution, idx_c)
+        )
 
-    def get_recovered(self, solution) -> np.ndarray:
-        idx = self.c_idx["r"]
-        return self.aggregate_by_age(solution, idx)
+    def get_epidemic_peak(self, solution: np.ndarray) -> float:
+        idx_i = self.c_idx["i"]
+        idx_cp = self.c_idx["cp"]
+        idx_c = self.c_idx["c"]
+        return (
+                self.aggregate_by_age(solution, idx_i) +
+                self.aggregate_by_age(solution, idx_cp) +
+                self.aggregate_by_age(solution, idx_c)
+        ).max()
 
-    def get_icu_dynamics(self, solution: np.ndarray) -> np.ndarray:
-        idx = self.c_idx["cp"]
-        return self.aggregate_by_age(solution, idx)
+    def get_hospital_peak(self, solution: np.ndarray) -> float:
+        idx_cp = self.c_idx["cp"]
+        idx_c = self.c_idx["c"]
+        return (
+                self.aggregate_by_age(solution, idx_cp) +
+                self.aggregate_by_age(solution, idx_c)
+        ).max()
+
+    def get_icu_cases(self, solution: np.ndarray) -> float:
+        idx_cp = self.c_idx["c"]
+        return self.aggregate_by_age(solution, idx_cp).max()
+
+    def get_final_size_dead(self, solution: np.ndarray) -> float:
+        idx_d = self.c_idx["d"]
+        final_state = solution[-1].reshape((1, -1))
+        return self.aggregate_by_age(final_state, idx_d)

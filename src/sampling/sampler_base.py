@@ -60,14 +60,14 @@ class SamplerBase(ABC):
 
         if strategy == "absolute":
             lower_bound = np.clip(contact_other_values - delta, 0, None)
-            upper_bound = contact_other_values + delta
+            upper_bound = contact_other_values
             for i in range(n_params):
                 lhs_table[:, i] = lhs_table[:, i] * (upper_bound[i] -
                                                      lower_bound[i]) + lower_bound[i]
 
         elif strategy == "relative":
             lower_bound = contact_other_values * 0.5
-            upper_bound = contact_other_values * 1.5
+            upper_bound = contact_other_values
             for i in range(n_params):
                 lhs_table[:, i] = lhs_table[:, i] * (upper_bound[i] -
                                                      lower_bound[i]) + lower_bound[i]
@@ -75,16 +75,18 @@ class SamplerBase(ABC):
         elif strategy == "poisson":
             if model == "seir":
                 n_participants = 67
-            elif model in ["rost_maszk", "rost_prem"]:
+            elif model in ["rost_maszk", "rost_prem", "validation"]:
                 n_participants = 188
             else:
                 raise ValueError(f"Unknown model '{model}' for poisson strategy.")
 
-            std = np.sqrt(contact_other_values / n_participants)
+            # Avoid division by zero and NaNs by clipping to a small epsilon
+            contact_values = np.clip(contact_other_values, 1e-6, None)
+            std = np.sqrt(contact_values / n_participants)
             for i in range(n_params):
                 lhs_table[:, i] = norm(loc=contact_other_values[i],
                                        scale=std[i]).ppf(lhs_table[:, i])
-                lhs_table[:, i] = np.clip(lhs_table[:, i], 0, None)
+                lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)  # negatives replaced with 0
 
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
