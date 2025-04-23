@@ -44,72 +44,6 @@ class SimulationNPI(SimulationBase):
         self.susc_choices = [0.5, 1.0]
         self.r0_choices = [1.2, 2.5]
 
-    def _set_up_config(self, epi_model):
-        if epi_model in ["rost_maszk", "rost_prem", "chikina", "moghadas"]:
-            self.config = {
-                "include_final_death_size": True,
-                "include_icu_peak": True,
-                "include_hospital_peak": True,
-                "include_infecteds_peak": True,
-                "include_infecteds": False,  # excluded from the targets
-                "include_r0": True
-            }
-        elif epi_model == "seir":
-            self.config = {
-                "include_final_death_size": False,
-                "include_icu_peak": False,
-                "include_hospital_peak": False,
-                "include_infecteds_peak": True,
-                "include_infecteds": False,  # excluded from the targets
-                "include_r0": True
-            }
-        elif epi_model == "validation":
-            self.config = {
-                "include_final_death_size": True,
-                "include_icu_peak": False,
-                "include_hospital_peak": False,
-                "include_infecteds_peak": True,
-                "include_infecteds": False,
-                "include_r0": True
-            }
-        else:
-            raise ValueError("Invalid epi_model")
-
-    def _choose_model(self, epi_model):
-        if epi_model in ["rost_maszk", "rost_prem"]:
-            self.model = rost.RostModelHungary(model_data=self.data)
-        elif epi_model == "chikina":
-            self.model = chikina.SirModel(model_data=self.data)
-        elif epi_model == "seir":
-            self.model = seir.SeirUK(model_data=self.data)
-        elif epi_model == "moghadas":
-            self.model = moghadas.MoghadasModelUsa(model_data=self.data)
-        elif epi_model == "validation":
-            self.model = validation.ValidationModel(model_data=self.data)
-        else:
-            raise Exception("No model was given!")
-
-    def get_model_susceptibility(self, susc_value):
-        n_susc_ages = self.model_susceptibility_ages[self.epi_model]
-        susceptibility = np.ones(self.n_ag)
-        susceptibility[:n_susc_ages] = susc_value
-        return susceptibility
-
-    def choose_r0_generator(self):
-        if self.epi_model == "chikina":
-            r0generator = chikina.R0SirModel(param=self.params)
-        elif self.epi_model in ["rost_maszk", "rost_prem"]:
-            r0generator = rost.R0Generator(param=self.params, n_age=self.n_ag)
-        elif self.epi_model == "seir":
-            r0generator = seir.R0SeirSVModel(param=self.params)
-        elif self.epi_model == "moghadas":
-            r0generator = moghadas.R0SeyedModel(param=self.params)
-        elif self.epi_model == "validation":
-            r0generator = validation.R0ValidationModel(param=self.params)
-        else:
-            raise Exception("No model is given!")
-        return r0generator
-
     def generate_lhs(self, generate_lhs: bool = True):
         # Update params by susceptibility vector
         for susc in self.susc_choices:
@@ -186,14 +120,6 @@ class SimulationNPI(SimulationBase):
                     os.makedirs(agg_folder, exist_ok=True)
                     agg_fname = os.path.join(agg_folder, "agg.csv")
                     np.savetxt(fname=agg_fname, X=stack_value, delimiter=";")
-
-    @staticmethod
-    def _load_output_json(folder_name, filename):
-        directory = os.path.join("./sens_data", folder_name)
-        filename = os.path.join(directory, filename.replace(".csv", ".json"))
-        with open(filename, "r") as json_file:
-            data = json.load(json_file)
-        return data
 
     def plot_prcc_values(self):
         agg_values = ["agg_prcc", "PRCC_Pvalues"]
@@ -299,6 +225,57 @@ class SimulationNPI(SimulationBase):
                 plot = src.Plotter(sim_obj=self, data=self.data)
                 plot.plot_model_max_values(max_values=dfs, model=self.epi_model)
 
+    def _set_up_config(self, epi_model):
+        if epi_model in ["rost_maszk", "rost_prem", "chikina", "moghadas"]:
+            self.config = {
+                "include_final_death_size": True,
+                "include_icu_peak": True,
+                "include_hospital_peak": True,
+                "include_infecteds_peak": True,
+                "include_infecteds": False,  # excluded from the targets
+                "include_r0": True
+            }
+        elif epi_model == "seir":
+            self.config = {
+                "include_final_death_size": False,
+                "include_icu_peak": False,
+                "include_hospital_peak": False,
+                "include_infecteds_peak": True,
+                "include_infecteds": False,  # excluded from the targets
+                "include_r0": True
+            }
+        elif epi_model == "validation":
+            self.config = {
+                "include_final_death_size": True,
+                "include_icu_peak": False,
+                "include_hospital_peak": False,
+                "include_infecteds_peak": True,
+                "include_infecteds": False,
+                "include_r0": True
+            }
+        else:
+            raise ValueError("Invalid epi_model")
+
+    def _choose_model(self, epi_model):
+        if epi_model in ["rost_maszk", "rost_prem"]:
+            self.model = rost.RostModelHungary(model_data=self.data)
+        elif epi_model == "chikina":
+            self.model = chikina.SirModel(model_data=self.data)
+        elif epi_model == "seir":
+            self.model = seir.SeirUK(model_data=self.data)
+        elif epi_model == "moghadas":
+            self.model = moghadas.MoghadasModelUsa(model_data=self.data)
+        elif epi_model == "validation":
+            self.model = validation.ValidationModel(model_data=self.data)
+        else:
+            raise Exception("No model was given!")
+
+    def get_model_susceptibility(self, susc_value):
+        n_susc_ages = self.model_susceptibility_ages[self.epi_model]
+        susceptibility = np.ones(self.n_ag)
+        susceptibility[:n_susc_ages] = susc_value
+        return susceptibility
+
     def prepare_simulations(self, base_r0, susc):
         r0generator = self.choose_r0_generator()
         r0 = r0generator.get_eig_val(
@@ -313,3 +290,26 @@ class SimulationNPI(SimulationBase):
              "beta": beta,
              "susc": susc,
              "r0generator": r0generator})
+
+    @staticmethod
+    def _load_output_json(folder_name, filename):
+        directory = os.path.join("./sens_data", folder_name)
+        filename = os.path.join(directory, filename.replace(".csv", ".json"))
+        with open(filename, "r") as json_file:
+            data = json.load(json_file)
+        return data
+
+    def choose_r0_generator(self):
+        if self.epi_model == "chikina":
+            r0generator = chikina.R0SirModel(param=self.params)
+        elif self.epi_model in ["rost_maszk", "rost_prem"]:
+            r0generator = rost.R0Generator(param=self.params, n_age=self.n_ag)
+        elif self.epi_model == "seir":
+            r0generator = seir.R0SeirSVModel(param=self.params)
+        elif self.epi_model == "moghadas":
+            r0generator = moghadas.R0SeyedModel(param=self.params)
+        elif self.epi_model == "validation":
+            r0generator = validation.R0ValidationModel(param=self.params)
+        else:
+            raise Exception("No model is given!")
+        return r0generator
