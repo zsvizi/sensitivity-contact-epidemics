@@ -43,3 +43,7 @@ class ValidationModel(EpidemicModelBase):
         return (self.aggregate_by_age(solution, idx_e) +
                 self.aggregate_by_age(solution, idx_i)).max()
 
+    def get_final_size_dead(self, solution: np.ndarray) -> float:
+        state = solution[-1].reshape((1, -1))
+        return self.aggregate_by_age(state, self.c_idx["d"])
+

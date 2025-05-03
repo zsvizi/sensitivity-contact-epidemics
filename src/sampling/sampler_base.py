@@ -62,12 +62,14 @@ class SamplerBase(ABC):
             lower_bound = np.clip(contact_other_values - delta, 0, None)
             upper_bound = contact_other_values
             for i in range(n_params):
-                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * lhs_table[:, i]
+                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * \
+                                  lhs_table[:, i]
         elif strategy == "relative":
             lower_bound = contact_other_values * 0.5
             upper_bound = contact_other_values
             for i in range(n_params):
-                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * lhs_table[:, i]
+                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * \
+                                  lhs_table[:, i]
         elif strategy == "poisson":
             if model == "seir":
                 n_participants = 67
@@ -83,7 +85,7 @@ class SamplerBase(ABC):
                 lhs_table[:, i] = norm(loc=contact_other_values[i],
                                        scale=std[i]
                                   ).ppf(lhs_table[:, i])
-                lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)  # negatives replaced with 0
+                lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 

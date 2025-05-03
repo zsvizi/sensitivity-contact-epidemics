@@ -16,4 +16,4 @@ class StateCalculator:
         return self.model.get_icu_cases(sol)
 
     def calculate_final_size_dead(self, sol):
-        return self.model.get_deaths(sol)
+        return self.model.get_final_size_dead(sol)

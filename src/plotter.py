@@ -1,27 +1,23 @@
-import os
-
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import numpy as np
+import os
+import pandas as pd
+import seaborn as sns
+
 from matplotlib import patches, lines
 from matplotlib.cm import get_cmap
 import matplotlib.colors as colors
 from matplotlib.lines import Line2D
 from matplotlib.ticker import LogFormatterSciNotation as LogFormatter
 from matplotlib.ticker import LogLocator
-from matplotlib.ticker import FuncFormatter
-
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import numpy as np
-import pandas as pd
-import seaborn as sns
 
 from src.dataloader import DataLoader
 from src.simulation.simulation_base import SimulationBase
 from src.prcc.prcc import get_rectangular_matrix_from_upper_triu
-
-# plt.style.use('seaborn-whitegrid')
 matplotlib.use('agg')
 
 
@@ -38,10 +34,13 @@ class Plotter:
     @staticmethod
     def labels_dict():
         labels = {
-            "rost_maszk": ["0-4", "5-14", "15-29", "30-44", "45-59", "60-69", "70-79", "80-"],
-            "rost_prem": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-             "55-59", "60-64", "65-69", "70-74", "75+"],
-            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+            "rost_maszk": ["0-4", "5-14", "15-29", "30-44", "45-59",
+                           "60-69", "70-79", "80+"],
+            "rost_prem": ["0-4", "5-9", "10-14", "15-19", "20-24",
+                          "25-29", "30-34", "35-39", "40-44", "45-49",
+                          "50-54", "55-59", "60-64", "65-69", "70-74", "75+"],
+            "chikina": ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29",
+                        "30-34", "35-39", "40-44", "45-49", "50-54",
                         "55-59", "60-64", "65-69", "70-74", "75-79", "80+"],
             "moghadas": ["0-19", "20-49", "50-65", "65+"],
             "validation": ["0-29", "30-59", "60+"],
@@ -54,37 +53,63 @@ class Plotter:
     def plot_contact_matrices_models(self, contact_data, model, filename,
                                      plot_total_contact: bool = True):
         """
-        Plot contact matrices for different models and save it in sub-directory
-        :param filename: The filename prefix for the saved PDF files.
-        :param model: The model name representing the type of contact matrices.
-        :param contact_data: A dictionary containing contact matrices for different
-        categories. Keys represent contact categories and values represent the contact matrices.
-        :param plot_total_contact: for plotting total contacts
-        :return: Heatmaps for different models
+        Plot contact matrices based on model type and save in sub-directory.
+        Only Full and Delta matrices have explicit colorbars.
+
+        :param filename: Filename prefix for saved PDFs.
+        :param model: Model type for matrices.
+        :param contact_data: Dict containing contact matrices.
+        :param plot_total_contact: Flag for plotting total contacts.
         """
         output_dir = f"sens_data/contact_matrices/{model}"
         os.makedirs(output_dir, exist_ok=True)
 
         cmaps = {
-            "rost_maszk": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
-            "rost_prem": {"Home": "Greens", "Work": "Greens", "School": "Greens",
+            "rost_maszk": {"Home": "Greens", "Other": "Greens",
+                           "All": "Greens"},
+            "rost_prem": {"Home": "Greens", "Work": "Greens",
+                          "School": "Greens",
                           "Other": "Greens", "Full": "Greens"},
-            "validation": {"Home": "Greens", "Other": "Greens", "All": "Greens"},
-            "chikina": {"Home": "inferno", "Work": "inferno", "School": "inferno",
-                        "Other": "inferno", "Full": "inferno"},
-            "moghadas": {"Home": "inferno", "All": "inferno"},
+            "validation": {"Home": "Greens", "Other": "Greens",
+                           "All": "Greens"},
+            "chikina": {"Home": "inferno", "Work": "Greens",
+                        "School": "Greens",
+                        "Other": "Greens", "Full": "Greens"},
+            "moghadas": {"Home": "Greens", "All": "Greens"},
             "seir": {"Physical": "Greens", "All": "Greens"}
         }
 
         labels = self.labels_dict().get(model, [])
         if not labels:
-            raise ValueError(f"Invalid model '{model}' provided. "
+            raise ValueError(f"Invalid model '{model}'. "
                              f"Available models: {list(cmaps.keys())}")
 
-        contact_full = np.array([contact_data[i] for i in
-                                 cmaps[model].keys() if i != "Full"]).sum(axis=0)
+        if model in ["rost_prem", "chikina"]:
+            contact_full = sum(contact_data[i] for i in ["Home", "School",
+                                                         "Work", "Other"])
+            contact_data["C_delta"] = contact_full - contact_data['Home']
+            categories_to_plot = ["Home", "School", "Work", "Other",
+                                  "Full", "C_delta"]
+        elif model == "seir":
+            contact_full = contact_data["All"]
+            contact_data["C_delta"] = contact_data["All"] - \
+                                      contact_data['Physical']
+            categories_to_plot = ["Physical", "All", "C_delta"]
+        else:  # validation
+            contact_full = contact_data["All"]
+            contact_data["C_delta"] = contact_full - contact_data["Home"]
+            categories_to_plot = ["Home", "Other", "All", "C_delta"]
 
-        for contact_type, cmap in cmaps[model].items():
+        if plot_total_contact:
+            full_data_to_plot = contact_full * self.data.age_data
+        else:
+            full_data_to_plot = contact_full
+
+        vmin_data = max(full_data_to_plot[full_data_to_plot > 0].min(), 0.01)
+        vmax_data = full_data_to_plot.max()
+        norm = mcolors.Normalize(vmin=vmin_data, vmax=vmax_data)
+
+        for contact_type in categories_to_plot:
             contacts = contact_data[contact_type] if contact_type != "Full" else \
                 contact_full
             contact_matrix = pd.DataFrame(contacts, columns=labels, index=labels)
@@ -95,46 +120,32 @@ class Plotter:
                 data_to_plot = contact_matrix
 
             fig, ax = plt.subplots(figsize=(8, 8))
-
-            # Set up log normalization
-            norm = mcolors.LogNorm(vmin=0.01, vmax=10)
-
-            # Plot heatmap without default colorbar
-            sns.heatmap(data_to_plot, cmap=cmap, norm=norm, linewidths=0,
+            cmap_choice = cmaps[model].get(contact_type, "Greens")
+            sns.heatmap(data_to_plot, cmap=cmap_choice, norm=norm, linewidths=0,
                         square=True, cbar=False, ax=ax)
 
-            # Style adjustments
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(True)
-            ax.spines['left'].set_visible(True)
+            ax.set_xticklabels(labels, rotation=45, ha='center', fontsize=14)
+            ax.set_yticklabels(labels, rotation=0, va='center', fontsize=14)
+            ax.tick_params(length=8, width=1.5)
+            ax.set_xlabel("Respondent age", fontsize=18, labelpad=10)
+            ax.set_ylabel("Contact age", fontsize=18, labelpad=10)
 
-            ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=12)
-            ax.set_yticklabels(labels, rotation=0, fontsize=12)
-            ax.set_xlabel("Respondent age", fontsize=14)
-            ax.set_ylabel("Contact age", fontsize=14)
-            ax.set_title(f"{contact_type} contact", fontsize=18, fontweight="bold")
+            title_map = {"C_delta": r"$C^\Delta$", "Full": "Full",
+                         "Home": "Home", "School": "School", "Work": "Work",
+                         "Other": "Other",
+                         "Physical": "Physical", "All": "All"}
+            ax.set_title(f"{title_map[contact_type]} contact", fontsize=30,
+                         fontweight="bold")
 
-            # Only add colorbar for 'Full' (chikina, rost) or 'All' (moghadas, seir)
-            if contact_type in ["Full", "All"]:
+            if contact_type in ["Full", "All", "C_delta"]:
                 divider = make_axes_locatable(ax)
                 cax = divider.append_axes("right", size="5%", pad=0.45)
-
-                # Use real data range
-                vmin_data, vmax_data = data_to_plot.min().min(), \
-                                       data_to_plot.max().max()
-                norm = mcolors.LogNorm(vmin=max(vmin_data, 0.01),
-                                       vmax=max(vmax_data, 0.01))
-
-                mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+                mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap_choice)
                 mappable.set_array([])
 
-                cb = plt.colorbar(mappable=mappable, cax=cax)
-                cb.set_label("Avg. num. contacts", fontsize=12, labelpad=10)
-
-                cb.set_ticks(np.geomspace(max(vmin_data, 0.01), vmax_data, num=4))
-                cb.ax.yaxis.set_major_formatter(FuncFormatter(lambda val,
-                                                                     pos: f"{val:.2g}"))
+                cb = plt.colorbar(mappable=mappable, cax=cax, format='%.1f')
+                cb.set_label("Avg. num. contacts", fontsize=18, labelpad=10)
+                cb.ax.tick_params(labelsize=30)
 
             ax.invert_yaxis()
             plt.tight_layout()
@@ -418,9 +429,10 @@ class Plotter:
 
         fig, ax = plt.subplots(figsize=(10, 8))
         # Plotting sensitivity values with different colors based on conditions
-        color = ['lightgreen'
-                 if abs(prcc) < 0.3 else 'green' if
-                 0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
+        # color = ['lightgreen'
+        #          if abs(prcc) < 0.3 else 'green' if
+        #          0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
+        color = '#07553d'
 
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")
