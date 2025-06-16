@@ -7,20 +7,20 @@ from src.model.model_base import EpidemicModelBase
 
 class SeirUK(EpidemicModelBase):
     def __init__(self, model_data) -> None:
-        compartments = ["s", "e", "i", "r", "c"]
+        compartments = ["s", "e", "i", "r", "inf"]
 
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["e"][3] = 1
-        iv.update({"c": iv["i"] + iv["r"]
+        iv.update({"inf": iv["i"] + iv["r"]
                    })
 
-        iv.update({"s": self.population - (iv["e"] + iv["c"])})
+        iv.update({"s": self.population - (iv["e"] + iv["inf"])})
 
     def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
-        s, e, i, r, c = xs.reshape(-1, self.n_age)
+        s, e, i, r, inf = xs.reshape(-1, self.n_age)
         transmission = ps["beta"] * np.array(i).dot(cm)
         # add seasonality
         z = 1 + ps["q"] * np.sin(2 * math.pi * (t - ps["t_offset"]) / 365)
@@ -32,7 +32,7 @@ class SeirUK(EpidemicModelBase):
             "r": ps["rho"] * i,  # R'(t)
 
             # add compartment to store total infecteds
-            "c": ps["gamma"] * e  # C'(t)
+            "inf": ps["gamma"] * e  # C'(t)
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 

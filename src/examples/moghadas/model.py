@@ -8,13 +8,13 @@ class MoghadasModelUsa(EpidemicModelBase):
         self.model_data = model_data
         compartments = ["s", "e", "i_n",
                         "q_n", "i_h", "q_h", "a_n",
-                        "a_q", "h", "c", "r", "d", "i", "hosp", "icu"]
+                        "a_q", "h", "c", "r", "d", "inf", "hosp", "icu"]
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["i_n"][2] = 1
         keys = ["e", "q_n", "i_h", "q_h", "a_n", "a_q", "h", "c",
-                "i", "hosp", "icu"]
+                "inf", "hosp", "icu"]
         iv.update({key: iv[key] for key in keys})
         iv.update({"s": self.population - (iv["e"] + iv["i_n"] + iv["q_n"] +
                                            iv["i_h"] + iv["q_h"] + iv["a_n"] +
@@ -23,7 +23,7 @@ class MoghadasModelUsa(EpidemicModelBase):
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
         s, e, i_n, q_n, i_h, q_h, a_n, a_q, h, c, r, d, \
-            i, hosp, icu = xs.reshape(-1, self.n_age)
+            inf, hosp, icu = xs.reshape(-1, self.n_age)
         transmission = ps["beta"] * np.array(i_n / self.population).dot(cm) + \
             np.array(i_h / self.population).dot(cm) + \
             np.array(ps["k"] * a_n / self.population).dot(cm)
@@ -54,7 +54,7 @@ class MoghadasModelUsa(EpidemicModelBase):
             "d": ps["m_h"] * ps["mu_h"] * h + ps["m_c"] * ps["mu_c"] * c,  # D' (t)
 
             # add compartments to store accumulated values
-            "i": ps["sigma"] * e,  # I'(t)
+            "inf": ps["sigma"] * e,  # I'(t)
             "hosp": (1 - ps["theta"]) * (1 - ps["q"]) * ps["h"] * ps["sigma"] * e +
                     (1 - ps["theta"]) * ps["q"] * ps["h"] * ps["sigma"] * e +
                     ps["f_i"] * ps["tau_i"] * i_h + (1 - ps["c"]) * (1 - ps["f_i"]) *
@@ -73,7 +73,7 @@ class MoghadasModelUsa(EpidemicModelBase):
         s = self.aggregate_by_age(solution, self.c_idx["s"])
         r = self.aggregate_by_age(solution, self.c_idx["r"])
         d = self.aggregate_by_age(solution, self.c_idx["d"])
-        i = self.aggregate_by_age(solution, self.c_idx["i"])
+        i = self.aggregate_by_age(solution, self.c_idx["inf"])
         hosp = self.aggregate_by_age(solution, self.c_idx["hosp"])
         icu = self.aggregate_by_age(solution, self.c_idx["icu"])
 

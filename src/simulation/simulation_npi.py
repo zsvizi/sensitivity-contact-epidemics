@@ -14,7 +14,7 @@ from src.simulation.simulation_base import SimulationBase
 class SimulationNPI(SimulationBase):
     def __init__(self, data: DataLoader, n_samples: int = 1,
                  country: str = "usa",
-                 epi_model: str = "rost_model",
+                 epi_model: str = "rost_prem",
                  strategy: str = "absolute",
                  is_kappa_applied: bool = True) -> None:
 
@@ -191,7 +191,7 @@ class SimulationNPI(SimulationBase):
             for base_r0 in self.r0_choices:
                 print(susc, base_r0)
                 # Define directories and aggregation values
-                if self.epi_model in ["rost", "chikina", "moghadas"]:
+                if self.epi_model in ["rost_prem", "chikina", "moghadas"]:
                     directories = [
                         f"./sens_data/Epidemic/Epidemic_values",
                         f"./sens_data/icu/icu_values",

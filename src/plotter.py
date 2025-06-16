@@ -502,35 +502,27 @@ class Plotter:
             directory_column_orders = [
                 (f"./sens_data/Epidemic/Epidemic_values", [
                     "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
-                    "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                     "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
                     "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
-                    "Epidemic_values/1.0_1.8_ratio_0.25", "Epidemic_values/1.0_1.8_ratio_0.5",
                     "Epidemic_values/1.0_2.5_ratio_0.25", "Epidemic_values/1.0_2.5_ratio_0.5"
                 ]),
                 (f"./sens_data/icu/icu_values", [
                     "icu_values/0.5_1.2_ratio_0.25", "icu_values/0.5_1.2_ratio_0.5",
-                    "icu_values/0.5_1.8_ratio_0.25", "icu_values/0.5_1.8_ratio_0.5",
                     "icu_values/0.5_2.5_ratio_0.25", "icu_values/0.5_2.5_ratio_0.5",
                     "icu_values/1.0_1.2_ratio_0.25", "icu_values/1.0_1.2_ratio_0.5",
-                    "icu_values/1.0_1.8_ratio_0.25", "icu_values/1.0_1.8_ratio_0.5",
                     "icu_values/1.0_2.5_ratio_0.25", "icu_values/1.0_2.5_ratio_0.5",
                 ]),
                 (f"./sens_data/death/death_values", [
                     "death_values/0.5_1.2_ratio_0.25", "death_values/0.5_1.2_ratio_0.5",
-                    "death_values/0.5_1.8_ratio_0.25", "death_values/0.5_1.8_ratio_0.5",
                     "death_values/0.5_2.5_ratio_0.25", "death_values/0.5_2.5_ratio_0.5",
                     "death_values/1.0_1.2_ratio_0.25", "death_values/1.0_1.2_ratio_0.5",
-                    "death_values/1.0_1.8_ratio_0.25", "death_values/1.0_1.8_ratio_0.5",
                     "death_values/1.0_2.5_ratio_0.25", "death_values/1.0_2.5_ratio_0.5"
                 ]),
 
                 (f"./sens_data/hospital/hospital_values", [
                     "hospital_values/0.5_1.2_ratio_0.25", "hospital_values/0.5_1.2_ratio_0.5",
-                    "hospital_values/0.5_1.8_ratio_0.25", "hospital_values/0.5_1.8_ratio_0.5",
                     "hospital_values/0.5_2.5_ratio_0.25", "hospital_values/0.5_2.5_ratio_0.5",
                     "hospital_values/1.0_1.2_ratio_0.25", "hospital_values/1.0_1.2_ratio_0.5",
-                    "hospital_values/1.0_1.8_ratio_0.25", "hospital_values/1.0_1.8_ratio_0.5",
                     "hospital_values/1.0_2.5_ratio_0.25", "hospital_values/1.0_2.5_ratio_0.5"
                 ])
             ]
@@ -538,10 +530,8 @@ class Plotter:
             directory_column_orders = [
                 (f"./sens_data/Epidemic/Epidemic_values", [
                     "Epidemic_values/0.5_1.2_ratio_0.25", "Epidemic_values/0.5_1.2_ratio_0.5",
-                    "Epidemic_values/0.5_1.8_ratio_0.25", "Epidemic_values/0.5_1.8_ratio_0.5",
                     "Epidemic_values/0.5_2.5_ratio_0.25", "Epidemic_values/0.5_2.5_ratio_0.5",
                     "Epidemic_values/1.0_1.2_ratio_0.25", "Epidemic_values/1.0_1.2_ratio_0.5",
-                    "Epidemic_values/1.0_1.8_ratio_0.25", "Epidemic_values/1.0_1.8_ratio_0.5",
                     "Epidemic_values/1.0_2.5_ratio_0.25", "Epidemic_values/1.0_2.5_ratio_0.5"
                 ])
             ]
@@ -564,6 +554,8 @@ class Plotter:
             index = ["All", "0-4", "5-9", "10-14", "15-19", "20-24",
                      "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
                      "55-59", "60-64", "65-69", "70+"]
+        elif model == "validation":
+            index = ["0-29", "30-59", "60+"]
         else:
             raise Exception("Invalid model")
 
@@ -574,14 +566,10 @@ class Plotter:
             # Add labels to the y-axis
             labels = [fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.25$",
                       fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.5$",
-                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.25$",
-                      fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.5$",
                       fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.25$",
                       fr"$\sigma=0.5$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$",
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.25$",
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.2$, $\mathcal{{R}}=0.5$",
-                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.25$",
-                      fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=1.8$, $\mathcal{{R}}=0.5$",
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.25$",
                       fr"$\sigma=1.0$, $\overline{{\mathcal{{R}}}}_0=2.5$, $\mathcal{{R}}=0.5$"]
 
@@ -641,20 +629,9 @@ class Plotter:
                 parameters=self.sim_obj.params,
                 cm=cm
             )
-            if model in ["rost_maszk", "rost_prem", "seir"]:
-                total_infecteds = self.sim_obj.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.sim_obj.model.c_idx["c"])
-            elif model == "moghadas":
-                total_infecteds = self.sim_obj.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.sim_obj.model.c_idx["i"])
-            elif model == "chikina":
-                total_infecteds = self.sim_obj.model.aggregate_by_age(
-                    solution=solution,
-                    idx=self.sim_obj.model.c_idx["inf"])
-            else:
-                raise Exception("Invalid model")
+            total_infecteds = self.sim_obj.model.aggregate_by_age(
+                solution=solution,
+                idx=self.sim_obj.model.c_idx["inf"])
 
             # Save the results in a dictionary with metadata
             result_entry = {
@@ -953,7 +930,7 @@ class Plotter:
             x_start = 1200
             adj = 200
             text_adj = 35
-        elif model == "moghadas":  # t = 400
+        elif model in ["seir", "validation", "moghadas"]:  # t = 400
             x_start = 400
             adj = 50
             text_adj = 10
@@ -961,10 +938,6 @@ class Plotter:
             x_start = 2500
             adj = 150
             text_adj = 60
-        elif model == "seir":  # t = 200
-            x_start = 400
-            adj = 50
-            text_adj = 10
         else:
             raise Exception("Invalid model")
         # Create a rectangular box for the y-axis label on the right side

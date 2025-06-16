@@ -4,12 +4,14 @@ from src.plotter import Plotter
 
 
 class ContactManipulation:
-    def __init__(self, sim_obj, susc: float, base_r0: float):
+    def __init__(self, sim_obj, susc: float, base_r0: float,
+                 epi_model: str = "rost_prem",):
         self.sim_obj = sim_obj
         self.base_r0 = base_r0
         self.susc = susc
 
         self.model = sim_obj.model
+        self.epi_model = epi_model
         self.contact_matrix = sim_obj.contact_matrix
         self.contact_home = sim_obj.contact_home
         self.params = sim_obj.params
@@ -21,9 +23,9 @@ class ContactManipulation:
         legend_list_orig = []
         self.get_full_cm(cm_list_orig, legend_list_orig)
 
-        if self.model == "rost":
+        if self.epi_model in ["rost_prem", "rost_maszk"]:
             t = np.arange(0, 1200, 0.5)
-        elif self.model == "chikina":
+        elif self.epi_model == "chikina":
             t = np.arange(0, 2500, 0.5)
         else:
             t = np.arange(0, 500, 0.5)
@@ -40,20 +42,20 @@ class ContactManipulation:
             # epidemic size and epidemic peak
             self.plotter.plot_epidemic_peak_and_size(
                 time=t, cm_list=cm_list, legend_list=legend_list,
-                model=self.model, ratio=ratio)
+                model=self.epi_model, ratio=ratio)
             # plot icu size
-            if self.model in ["rost", "chikina", "moghadas"]:
+            if self.epi_model in ["rost_prem", "rost_maszk", "chikina", "moghadas"]:
                 self.plotter.plot_icu_size(
                     time=t, cm_list=cm_list, legend_list=legend_list,
-                    model=self.model, ratio=ratio)
+                    model=self.epi_model, ratio=ratio)
                 # number of hospitalized
                 self.plotter.plot_solution_hospitalized_size(
                     time=t, cm_list=cm_list, legend_list=legend_list,
-                    model=self.model, ratio=ratio)
+                    model=self.epi_model, ratio=ratio)
                 # final death size
                 self.plotter.plot_solution_final_death_size(
                      time=t, cm_list=cm_list, legend_list=legend_list,
-                     model=self.model, ratio=ratio)
+                     model=self.epi_model, ratio=ratio)
 
     def get_full_cm(self, cm_list, legend_list):
         cm = self.contact_matrix

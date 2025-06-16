@@ -9,21 +9,21 @@ class RostModelHungary(EpidemicModelBase):
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
                         "ih", "ic", "icr",
-                        "r", "d", "c", "hosp", "icu"]
+                        "r", "d", "inf", "hosp", "icu"]
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
         iv["l1"][2] = 1
-        iv.update({"c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] +
+        iv.update({"inf": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] +
                    iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
                    })
 
-        iv.update({"s": self.population - (iv["c"] + iv["l1"] + iv["l2"])})
+        iv.update({"s": self.population - (iv["inf"] + iv["l1"] + iv["l2"])})
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, \
-            r, d, c, hosp, icu = xs.reshape(-1, self.n_age)
+            r, d, inf, hosp, icu = xs.reshape(-1, self.n_age)
 
         transmission = ps["beta"] * np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
         actual_population = self.population
@@ -49,7 +49,7 @@ class RostModelHungary(EpidemicModelBase):
             "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3 + ps["gamma_h"] * ih +
             ps["gamma_cr"] * icr,  # R'(t)
             "d": ps["mu"] * ps["gamma_c"] * ic,  # D'(t)
-            "c": 2 * ps["alpha_l"] * l2,  # C'(t)
+            "inf": 2 * ps["alpha_l"] * l2,  # C'(t)
             # add compartments for collecting total values
             "hosp":  ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3 +
                      ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3,  # Hosp'(t)
@@ -62,7 +62,7 @@ class RostModelHungary(EpidemicModelBase):
         s = self.aggregate_by_age(solution, self.c_idx["s"])
         r = self.aggregate_by_age(solution, self.c_idx["r"])
         d = self.aggregate_by_age(solution, self.c_idx["d"])
-        c = self.aggregate_by_age(solution, self.c_idx["c"])
+        c = self.aggregate_by_age(solution, self.c_idx["inf"])
         hosp = self.aggregate_by_age(solution, self.c_idx["hosp"])
         icu = self.aggregate_by_age(solution, self.c_idx["icu"])
         return total - s - r - d - c - hosp - icu
@@ -83,4 +83,3 @@ class RostModelHungary(EpidemicModelBase):
     def get_final_size_dead(self, solution: np.ndarray) -> float:
         state = solution[-1].reshape((1, -1))
         return self.aggregate_by_age(state, self.c_idx["d"])
-

@@ -5,7 +5,7 @@ from src.model.r0_generator_base import R0GeneratorBase
 
 
 class R0Generator(R0GeneratorBase):
-    def __init__(self, param: dict, n_age: int,
+    def __init__(self, param: dict, n_age: int = 16,
                  country: str = "Hungary") -> None:
         self.country = country
 
