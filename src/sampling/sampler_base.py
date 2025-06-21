@@ -27,8 +27,20 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
+    @staticmethod
+    def apply_inverse_cdf(u, dist_type="tent"):
+        if dist_type == "tent":
+            return np.where(u < 0.5, np.sqrt(u / 2), 1 - np.sqrt(1 - u))
+        elif dist_type == "narrow_tent":
+            return np.where(u < 0.5,
+                            (1 + np.sqrt(2 * u)) / 4,
+                            (3 - np.sqrt(2 * (1 - u))) / 4)
+        else:
+            return u
+
     def _get_lhs_table(self, model: str, strategy: str, number_of_samples: int = 120000,
-                       kappa: float = None, delta: float = 0.5) -> np.ndarray:
+                       kappa: float = None, delta: float = 0.5,
+                       dist_type: str = "tent") -> np.ndarray:
         """
         Generate LHS table using selected strategy:
         - 'baseline': sample reduction ratios in [0, 1 - kappa]
@@ -41,13 +53,18 @@ class SamplerBase(ABC):
         n_params = self.sim_obj.upper_tri_size
 
         if strategy == "baseline":
+            lhs_table = create_latin_table(n_of_samples=number_of_samples,
+                                           lower=[0.0] * n_params,
+                                           upper=[1.0] * n_params)
             if kappa is None:
-                raise ValueError("Kappa must be provided for 'baseline' strategy.")
-            lower_bound = lower_bound_base
-            upper_bound = upper_bound_base * (1 - kappa)
-            return create_latin_table(n_of_samples=number_of_samples,
-                                      lower=lower_bound,
-                                      upper=upper_bound)
+                lhs_table = self.apply_inverse_cdf(u=lhs_table, dist_type=dist_type)
+            else:
+                lower_bound = lower_bound_base
+                upper_bound = upper_bound_base * (1 - kappa)
+                lhs_table = create_latin_table(n_of_samples=number_of_samples,
+                                               lower=lower_bound,
+                                               upper=upper_bound)
+            return lhs_table
 
         # Compute "other" contact matrix (non-home), upper triangle only
         contact_other = self.sim_obj.contact_matrix - self.sim_obj.contact_home

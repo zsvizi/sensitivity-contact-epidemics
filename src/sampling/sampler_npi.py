@@ -72,7 +72,7 @@ class SamplerNPI(SamplerBase):
             kappa = self.calculate_kappa()
             print("computing kappa for base_r0=" + str(self.base_r0))
         else:
-            kappa = 0
+            kappa = None
             print("Skipping kappa calculation.")
         return kappa
 
