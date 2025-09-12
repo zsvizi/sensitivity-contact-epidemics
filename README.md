@@ -156,3 +156,20 @@ simulation = src.SimulationNPI(data=data, n_samples=10000, epi_model="chikina", 
 This project is developed and tested with Python 3.8 or higher. Install dependencies from `requirements.txt`:
 ```bash
 pip install -r requirements.txt
+```
+
+# License
+Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
+
+This work is licensed under a
+[Creative Commons Attribution 4.0 International License][cc-by].
+
+[![CC BY 4.0][cc-by-image]][cc-by]
+
+[cc-by]: http://creativecommons.org/licenses/by/4.0/
+[cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+
+# Acknowledgements
+PanSim was developed as part of the National Laboratory for Health Security project, supported by the National Research, Development and Innovation Office, Hungary , grants RRF-2.3.1-21-2022-00006
+![Szecsenyi](logo.jpg)
