@@ -3,15 +3,15 @@ import os
 import json
 
 import numpy as np
+from scipy.stats import norm
 from smt.sampling_methods import LHS
 
 import src
 
 
 class SamplerBase(ABC):
-    def __init__(self, sim_obj: src.SimulationNPI, config, target="r0") -> None:
-        self.config = config
-        self.target = target
+    def __init__(self, sim_obj: src.SimulationNPI) -> None:
+        self.config = sim_obj.config
         self.sim_obj = sim_obj
         self.base_r0 = sim_obj.sim_state["base_r0"]
         self.beta = sim_obj.sim_state["beta"]
@@ -27,19 +27,74 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, number_of_samples: int = 120000, kappa: float = None) -> np.ndarray:
-        # only computes lhs for icu with a_ij
-        # Get actual limit matrices
-        lower_bound = self.lhs_boundaries["lower"]
-        upper_bound = self.lhs_boundaries["upper"]
+    def _get_lhs_table(self, model: str, strategy: str, number_of_samples: int = 120000,
+                       kappa: float = None, delta: float = 0.1) -> np.ndarray:
+        """
+        Generate LHS table using selected strategy:
+        - 'baseline': sample reduction ratios in [0, 1 - kappa]
+        - 'absolute': sample Cij ± delta
+        - 'relative': sample Cij ± 50% - SZERINTEM NEM EZT CSINÁLJA!!!! #TODO: ellenőrzés
+        - 'poisson': sample from Normal(Cij, sqrt(Cij / n))
+        """
+        lower_bound_base = self.lhs_boundaries["lower"]
+        upper_bound_base = self.lhs_boundaries["upper"]
+        n_params = self.sim_obj.upper_tri_size
 
-        if kappa is not None:
-            upper_bound *= (1 - kappa)
+        if strategy == "baseline":
+            if kappa is None:
+                raise ValueError("Kappa must be provided for 'baseline' strategy.")
+            lower_bound = lower_bound_base
+            upper_bound = upper_bound_base * (1 - kappa)
+            return create_latin_table(n_of_samples=number_of_samples,
+                                      lower=lower_bound,
+                                      upper=upper_bound)
 
-        # Get LHS tables
+        contact_other_mtx = self.sim_obj.contact_matrix - self.sim_obj.contact_home # TODO: ellenőrzés, átnézés
+        # We need to smple from the total contacts
+        # in order to remain(?) symmetry c_ij N_i = c_ji N_j after random sampling. That's why we need to multiply
+        # with the age_vector. Later, when we use the sampled contact matrices for the simulations, we divide
+        # by the age_vector
+        contact_other_mtx_total = contact_other_mtx * self.sim_obj.age_vector
+        # Compute "other" contact matrix (non-home), upper triangle only
+        contact_other_values = contact_other_mtx_total[self.sim_obj.upper_tri_indexes]
+
+        # Sample from [0, 1], then transform
         lhs_table = create_latin_table(n_of_samples=number_of_samples,
-                                       lower=lower_bound,
-                                       upper=upper_bound)
+                                       lower=[0.0] * n_params,
+                                       upper=[1.0] * n_params)
+
+        if strategy == "absolute":
+            lower_bound = np.clip(contact_other_values - delta, 0, None)
+            upper_bound = contact_other_values + delta
+            for i in range(n_params):
+                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * \
+                                  lhs_table[:, i]
+        elif strategy == "relative":
+            lower_bound = contact_other_values * 0.8
+            upper_bound = contact_other_values * 1.2
+            for i in range(n_params):
+                lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * \
+                                  lhs_table[:, i]
+        elif strategy == "poisson":
+            # TODO: move these magic numbers elsewhere
+            if model == "seir":
+                n_participants = 67
+            elif model in ["rost_maszk", "rost_prem", "validation"]:
+                n_participants = 188
+            else:
+                raise ValueError(f"Unknown model '{model}' for poisson strategy.")
+
+            # Avoid division by zero and NaNs by clipping to a small epsilon
+            contact_values = np.clip(contact_other_values, 1e-6, None)
+            std = np.sqrt(contact_values / n_participants)
+            for i in range(n_params):
+                lhs_table[:, i] = norm(loc=contact_other_values[i],
+                                       scale=std[i]
+                                       ).ppf(lhs_table[:, i])
+                lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+
         return lhs_table
 
     def _save_output(self, output, folder_name):
@@ -70,5 +125,6 @@ class SamplerBase(ABC):
 
 def create_latin_table(n_of_samples, lower, upper) -> np.ndarray:
     bounds = np.array([lower, upper]).T
-    sampling = LHS(xlimits=bounds)
+    sampling = LHS(xlimits=bounds, random_state=42) # TODO: ezt opcionálissá tenni
+
     return sampling(n_of_samples)
