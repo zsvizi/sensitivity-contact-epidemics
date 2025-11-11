@@ -271,7 +271,6 @@ class SimulationNPI(SimulationBase):
         Initialize the correct model object based on the selected epidemiological model.
 
         :param str epi_model: Model identifier string.
-        :raises Exception: If the model type is not recognized.
         """
         if epi_model in ["rost_maszk", "rost_prem"]:
             self.model = rost.RostModelHungary(model_data=self.data)
@@ -341,7 +340,6 @@ class SimulationNPI(SimulationBase):
         Select and return the R₀ generator corresponding to the active model type.
 
         :return object: Instance of an R₀ generator class.
-        :raises Exception: If model type is not recognized.
         """
         if self.epi_model == "chikina":
             return chikina.R0SirModel(param=self.params)
