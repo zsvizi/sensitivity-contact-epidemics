@@ -12,14 +12,21 @@ class DataLoader:
     def __init__(self, country: str):
         self.country = country
 
-        if country == "Hungary":   # our model of analysis
+        if country == "Hungary_maszk":
+            self._model_parameters_data_file = os.path.join(
+                PROJECT_PATH, "../data", "maszk_model_parameters.json")
+            self._contact_data_file = os.path.join(
+                PROJECT_PATH, "../data", "maszk_contact_data.xls")
+            self._age_data_file = os.path.join(
+                PROJECT_PATH, "../data", "maszk_age_distribution.xls")
+        elif country == "Hungary_prem":
             self._model_parameters_data_file = os.path.join(
                 PROJECT_PATH, "../data", "rost_model_parameters.json")
             self._contact_data_file = os.path.join(
                 PROJECT_PATH, "../data", "rost_contact_matrices.xls")
             self._age_data_file = os.path.join(
                 PROJECT_PATH, "../data", "rost_age_distribution.xls")
-        if country == "usa":  # Modeling strict age-targeted
+        elif country == "usa":  # Modeling strict age-targeted
             # mitigation strategies for COVID-19
             self._model_parameters_data_file = os.path.join(
                 PROJECT_PATH, "../data", "chikina_model_parameters.json")
@@ -42,6 +49,13 @@ class DataLoader:
                 PROJECT_PATH, "../data", "seir_contact_matrices.xls")
             self._age_data_file = os.path.join(
                 PROJECT_PATH, "../data", "seir_age_distribution.xls")
+        elif country == "None":  # SEIRD model for validation with 3 age groups
+            self._model_parameters_data_file = os.path.join(
+                PROJECT_PATH, "../data", "validation_model_parameters.json")
+            self._contact_data_file = os.path.join(
+                PROJECT_PATH, "../data", "validation_contact_matrices.xls")
+            self._age_data_file = os.path.join(
+                PROJECT_PATH, "../data", "validation_age_distribution.xls")
 
         self._get_age_data()
         self._get_model_parameters_data()
@@ -69,7 +83,12 @@ class DataLoader:
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = dict()
-        num_sheets = 2 if self.country in ["united_states", "UK"] else 4
+        if self.country in ["united_states", "UK"]:
+            num_sheets = 2
+        elif self.country in ["Hungary_maszk", "None"]:
+            num_sheets = 3
+        else:
+            num_sheets = 4
         for idx in range(num_sheets):
             sheet = wb.sheet_by_index(idx)
             datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
