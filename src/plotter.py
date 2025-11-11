@@ -94,7 +94,7 @@ class Plotter:
         elif model == "seir":
             contact_full = contact_data["All"]
             contact_data["C_delta"] = contact_data["All"] - \
-                                    contact_data['Physical']
+                                      contact_data['Physical']
             categories_to_plot = ["Physical", "All", "C_delta"]
         else:  # validation
             contact_full = contact_data["All"]
@@ -177,12 +177,10 @@ class Plotter:
         # Define colors based on percentage contribution
         if model in ["rost_maszk", "rost_prem", "seir", "chikina"]:
             color = ['lightgreen'
-                     if pc <= 5 else 'green' if 5 < pc <= 8
-            else '#07553d' for pc in percentage_contribution]
+                     if pc <= 5 else 'green' if 5 < pc <= 8 else '#07553d' for pc in percentage_contribution]
         else:
             color = ['lightgreen'
-                     if pc <= 20 else 'green' if 20 < pc <= 30
-            else '#07553d' for pc in percentage_contribution]
+                     if pc <= 20 else 'green' if 20 < pc <= 30 else '#07553d' for pc in percentage_contribution]
         fig, ax = plt.subplots(figsize=(10, 6))
 
         # Plot bar plots with error bars for mean contact and percentage contribution
