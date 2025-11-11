@@ -10,14 +10,13 @@ class CMCalculatorLockdown:
     and runs corresponding simulations.
 
     This class reconstructs full contact matrices from sampled upper-triangular
-    elements, adjusts them based on lockdown strategies, and executes simulations
-    to evaluate the resulting outcomes.
+    elements, adjusts them based on lockdown strategies, and executes simulations.
     """
 
     def __init__(self, sim_obj: src.SimulationNPI) -> None:
         """
         Initializes the lockdown contact matrix calculator.
-        Args:
+
         :param src.SimulationNPU sim_obj: Simulation object containing configuration,
                                          age structure, and contact matrices.
         """
@@ -38,7 +37,6 @@ class CMCalculatorLockdown:
         :param calc: Simulation calculation object (providing a `get_output(cm)` method)
         :param str strategy: Sampling strategy used (e.g. "poisson")
 
-
         :return list: Combined list of simulation outputs and the flattened upper-triangular
                   values of the sampled total contact matrix
         """
@@ -49,9 +47,8 @@ class CMCalculatorLockdown:
                 matrix_size=self.sim_obj.n_ag
             )
 
-            # Modify the contact matrix:
-            # - reduce "non-home" contacts according to ratio_matrix
-            # - keep "home" contacts unchanged
+            # Reduce "non-home" contacts according to ratio_matrix,
+            # keep "home" contacts unchanged
             cm_sim = (1 - ratio_matrix) * (self.sim_obj.contact_matrix - self.sim_obj.contact_home)
             cm_sim += self.sim_obj.contact_home
         else:
