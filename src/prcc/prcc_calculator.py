@@ -49,7 +49,7 @@ class PRCCCalculator:
 
         The t-statistic for each PRCC is calculated as:
             t = PRCC * sqrt((N - 2 - k) / (1 - PRCC^2))
-        where N is the number of LHS samples and k is the number of parameters (age groups).
+        where N is the number of LHS samples and k is the number of parameters
         """
         t = self.prcc_list * np.sqrt(
             (self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size) / (1 - self.prcc_list ** 2)
