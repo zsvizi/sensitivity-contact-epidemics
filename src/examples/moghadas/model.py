@@ -25,12 +25,12 @@ class MoghadasModelUsa(EpidemicModelBase):
         s, e, i_n, q_n, i_h, q_h, a_n, a_q, h, c, r, d, \
             inf, hosp, icu = xs.reshape(-1, self.n_age)
         transmission = ps["beta"] * np.array(i_n / self.population).dot(cm) + \
-            np.array(i_h / self.population).dot(cm) + \
-            np.array(ps["k"] * a_n / self.population).dot(cm)
+                       np.array(i_h / self.population).dot(cm) + \
+                       np.array(ps["k"] * a_n / self.population).dot(cm)
 
         transmission_2 = ps["beta"] * np.array(q_n / self.population).dot(self.model_data.contact_data["Home"]) + \
-            np.array(q_h / self.population).dot(self.model_data.contact_data["Home"]) + \
-            np.array(ps["k"] * a_q / self.population).dot(self.model_data.contact_data["Home"])
+                         np.array(q_h / self.population).dot(self.model_data.contact_data["Home"]) + \
+                         np.array(ps["k"] * a_q / self.population).dot(self.model_data.contact_data["Home"])
 
         model_eq_dict = {
             "s": -ps["susc"] * s * transmission - ps["susc"] * s * transmission_2,  # S'(t)
@@ -60,7 +60,7 @@ class MoghadasModelUsa(EpidemicModelBase):
                     ps["f_i"] * ps["tau_i"] * i_h + (1 - ps["c"]) * (1 - ps["f_i"]) *
                     ps["delta"] * i_h + (1 - ps["c"]) * ps["delta"] * q_h,  # hosp'(t)
             "icu": ps["c"] * (1 - ps["f_i"]) * ps["delta"] * i_h +
-                   ps["c"] * ps["delta"] * q_h   # ICU' (t)
+                   ps["c"] * ps["delta"] * q_h  # ICU' (t)
         }
 
         return self.get_array_from_dict(comp_dict=model_eq_dict)
