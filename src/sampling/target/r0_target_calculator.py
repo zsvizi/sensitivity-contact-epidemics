@@ -1,8 +1,6 @@
 import numpy as np
 
 import src
-from src.examples.rost.r0 import R0Generator
-from src.sampling.target.target_calculator import TargetCalculator
 from src.examples.seir.r0 import R0SeirSVModel
 from src.examples.chikina.r0 import R0SirModel
 from src.examples.moghadas.r0 import R0SeyedModel
