@@ -23,15 +23,15 @@ class PRCCCalculator:
         self.agg_prcc = None  # Median PRCC per age group
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
-        sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
-        sim_data = 1 - sim_data
-        simulation = np.append(sim_data, sim_output.reshape((-1, 1)), axis=1)
         """
         Calculates PRCC values between LHS input parameters and simulation output.
 
         :param np.ndarray lhs_table: Latin Hypercube Sampling table of parameter sets.
         :param np.ndarray sim_output: Simulation outputs corresponding to each row in lhs_table.
         """
+        # Combine LHS parameters and simulation output into a single matrix
+        simulation = np.append(lhs_table, sim_output.reshape((-1, 1)), axis=1)
+
         # Compute the PRCC vector using the last column (output) against all parameters
         prcc_list = get_prcc_values(lhs_output_table=simulation)
 
