@@ -1,19 +1,18 @@
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import numpy as np
 import os
-import pandas as pd
-import seaborn as sns
 
+import matplotlib
 from matplotlib import patches, lines
+import matplotlib.colors as mcolors
 from matplotlib.cm import get_cmap
-import matplotlib.colors as colors
 from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
 from matplotlib.ticker import LogFormatterSciNotation as LogFormatter
 from matplotlib.ticker import LogLocator
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
 from src.dataloader import DataLoader
 from src.simulation.simulation_base import SimulationBase
@@ -264,7 +263,7 @@ class Plotter:
             color = np.vstack((colors_viridis, colors_greens))
 
             # Create a new colormap
-            cmap = colors.LinearSegmentedColormap.from_list(cmap_name, color)
+            cmap = mcolors.LinearSegmentedColormap.from_list(cmap_name, color)
             return cmap
         else:
             return plt.get_cmap(cmap_name)
@@ -288,10 +287,10 @@ class Plotter:
             os.makedirs("sens_data/prcc_plot", exist_ok=True)
             save_path = os.path.join("sens_data", "prcc_plot" + '.pdf')
 
-        p_value_cmap = colors.ListedColormap(['Orange', 'red', 'darkred'])
+        p_value_cmap = mcolors.ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
         # adjusted_cmaps = [self.adjust_colormap(cmap) for cmap in cmaps]
-        log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
+        log_norm = mcolors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
         fig, ax = plt.subplots(figsize=(8, 8))
         triang = self.construct_triangle_grids_prcc_p_value()
