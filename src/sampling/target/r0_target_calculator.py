@@ -6,6 +6,9 @@ from src.sampling.target.target_calculator import TargetCalculator
 from src.examples.seir.r0 import R0SeirSVModel
 from src.examples.chikina.r0 import R0SirModel
 from src.examples.moghadas.r0 import R0SeyedModel
+from src.examples.rost.r0 import R0Generator
+from src.examples.validation.r0 import R0ValidationModel
+from src.sampling.target.target_calculator import TargetCalculator
 
 
 class R0TargetCalculator(TargetCalculator):
@@ -18,14 +21,19 @@ class R0TargetCalculator(TargetCalculator):
     def get_output(self, cm: np.ndarray):
         if self.country == "Hungary":
             r0generator = R0Generator(param=self.sim_obj.params)
+        if self.country in ["Hungary_maszk", "Hungary_prem"]:
+            r0generator = R0Generator(param=self.sim_obj.params,
+                                      n_age=self.sim_obj.n_ag)
         elif self.country == "UK":
             r0generator = R0SeirSVModel(param=self.sim_obj.params)
         elif self.country == "usa":
             r0generator = R0SirModel(param=self.sim_obj.params)
         elif self.country == "united_states":
             r0generator = R0SeyedModel(param=self.sim_obj.params)
+        elif self.country == "None":
+            r0generator = R0ValidationModel(param=self.sim_obj.params)
         else:
-            raise Exception("Invalid country!")
+            raise Exception("Invalid country! Cannot select R₀ generator.")
 
         beta_lhs = self.base_r0 / r0generator.get_eig_val(
             contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
