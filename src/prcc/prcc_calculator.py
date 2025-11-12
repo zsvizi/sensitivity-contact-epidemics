@@ -6,77 +6,112 @@ from src.prcc.prcc import get_prcc_values, get_rectangular_matrix_from_upper_tri
 
 
 class PRCCCalculator:
+    """
+    Calculate Partial Rank Correlation Coefficients (PRCC) and associated statistics
+    for sensitivity analysis of epidemic simulations.
+    """
     def __init__(self, sim_obj: src.SimulationNPI):
         self.sim_obj = sim_obj
 
+        # Confidence intervals and p-values for aggregated PRCC
         self.confidence_lower = None
         self.confidence_upper = None
         self.p_value = None
         self.p_value_mtx = None
         self.prcc_mtx = None
         self.prcc_list = None
+        self.agg_prcc = None  # Median PRCC per age group
 
     def calculate_prcc_values(self, lhs_table: np.ndarray, sim_output: np.ndarray):
         sim_data = lhs_table[:, :(self.sim_obj.n_ag * (self.sim_obj.n_ag + 1)) // 2]
         sim_data = 1 - sim_data
         simulation = np.append(sim_data, sim_output.reshape((-1, 1)), axis=1)
+        """
+        Calculates PRCC values between LHS input parameters and simulation output.
+
+        :param np.ndarray lhs_table: Latin Hypercube Sampling table of parameter sets.
+        :param np.ndarray sim_output: Simulation outputs corresponding to each row in lhs_table.
+        """
+        # Compute the PRCC vector using the last column (output) against all parameters
         prcc_list = get_prcc_values(lhs_output_table=simulation)
-        prcc_mtx = get_rectangular_matrix_from_upper_triu(
-            rvector=prcc_list[:self.sim_obj.upper_tri_size],
-            matrix_size=self.sim_obj.n_ag)
-        self.prcc_mtx = prcc_mtx
+
+        # Convert PRCC vector into a symmetric matrix for analysis
+        self.prcc_mtx = get_rectangular_matrix_from_upper_triu(
+            rvector=prcc_list[:self.sim_obj.upper_tri_size],  # only upper-triangular values
+            matrix_size=self.sim_obj.n_ag
+        )
+
         self.prcc_list = prcc_list
 
     def calculate_p_values(self):
+        """
+        Computes p-values for PRCC coefficients using Student's t-distribution.
+
+        The t-statistic for each PRCC is calculated as:
+            t = PRCC * sqrt((N - 2 - k) / (1 - PRCC^2))
+        where N is the number of LHS samples and k is the number of parameters (age groups).
+        """
         t = self.prcc_list * np.sqrt(
-            (self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size) / (1 - self.prcc_list ** 2)
+            (self.sim_obj.n_samples - 2 - self.sim_obj.n_ag) /
+            (1 - (self.prcc_list ** 2))
         )
-        # p-value for 2-sided test
-        dof = self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size
-        p_value = 2 * (1 - ss.t.cdf(x=abs(t), df=dof))
+
+        # Degrees of freedom for two-sided t-test
+        dof = self.sim_obj.n_samples - 2 - self.sim_obj.n_ag
+        p_value = 2 * (1 - ss.t.cdf(x=np.abs(t), df=dof))
+
+        # Store p-values in vector and convert to symmetric matrix
         self.p_value = p_value
         self.p_value_mtx = get_rectangular_matrix_from_upper_triu(
             rvector=p_value[:self.sim_obj.upper_tri_size],
-            matrix_size=self.sim_obj.n_ag)
+            matrix_size=self.sim_obj.n_ag
+        )
 
     def _calculate_distribution_prcc_p_val(self):
+        """
+        Calculates a normalized distribution of PRCC weights based on p-values.
+
+        Each element represents the relative importance of that PRCC value
+        in contributing to the overall sensitivity, normalized by row.
+        """
         distribution_prcc_p_val = (1 - self.p_value_mtx) / \
-                                  np.sum(1 - self.p_value_mtx,
-                                         axis=1, keepdims=True)
+                                  np.sum(1 - self.p_value_mtx, axis=1, keepdims=True)
         return distribution_prcc_p_val
 
     def aggregate_prcc_values_median(self):
+        """
+        Computes the median PRCC for each age group along with first and third quartiles.
+
+        The aggregation is weighted using the normalized p-value distribution.
+        """
         median_values = []
         conf_lower = []
         conf_upper = []
-        # prob using complex logic
+
+        # Compute normalized weights from p-values
         distribution_prcc_p_val = self._calculate_distribution_prcc_p_val()
 
-        # Iterate over the columns of prcc and p_value
+        # Iterate over age groups (columns of PRCC matrix)
         for i in range(self.sim_obj.n_ag):
-            # Take the ith column from prcc
-            prcc_column = self.prcc_mtx[i, :]
+            prcc_column = self.prcc_mtx[:, i]
+            prob_value_column = distribution_prcc_p_val[:, i]
 
-            # Take the ith column from distribution_prcc_p_val
-            prob_value_column = distribution_prcc_p_val[i, :]
+            # Combine PRCC and probability weights for sorting
+            combined_matrix = np.column_stack((np.abs(prcc_column), prob_value_column))
 
-            # Combine prcc_column and prob_value_column into a single matrix (16 * 2)
-            combined_matrix = np.column_stack((prcc_column, prob_value_column))
-            # Take the absolute values of the first column to avoid -ve median values
-            combined_matrix[:, 0] = np.abs(combined_matrix[:, 0])
-            # Sort the rows of combined_matrix by the first column
+            # Sort rows by absolute PRCC values
             sorted_indices = np.argsort(combined_matrix[:, 0])
             combined_matrix_sorted = combined_matrix[sorted_indices]
-            # Calculate the cumulative sum of the second column
+
+            # Compute cumulative sum of probability weights
             cumul_distr = np.cumsum(combined_matrix_sorted[:, 1])
-            # Find the median value
+
+            # Determine median and quartiles based on cumulative probability
             median_value = combined_matrix_sorted[cumul_distr >= 0.5, 0][0]
-            # Find the first quartile
             q1_value = combined_matrix_sorted[cumul_distr >= 0.25, 0][0]
-            # Find the third quartile
             q3_value = combined_matrix_sorted[cumul_distr >= 0.75, 0][0]
 
-            # Append the median, Q1, and Q3 values to their respective lists
+            # Store aggregated PRCC and confidence intervals
             median_values.append(median_value)
             conf_lower.append(median_value - q1_value)
             conf_upper.append(q3_value - median_value)
@@ -84,4 +119,3 @@ class PRCCCalculator:
         self.agg_prcc = median_values
         self.confidence_lower = conf_lower
         self.confidence_upper = conf_upper
-
