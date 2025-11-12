@@ -37,7 +37,7 @@ class SamplerBase(ABC):
         pass
 
     def _get_lhs_table(self, model: str, strategy: str, number_of_samples: int = 120000,
-                       kappa: float = None, delta: float = 0.1) -> np.ndarray:
+                       kappa: float = None, delta: float = 1e2) -> np.ndarray:
         """
         Generate a Latin Hypercube Sampling (LHS) table for contact matrices based on a chosen strategy.
 
