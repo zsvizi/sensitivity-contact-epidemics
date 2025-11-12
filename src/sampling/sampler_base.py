@@ -172,14 +172,15 @@ class SamplerBase(ABC):
         with open(filename + ".json", "w") as json_file:
             json.dump(value, json_file)
 
+
 # TODO: ezt egy segítőfüggvényes mappába esetleg?
 def create_latin_table(n_of_samples: int, lower: np.ndarray, upper: np.ndarray) -> np.ndarray:
     """
     Generate a Latin Hypercube Sampling (LHS) table within specified bounds.
 
     :param int n_of_samples: Number of samples to generate.
-    :param lower: Lower bounds for each parameter.
-    :param upper: Upper bounds for each parameter. # TODO: típus annotáció
+    :param np.ndarray lower: Lower bounds for each parameter.
+    :param np.ndarray upper: Upper bounds for each parameter.
 
     :return np.ndarray: A 2D array of shape (n_of_samples, n_parameters) containing LHS samples.
     """
