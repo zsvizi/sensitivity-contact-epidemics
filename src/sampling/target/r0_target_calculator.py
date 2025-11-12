@@ -12,8 +12,6 @@ from src.sampling.target.target_calculator import TargetCalculator
 
 
 class R0TargetCalculator(TargetCalculator):
-    def __init__(self, sim_obj: src.SimulationNPI, country: str):
-        self.country = country
     """
     Target calculator for computing the basic reproduction number (R_0)
     under different contact matrix configurations.
@@ -63,10 +61,13 @@ class R0TargetCalculator(TargetCalculator):
         else:
             raise Exception("Invalid country! Cannot select R₀ generator.")
 
-        beta_lhs = self.base_r0 / r0generator.get_eig_val(
-            contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
-            population=self.sim_obj.population)[0]
-        r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        # Compute dominant eigenvalue of the next-generation matrix
+        r0_lhs = self.beta * r0generator.get_eig_val(
+            contact_mtx=cm,
+            susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
+            population=self.sim_obj.population
+        )[0]
+
         # Return the R_0 value as a NumPy array for downstream processing
         output = np.array([r0_lhs])
         return output
