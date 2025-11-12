@@ -52,12 +52,11 @@ class PRCCCalculator:
         where N is the number of LHS samples and k is the number of parameters (age groups).
         """
         t = self.prcc_list * np.sqrt(
-            (self.sim_obj.n_samples - 2 - self.sim_obj.n_ag) /
-            (1 - (self.prcc_list ** 2))
+            (self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size) / (1 - self.prcc_list ** 2)
         )
 
         # Degrees of freedom for two-sided t-test
-        dof = self.sim_obj.n_samples - 2 - self.sim_obj.n_ag
+        dof = self.sim_obj.n_samples - 2 - self.sim_obj.upper_tri_size
         p_value = 2 * (1 - ss.t.cdf(x=np.abs(t), df=dof))
 
         # Store p-values in vector and convert to symmetric matrix
