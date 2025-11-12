@@ -14,13 +14,41 @@ from src.sampling.target.target_calculator import TargetCalculator
 class R0TargetCalculator(TargetCalculator):
     def __init__(self, sim_obj: src.SimulationNPI, country: str):
         self.country = country
+    """
+    Target calculator for computing the basic reproduction number (R_0)
+    under different contact matrix configurations.
+
+    This class selects the appropriate R_0 generator depending on the
+    simulation's target country and model setup. It then computes the
+    effective R_0 by combining the base transmission rate (beta) with the
+    dominant eigenvalue of the next-generation matrix.
+    """
+
+    def __init__(self, sim_obj: src.SimulationNPI):
+        """
+        Initializes the R_§ target calculator.
+
+        :param src.SimulationNPI sim_obj: Simulation object containing
+                                          model state, country, and parameters.
+        """
+        self.country = sim_obj.country
         super().__init__(sim_obj=sim_obj)
         self.base_r0 = sim_obj.sim_state["base_r0"]
         self.beta = sim_obj.sim_state["beta"]
 
-    def get_output(self, cm: np.ndarray):
-        if self.country == "Hungary":
-            r0generator = R0Generator(param=self.sim_obj.params)
+    def get_output(self, cm: np.ndarray) -> np.ndarray:
+        """
+        Compute the effective reproduction number (R_0) for a given contact matrix.
+
+        Depending on the simulation country, a specific epidemiological model
+        is used to compute the eigenvalue of the next-generation matrix (NGM).
+        The effective R_0 is then calculated as:
+            (R_0)_{effective} = beta * lambda_max(NGM)
+
+        :param np.ndarray cm: Contact matrix representing interactions.
+        :return np.ndarray: array containing the computed effective R_0 value.
+        """
+        # Select appropriate R_0 generator based on country (model type)
         if self.country in ["Hungary_maszk", "Hungary_prem"]:
             r0generator = R0Generator(param=self.sim_obj.params,
                                       n_age=self.sim_obj.n_ag)
@@ -39,5 +67,6 @@ class R0TargetCalculator(TargetCalculator):
             contact_mtx=cm, susceptibles=self.sim_obj.susceptibles.reshape(1, -1),
             population=self.sim_obj.population)[0]
         r0_lhs = (self.beta / beta_lhs) * self.base_r0
+        # Return the R_0 value as a NumPy array for downstream processing
         output = np.array([r0_lhs])
         return output
