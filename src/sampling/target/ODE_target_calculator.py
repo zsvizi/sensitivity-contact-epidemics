@@ -44,7 +44,6 @@ class ODETargetCalculator(TargetCalculator):
         # Define base simulation time segment
         t_interval = 250
         t = np.arange(0, t_interval, 0.5)
-        t_interval_complete = 0  # TODO: ez mire kell? nem jó semmire jelenleg
 
         # Run initial ODE integration
         sol = self.sim_obj.model.get_solution(
@@ -72,7 +71,6 @@ class ODETargetCalculator(TargetCalculator):
                 cm=cm
             )
 
-            t_interval_complete += t_interval
             state = sol[-1]
 
             # Append new results (excluding repeated initial state)
