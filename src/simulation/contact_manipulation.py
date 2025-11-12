@@ -1,6 +1,5 @@
 import numpy as np
 
-import src
 from src.plotter import Plotter
 
 
@@ -13,7 +12,7 @@ class ContactManipulation:
     hospitalization, and death size.
     """
 
-    def __init__(self, sim_obj: src.SimulationNPI, susc: float, base_r0: float, model: str):
+    def __init__(self, sim_obj, susc: float, base_r0: float, model: str):
         """
         Initializes the class with a simulation reference and key parameters.
 
