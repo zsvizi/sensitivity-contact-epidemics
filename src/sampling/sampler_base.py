@@ -112,10 +112,15 @@ class SamplerBase(ABC):
 
             contact_other_values_unscaled = contact_other_mtx[self.sim_obj.upper_tri_indexes]
             contact_values = np.clip(contact_other_values_unscaled, a_min=1e-6, a_max=None)
-            std = np.sqrt(contact_values / n_participants)
+
+            i_idx, _ = self.sim_obj.upper_tri_indexes
+            N_per_param = self.sim_obj.age_vector.ravel()[i_idx]
+            # TODO: lehet nem kell az n_participants
+            std = np.sqrt(contact_values / (n_participants * N_per_param))
+
             for i in range(n_params):
                 lhs_table[:, i] = norm(
-                    loc=contact_other_values_unscaled[i],
+                    loc=contact_values[i],
                     scale=std[i]
                 ).ppf(lhs_table[:, i])
                 # Ensure all sampled contact values are non-negative
