@@ -63,12 +63,12 @@ class ValidationModel(EpidemicModelBase):
         s, e, i, r, d, inf = xs.reshape(-1, self.n_age)
 
         # Compute total force of infection (E does not contribute)
-        transmission = ps["beta"] * np.array(i).dot(cm)
+        transmission = ps["beta"] * cm.dot((np.array(i / self.population)))
 
         # Differential equations for each compartment
         model_eq_dict = {
-            "s": -transmission * s / self.population,  # S'(t)
-            "e": s / self.population * transmission - e * ps["alpha"],  # E'(t)
+            "s": - s * transmission,  # S'(t)
+            "e": s * transmission - e * ps["alpha"],  # E'(t)
             "i": ps["alpha"] * e - ps["gamma"] * i,  # I'(t)
             "r": ps["p_recovery"] * ps["gamma"] * i,  # R'(t)
             "d": (1 - ps["p_recovery"]) * ps["gamma"] * i,  # D'(t)
