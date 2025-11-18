@@ -61,7 +61,7 @@ class SirModel(EpidemicModelBase):
 
         :param np.ndarray xs: Flattened state vector for all age groups.
                               Shape: (n_age * n_compartments,)
-        :param t : Current time
+        :param int t: Current time
         :param dict ps: Parameter dictionary (alpha_i, xi, beta, susc, etc.)
         :param np.ndarray cm: Contact matrix (per capita contact rates).
 
