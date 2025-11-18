@@ -22,7 +22,7 @@ class R0TargetCalculator(TargetCalculator):
 
     def __init__(self, sim_obj: src.SimulationNPI):
         """
-        Initializes the R_§ target calculator.
+        Initializes the R_0 target calculator.
 
         :param src.SimulationNPI sim_obj: Simulation object containing
                                           model state, country, and parameters.

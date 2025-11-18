@@ -6,15 +6,15 @@ from src.model.r0_generator_base import R0GeneratorBase
 
 class R0SeirSVModel(R0GeneratorBase):
     """
-    R_§ generator for the SEIR model variant with seasonality and vaccination structure (UK model).
+    R_0 generator for the SEIR model variant with seasonality and vaccination structure (UK model).
 
     This class computes the next generation matrix (NGM) and its dominant eigenvalue, which
-    represents the basic reproduction number (R_§).
+    represents the basic reproduction number (R_0).
     """
 
     def __init__(self, param: dict, country: str = "UK", n_age: int = 15) -> None:
         """
-        Initializes the SEIR-based R_§ generator for the UK model.
+        Initializes the SEIR-based R_0 generator for the UK model.
 
         :param dict param: Dictionary of model parameters including 'gamma', 'rho', and 'susc'.
         :param str country: Country code used for model identification (default: "UK").
