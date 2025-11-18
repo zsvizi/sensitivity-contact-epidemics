@@ -3,11 +3,10 @@ import os
 import json
 
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import poisson
 from smt.sampling_methods import LHS
 
 import src
-from src.prcc.prcc import get_rectangular_matrix_from_upper_triu
 
 
 class SamplerBase(ABC):
@@ -103,36 +102,14 @@ class SamplerBase(ABC):
                 lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * lhs_table[:, i]
 
         elif strategy == "poisson":
-            if model == "seir":
-                n_participants = 67
-            elif model in ["rost_maszk", "rost_prem", "validation"]:
-                n_participants = 188
-            else:
-                raise ValueError(f"Unknown model '{model}' for poisson strategy.")
-
-            contact_other_values_unscaled = contact_other_mtx[self.sim_obj.upper_tri_indexes]
-            contact_values = np.clip(contact_other_values_unscaled, a_min=1e-6, a_max=None)
-
-            i_idx, _ = self.sim_obj.upper_tri_indexes
-            N_per_param = self.sim_obj.age_vector.ravel()[i_idx]
-            # TODO: lehet nem kell az n_participants
-            std = np.sqrt(contact_values / (n_participants * N_per_param))
+            contact_values = np.clip(contact_other_values, a_min=1e-6, a_max=None)
 
             for i in range(n_params):
-                lhs_table[:, i] = norm(
-                    loc=contact_values[i],
-                    scale=std[i]
+                lhs_table[:, i] = poisson(
+                    mu=contact_values[i]
                 ).ppf(lhs_table[:, i])
                 # Ensure all sampled contact values are non-negative
                 lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)
-
-            # Egyelőre kicsit robusztus visszaszorzás
-            for i in range(lhs_table.shape[0]):
-                temp_mtx = get_rectangular_matrix_from_upper_triu(
-                    rvector=lhs_table[i, :],
-                    matrix_size=self.sim_obj.n_ag)
-                temp_mtx *= self.sim_obj.age_vector
-                lhs_table[i, :] = temp_mtx[self.sim_obj.upper_tri_indexes]
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 
