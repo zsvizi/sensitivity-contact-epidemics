@@ -32,16 +32,15 @@ class R0SeirSVModel(R0GeneratorBase):
 
     def _get_v(self) -> np.ndarray:
         """
-        Construct the V matrix (transitions between infected compartments) and compute its inverse.
+        Construct the V matrix (transitions between infected compartments), compute its inverse
+        and stored as self.v_inv (np.ndarray)
 
         The matrix V describes rates of progression and recovery within infected
         compartments. The structure is based on the following transitions:
 
-        - E → E: loss due to progression (γ)
-        - E → I: gain in I due to γ
-        - I → I: loss due to recovery (ρ)
-
-        :return np.ndarray: Inverse of the V matrix.
+        - E -> E: loss due to progression (γ)
+        - E -> I: gain in I due to γ
+        - I -> I: loss due to recovery (ρ)
         """
         idx = self._idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))

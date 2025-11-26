@@ -53,7 +53,7 @@ class ValidationModel(EpidemicModelBase):
         :param int t: Current simulation time (unused here, included for ODE solver compatibility).
         :param dict ps: Dictionary of model parameters:
             - beta: Transmission rate
-            - alpha: Rate from exposed → infectious
+            - alpha: Rate from exposed -> infectious
             - gamma: Recovery/death rate (1 / infectious period)
             - p_recovery: Probability of recovery (vs death)
         :param np.ndarray cm: Contact matrix describing average contacts between age groups.

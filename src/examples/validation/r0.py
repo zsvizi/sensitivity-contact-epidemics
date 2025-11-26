@@ -17,7 +17,7 @@ class R0ValidationModel(R0GeneratorBase):
         Initializes the validation R_0 model with epidemiological parameters.
 
         :param dict param: Dictionary containing model parameters such as:
-            - alpha : rate of progression from exposed → infectious
+            - alpha : rate of progression from exposed -> infectious
             - gamma : recovery rate
             - susc  : age-specific susceptibility vector
         :param str country: Country or model label
@@ -37,20 +37,20 @@ class R0ValidationModel(R0GeneratorBase):
         Constructs and invert the V matrix (transition matrix).
 
         The V matrix captures movement between infectious compartments:
-            - E → E : removal from exposure at rate α
-            - E → I : progression from exposed to infectious (−α)
-            - I → I : removal from infectious at rate γ
+            - E -> E : removal from exposure at rate α
+            - E -> I : progression from exposed to infectious (−α)
+            - I -> I : removal from infectious at rate γ
 
         :return np.ndarray: The inverse of the constructed V matrix
         """
         idx = self._idx
         v = np.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
 
-        # E → E (removal)
+        # E -> E (removal)
         v[idx("e"), idx("e")] = self.parameters["alpha"]
-        # E → I (progression)
+        # E -> I (progression)
         v[idx("i"), idx("e")] = -self.parameters["alpha"]
-        # I → I (removal)
+        # I -> I (removal)
         v[idx("i"), idx("i")] = self.parameters["gamma"]
 
         # Store inverse for use in R_0 computation

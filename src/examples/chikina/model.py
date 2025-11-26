@@ -108,7 +108,7 @@ class SirModel(EpidemicModelBase):
                 + ps["susc"] * ps["xi"] * (transmission * s / self.population)
             ),
 
-            # Cumulative ICU transitions (presymptomatic → clinical)
+            # Cumulative ICU transitions (presymptomatic -> clinical)
             "icu": ps["alpha_p"] * cp,
         }
 

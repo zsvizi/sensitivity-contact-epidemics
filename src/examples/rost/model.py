@@ -65,7 +65,7 @@ class RostModelHungary(EpidemicModelBase):
         :param np.ndarray xs: State vector of size (n_age * n_compartments).
         :param int t: Current time
         :param np.ndarray ps: Model parameters.
-        :param np.ndarray cm: Contact matrix (age * age).
+        :param np.ndarray cm: Contact matrix (age x age).
 
         :return np.ndarray: The flattened array of derivatives for all age groups.
         """

@@ -33,10 +33,10 @@ class R0Generator(R0GeneratorBase):
         self._get_e()
         self._get_v()
 
-    def _get_v(self) -> np.ndarray:
+    def _get_v(self) -> None:
         """
         Constructs the V matrix (transitions out of infected compartments)
-        for the next-generation matrix approach. After construction, V is inverted and stored as self.v_inv.
+        for the next-generation matrix approach. After construction, V is inverted and stored as self.v_inv (np.ndarray)
 
         V matrix:
         - diagonal: rate of leaving each compartment
@@ -98,18 +98,30 @@ class R0Generator(R0GeneratorBase):
         n_states = self.n_states
 
         f = np.zeros((self.n_age * n_states, self.n_age * n_states))
-        inf_a = self.parameters["inf_a"] if "inf_a" in self.parameters.keys() else 1.0
-        inf_s = self.parameters["inf_s"] if "inf_s" in self.parameters.keys() else 1.0
-        inf_p = self.parameters["inf_p"] if "inf_p" in self.parameters.keys() else 1.0
 
+        # Relative infectiousness multipliers (fallback is 1.0)
+        inf_a = self.parameters.get("inf_a", 1.0)
+        inf_s = self.parameters.get("inf_s", 1.0)
+        inf_p = self.parameters.get("inf_p", 1.0)
+
+        # Susceptibility per age group (column vector)
         susc_vec = self.parameters["susc"].reshape((-1, 1))
-        f[i["l1"]:s_mtx:n_states, i["ip"]:s_mtx:n_states] = inf_p * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["a1"]:s_mtx:n_states] = inf_a * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["a2"]:s_mtx:n_states] = inf_a * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["a3"]:s_mtx:n_states] = inf_a * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["i1"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["i2"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
-        f[i["l1"]:s_mtx:n_states, i["i3"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
+
+        # All new infections enter at L1
+        # F is block-structured with stride n_states between age groups.
+        # Using cm.T ensures correct (j infects i) structure.
+        for infectious_state, inf_mult in [
+            ("ip", inf_p),
+            ("a1", inf_a),
+            ("a2", inf_a),
+            ("a3", inf_a),
+            ("i1", inf_s),
+            ("i2", inf_s),
+            ("i3", inf_s),
+        ]:
+            f[i["l1"]:s_mtx:n_states, i[infectious_state]:s_mtx:n_states] = (
+                inf_mult * contact_mtx.T * susc_vec
+            )
 
         return f
 
