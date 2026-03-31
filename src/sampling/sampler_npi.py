@@ -63,8 +63,9 @@ class SamplerNPI(SamplerBase):
         lhs_table = self._get_lhs_table(
             number_of_samples=self.sim_obj.n_samples,
             kappa=kappa,
-            model=self.epi_model,
-            strategy=self.strategy
+            strategy=self.strategy,
+            n=self.sim_obj.n,
+            contact_dispersion=self.sim_obj.contact_dispersion
         )
 
         print(f"Simulation for {self.epi_model} model, "
