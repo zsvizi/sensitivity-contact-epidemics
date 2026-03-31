@@ -1,18 +1,19 @@
-import os
-
 import matplotlib
-from matplotlib import patches, lines
-import matplotlib.colors as mcolors
-from matplotlib.cm import get_cmap
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import numpy as np
+import os
+import pandas as pd
+import seaborn as sns
+
+from matplotlib import patches, lines
+from matplotlib.cm import get_cmap
+import matplotlib.colors as colors
+from matplotlib.lines import Line2D
 from matplotlib.ticker import LogFormatterSciNotation as LogFormatter
 from matplotlib.ticker import LogLocator
 from matplotlib.tri import Triangulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import numpy as np
-import pandas as pd
-import seaborn as sns
 
 from src.dataloader import DataLoader
 from src.simulation.simulation_base import SimulationBase
@@ -176,10 +177,12 @@ class Plotter:
         # Define colors based on percentage contribution
         if model in ["rost_maszk", "rost_prem", "seir", "chikina"]:
             color = ['lightgreen'
-                     if pc <= 5 else 'green' if 5 < pc <= 8 else '#07553d' for pc in percentage_contribution]
+                     if pc <= 5 else 'green' if 5 < pc <= 8
+            else '#07553d' for pc in percentage_contribution]
         else:
             color = ['lightgreen'
-                     if pc <= 20 else 'green' if 20 < pc <= 30 else '#07553d' for pc in percentage_contribution]
+                     if pc <= 20 else 'green' if 20 < pc <= 30
+            else '#07553d' for pc in percentage_contribution]
         fig, ax = plt.subplots(figsize=(10, 6))
 
         # Plot bar plots with error bars for mean contact and percentage contribution
@@ -263,7 +266,7 @@ class Plotter:
             color = np.vstack((colors_viridis, colors_greens))
 
             # Create a new colormap
-            cmap = mcolors.LinearSegmentedColormap.from_list(cmap_name, color)
+            cmap = colors.LinearSegmentedColormap.from_list(cmap_name, color)
             return cmap
         else:
             return plt.get_cmap(cmap_name)
@@ -287,10 +290,10 @@ class Plotter:
             os.makedirs("sens_data/prcc_plot", exist_ok=True)
             save_path = os.path.join("sens_data", "prcc_plot" + '.pdf')
 
-        p_value_cmap = mcolors.ListedColormap(['Orange', 'red', 'darkred'])
+        p_value_cmap = colors.ListedColormap(['Orange', 'red', 'darkred'])
         cmaps = ["Greens", p_value_cmap]
         # adjusted_cmaps = [self.adjust_colormap(cmap) for cmap in cmaps]
-        log_norm = mcolors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
+        log_norm = colors.LogNorm(vmin=1e-3, vmax=1e0)  # used for p_values
         norm = plt.Normalize(vmin=0, vmax=1)  # used for PRCC_values
         fig, ax = plt.subplots(figsize=(8, 8))
         triang = self.construct_triangle_grids_prcc_p_value()
@@ -430,14 +433,14 @@ class Plotter:
         # color = ['lightgreen'
         #          if abs(prcc) < 0.3 else 'green' if
         #          0.3 <= abs(prcc) <= 0.5 else '#07553d' for prcc in prcc_vector]
-        color = '#07553d'
+        color = '#4BAA75'
 
         plt.bar(xp, list(prcc_vector), align='center', width=0.8, alpha=0.8,
                 color=color, label="PRCC")
         for pos, y, cl, cu in zip(xp, list(prcc_vector), list(conf_lower),
                                   list(conf_upper)):
             plt.errorbar(x=pos, y=y, yerr=[[cl], [cu]], fmt='none',
-                         ecolor='red', elinewidth=2, capsize=5, capthick=4)
+                         ecolor='#FF2F1C', elinewidth=7, capsize=10, capthick=6)
 
         # Remove vertical lines
         ax.grid(False)
@@ -450,8 +453,8 @@ class Plotter:
 
         ax.tick_params(axis='y', colors='black')
 
-        ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathcal{CI}$'])
-        plt.title(plot_title, y=1.03, fontsize=20)
+        #ax.legend([r'$\mathrm{\textbf{P}}$', r'$\mathcal{CI}$']) #(!!!)
+        #plt.title(plot_title, y=1.03, fontsize=20) #(!!!)
 
         # ax.legend(['Aggregated PRCC', 'Std Dev'], loc='upper right')
         plt.savefig(save_path, format="pdf", bbox_inches='tight')
