@@ -92,8 +92,8 @@ class PRCCCalculator:
 
         # Iterate over age groups (columns of PRCC matrix)
         for i in range(self.sim_obj.n_ag):
-            prcc_column = self.prcc_mtx[:, i]
-            prob_value_column = distribution_prcc_p_val[:, i]
+            prcc_column = self.prcc_mtx[i, :]
+            prob_value_column = distribution_prcc_p_val[i, :]
 
             # Combine PRCC and probability weights for sorting
             combined_matrix = np.column_stack((np.abs(prcc_column), prob_value_column))
