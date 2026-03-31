@@ -3,7 +3,7 @@ import os
 import json
 
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import norm
 from smt.sampling_methods import LHS
 
 import src
@@ -36,8 +36,9 @@ class SamplerBase(ABC):
     def _get_variable_parameters(self):
         pass
 
-    def _get_lhs_table(self, model: str, strategy: str, number_of_samples: int = 120000,
-                       kappa: float = None, delta: float = 1e2) -> np.ndarray:
+    def _get_lhs_table(self, strategy: str, number_of_samples: int = 120000,
+                       kappa: float = None, delta: float = 1e2,
+                       n: int = 188, contact_dispersion: float = 0.5) -> np.ndarray:
         """
         Generate a Latin Hypercube Sampling (LHS) table for contact matrices based on a chosen strategy.
 
@@ -46,12 +47,16 @@ class SamplerBase(ABC):
             - 'absolute': samples contact values as C_ij ± delta
             - 'relative': samples contact values as C_ij ± 20%
             - 'poisson': samples contact values from N(C_ij, sqrt(C_ij / n))
+            - 'nbinom': samples contact values from N(C_ij, sqrt((C_ij + alpha * C_ij^2) / n)) where alpha is
+            the `contact_dispersion` parameter.
 
-        :param str model: The simulation model type (e.g., "seir", "rost_maszk")
         :param str strategy: Sampling strategy to use
         :param int number_of_samples: Number of samples to generate
         :param float kappa: Reduction ratio for baseline sampling
         :param float delta: Absolute variation range for 'absolute' strategy
+        :param float contact_dispersion: The dispersion parameter used when sampling contact matrix values
+        :param int n: The assumed survey sample size (number of participants) used to calculate the variance
+                      during contact matrix sampling.
 
         :return np.ndarray: The generated LHS sample table
         """
@@ -101,13 +106,20 @@ class SamplerBase(ABC):
             for i in range(n_params):
                 lhs_table[:, i] = lower_bound[i] + (upper_bound[i] - lower_bound[i]) * lhs_table[:, i]
 
-        elif strategy == "poisson":
+        elif strategy in ["poisson", "nbinom"]:
             contact_values = np.clip(contact_other_values, a_min=1e-6, a_max=None)
+            # In case of "poisson" strategy the variance will be mu/n
+            dispersion = contact_dispersion if strategy == "nbinom" else 0.0
 
             for i in range(n_params):
-                lhs_table[:, i] = poisson(
-                    mu=contact_values[i]
+                mu = contact_values[i]
+                variance = (mu + dispersion * (mu ** 2)) / n
+                std_dev = np.sqrt(variance)
+
+                lhs_table[:, i] = norm(
+                    loc=mu, scale=std_dev
                 ).ppf(lhs_table[:, i])
+
                 # Ensure all sampled contact values are non-negative
                 lhs_table[:, i] = np.maximum(lhs_table[:, i], 0)
         else:
@@ -155,7 +167,6 @@ class SamplerBase(ABC):
             json.dump(value, json_file)
 
 
-# TODO: ezt egy segítőfüggvényes mappába esetleg?
 def create_latin_table(n_of_samples: int, lower: np.ndarray, upper: np.ndarray) -> np.ndarray:
     """
     Generate a Latin Hypercube Sampling (LHS) table within specified bounds.
@@ -167,6 +178,6 @@ def create_latin_table(n_of_samples: int, lower: np.ndarray, upper: np.ndarray) 
     :return np.ndarray: A 2D array of shape (n_of_samples, n_parameters) containing LHS samples.
     """
     bounds = np.array([lower, upper]).T
-    sampling = LHS(xlimits=bounds, random_state=42)  # TODO: Ezt opcionálissá tenni
+    sampling = LHS(xlimits=bounds, random_state=42)
 
     return sampling(n_of_samples)

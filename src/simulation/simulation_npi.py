@@ -18,7 +18,8 @@ class SimulationNPI(SimulationBase):
     """
 
     def __init__(self, data: DataLoader, n_samples: int = 1, country: str = "usa", epi_model: str = "rost_prem",
-                 strategy: str = "absolute", is_kappa_applied: bool = True) -> None:
+                 strategy: str = "absolute", is_kappa_applied: bool = True,
+                 contact_dispersion: float = 0.5, n: int = 188) -> None:
         """
         Initializes the simulation environment and epidemiological model.
 
@@ -28,6 +29,9 @@ class SimulationNPI(SimulationBase):
         :param str epi_model: Epidemiological model identifier.
         :param str strategy: Contact manipulation strategy
         :param bool is_kappa_applied: Whether the kappa scaling factor is applied to contact matrices or not
+        :param float contact_dispersion: The dispersion parameter used when sampling contact matrix values
+        :param int n: The assumed survey sample size (number of participants) used to calculate the variance
+                      during contact matrix sampling.
         """
         super().__init__(data=data, country=country)
 
@@ -36,6 +40,9 @@ class SimulationNPI(SimulationBase):
         self.country = country
         self.n_samples = n_samples
         self.epi_model = epi_model
+        self.contact_dispersion = contact_dispersion
+        self.n = n
+
         self.config = None
 
         # Set up configuration for each model type
